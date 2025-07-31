@@ -533,10 +533,14 @@ export const addHabitLog = async (habitLogData: Omit<HabitLog, 'id'>): Promise<s
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   
-  const docRef = await addDoc(getUserCollection('habitLogs'), {
+  const habitLogToAdd = {
     ...habitLogData,
-    userId: user.uid
-  });
+    userId: user.uid,
+    value: habitLogData.value || null,
+    completedChecklistItems: habitLogData.completedChecklistItems || [],
+  };
+
+  const docRef = await addDoc(getUserCollection('habitLogs'), habitLogToAdd);
   return docRef.id;
 };
 

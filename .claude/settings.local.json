@@ -4,7 +4,9 @@
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
       "Bash(Stop-Process -Id 23696 -Force)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(ls:*)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

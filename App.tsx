@@ -212,8 +212,8 @@ const App: React.FC = () => {
           setGoals(newUserData.goals);
           setMilestones(newUserData.milestones);
           setQuickWins(newUserData.quickWins);
-          setHabits(newUserData.habits);
-          setHabitLogs(newUserData.habitLogs);
+          setHabits(newUserData.habits || []);
+          setHabitLogs(newUserData.habitLogs || []);
           setCustomLists(newUserData.lists);
           setTags(newUserData.tags);
           setListFolders(newUserData.listFolders);
@@ -227,7 +227,7 @@ const App: React.FC = () => {
           setMilestones(userData.milestones);
           setQuickWins(userData.quickWins);
           setHabits(userData.habits);
-          setHabitLogs(userData.habitLogs);
+          setHabitLogs(userData.habitLogs || []);
           setCustomLists(userData.lists);
           setTags(userData.tags);
           setListFolders(userData.listFolders);
@@ -251,7 +251,7 @@ const App: React.FC = () => {
     // Set up real-time listeners for all collections
     const unsubscribeTasks = subscribeToUserTasks(setTasks);
     const unsubscribeLogs = subscribeToUserLogs(setLogs);
-    const unsubscribeHabits = subscribeToUserHabits(setHabits);
+    const unsubscribeHabits = subscribeToUserHabits((habitsData) => setHabits(habitsData || []));
     const unsubscribeGoals = subscribeToUserGoals(setGoals);
     const unsubscribeMilestones = subscribeToUserMilestones(setMilestones);
     const unsubscribeQuickWins = subscribeToUserQuickWins(setQuickWins);
@@ -883,7 +883,7 @@ const App: React.FC = () => {
                         goals={goals}
                         milestones={milestones}
                         quickWins={quickWins}
-                        habits={habits}
+                        habits={habits ?? []}
                         habitLogs={habitLogs}
                         allFoci={initialFoci}
                         allLogs={logs}

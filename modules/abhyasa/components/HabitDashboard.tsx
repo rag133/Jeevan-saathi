@@ -255,7 +255,7 @@ interface HabitDashboardProps {
     onDateSelect: (date: Date) => void;
 }
 
-const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits, habitLogs, allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
+const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], habitLogs = [], allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const datePickerRef = useRef<HTMLDivElement>(null);
 
@@ -271,7 +271,7 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits, habitLogs, allF
     
     const habitsForSelectedDay = useMemo(() => {
         const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
-        return habits.filter(habit => {
+        return (habits ?? []).filter(habit => {
             const { frequency } = habit;
             switch(frequency.type) {
                 case HabitFrequencyType.DAILY: return true;

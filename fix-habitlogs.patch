@@ -1,0 +1,10 @@
+--- a/modules/abhyasa/components/HabitDashboard.tsx
++++ b/modules/abhyasa/components/HabitDashboard.tsx
+@@ -255,7 +255,7 @@ interface HabitDashboardProps {
+     onDateSelect: (date: Date) => void;
+ }
+ 
+-const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], habitLogs, allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
++const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], habitLogs = [], allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
+     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+     const datePickerRef = useRef<HTMLDivElement>(null);

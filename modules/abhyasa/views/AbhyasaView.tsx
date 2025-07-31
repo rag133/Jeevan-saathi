@@ -53,10 +53,12 @@ type MilestoneFilter = MilestoneStatus | 'All';
 
 const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
     const {
-        goals, milestones, quickWins, habits, habitLogs, allFoci, allLogs, onAddLog,
+        goals, milestones, quickWins, habits: rawHabits, habitLogs, allFoci, allLogs, onAddLog,
         onAddGoal, onUpdateGoal, onDeleteGoal, onAddMilestone, onUpdateMilestone, onDeleteMilestone, onAddQuickWin, onUpdateQuickWinStatus,
         onAddHabit, onUpdateHabit, onDeleteHabit, onAddHabitLog, onDeleteHabitLog
     } = props;
+
+    const habits = useMemo(() => rawHabits || [], [rawHabits]);
     
     const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('goals');
     const [modal, setModal] = useState<AbhyasaModalType>(null);
@@ -195,7 +197,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
     };
 
     const handleAddLog = (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => {
-        const { habit, milestone, goal } = logModalState.context;
+ const { habit, milestone, goal } = logModalState.context;
         if (!habit && !milestone && !goal) return;
 
         let contextData: Partial<Log> = {};
@@ -226,7 +228,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
                             allFoci={allFoci}
                             allLogs={allLogs}
                             milestones={milestones.filter(m => m.parentGoalId === selectedGoal?.id)}
-                            habits={habits.filter(h => h.goalId === selectedGoal?.id || (h.milestoneId && milestones.some(m => m.id === h.milestoneId && m.parentGoalId === selectedGoal?.id)))}
+                            habits={(habits || []).filter(h => h.goalId === selectedGoal?.id || (h.milestoneId && milestones.some(m => m.id === h.milestoneId && m.parentGoalId === selectedGoal?.id)))}
                             habitLogs={habitLogs}
                             onUpdateGoal={onUpdateGoal}
                             onDeleteGoal={onDeleteGoal}
