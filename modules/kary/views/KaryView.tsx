@@ -39,6 +39,20 @@ interface KaryViewProps {
     onToggleKaryTask: (taskId: string) => void;
     customLists: List[];
     tags: Tag[];
+    listFolders: ListFolder[];
+    tagFolders: TagFolder[];
+    onAddList: (listData: Omit<List, 'id'>) => Promise<List>;
+    onUpdateList: (listId: string, updates: Partial<List>) => Promise<void>;
+    onDeleteList: (listId: string) => Promise<void>;
+    onAddTag: (tagData: Omit<Tag, 'id'>) => Promise<Tag>;
+    onUpdateTag: (tagId: string, updates: Partial<Tag>) => Promise<void>;
+    onDeleteTag: (tagId: string) => Promise<void>;
+    onAddListFolder: (folderData: Omit<ListFolder, 'id'>) => Promise<ListFolder>;
+    onUpdateListFolder: (folderId: string, updates: Partial<ListFolder>) => Promise<void>;
+    onDeleteListFolder: (folderId: string) => Promise<void>;
+    onAddTagFolder: (folderData: Omit<TagFolder, 'id'>) => Promise<TagFolder>;
+    onUpdateTagFolder: (folderId: string, updates: Partial<TagFolder>) => Promise<void>;
+    onDeleteTagFolder: (folderId: string) => Promise<void>;
 }
 
 const KaryView: React.FC<KaryViewProps> = ({ 
@@ -53,9 +67,22 @@ const KaryView: React.FC<KaryViewProps> = ({
     onToggleKaryTask,
     customLists,
     tags,
+    listFolders,
+    tagFolders,
+    onAddList,
+    onUpdateList,
+    onDeleteList,
+    onAddTag,
+    onUpdateTag,
+    onDeleteTag,
+    onAddListFolder,
+    onUpdateListFolder,
+    onDeleteListFolder,
+    onAddTagFolder,
+    onUpdateTagFolder,
+    onDeleteTagFolder,
 }) => {
-  const [listFolders, setListFolders] = useState<ListFolder[]>([]);
-  const [tagFolders, setTagFolders] = useState<TagFolder[]>([]);
+  
   
   const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(tasks.filter(t => !t.parentId).length > 0 ? tasks.filter(t => !t.parentId)[0].id : null);
@@ -122,12 +149,17 @@ const KaryView: React.FC<KaryViewProps> = ({
 
   useEffect(() => {
       const topLevelTasks = displayedTasks.filter(t => !t.parentId);
-      if (!selectedTaskId && topLevelTasks.length > 0) {
-          setSelectedTaskId(topLevelTasks[0].id);
-      } else if (selectedTaskId && !displayedTasks.some(t => t.id === selectedTaskId)) {
+      // If selectedTaskId is null or doesn't exist in the current tasks, select the first top-level task
+      if (!selectedTaskId || !tasks.some(t => t.id === selectedTaskId)) {
           setSelectedTaskId(topLevelTasks.length > 0 ? topLevelTasks[0].id : null);
+      } else {
+          // Ensure selectedTaskId refers to a task with a Firestore-generated ID
+          const currentSelectedTask = tasks.find(t => t.id === selectedTaskId);
+          if (currentSelectedTask && currentSelectedTask.id !== selectedTaskId) {
+              setSelectedTaskId(currentSelectedTask.id);
+          }
       }
-  }, [displayedTasks, selectedTaskId]);
+  }, [displayedTasks, selectedTaskId, tasks]);
 
   const handleAddTask = async (taskData: NewTaskData, list?: List | null, parentId?: string) => {
     const getListId = () => {
@@ -156,8 +188,7 @@ const KaryView: React.FC<KaryViewProps> = ({
         });
     }
 
-    const newTask: Task = {
-        id: crypto.randomUUID(),
+    const newTask: Omit<Task, 'id'> = {
         title: taskData.title,
         listId: getListId(),
         completed: false,
@@ -167,9 +198,9 @@ const KaryView: React.FC<KaryViewProps> = ({
         priority: taskData.priority || undefined,
         dueDate: taskData.dueDate && taskData.dueDate.trim() !== '' ? new Date(taskData.dueDate) : undefined,
     };
-    await onAddTask(newTask);
+    const firestoreTaskId = await onAddTask(newTask);
     if (!parentId) {
-        setSelectedTaskId(newTask.id);
+        setSelectedTaskId(firestoreTaskId);
     }
   };
   
@@ -250,7 +281,8 @@ const KaryView: React.FC<KaryViewProps> = ({
                 onToggleExpand={(taskId) => setExpandedTasks(prev => ({...prev, [taskId]: !prev[taskId]}))}
             />
             <KaryTaskDetail
-                task={selectedTask}
+                selectedTaskId={selectedTaskId}
+                tasks={tasks}
                 allTags={tags}
                 allLists={allLists}
                 allLogs={allLogs}

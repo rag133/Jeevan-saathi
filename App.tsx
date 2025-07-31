@@ -25,6 +25,7 @@ import {
   subscribeToUserTags,
   subscribeToUserListFolders,
   subscribeToUserTagFolders,
+  subscribeToUserFoci,
   addTask as addTaskToFirestore,
   updateTask as updateTaskInFirestore,
   deleteTask as deleteTaskFromFirestore,
@@ -58,7 +59,10 @@ import {
   deleteListFolder as deleteListFolderFromFirestore,
   addTagFolder as addTagFolderToFirestore,
   updateTagFolder as updateTagFolderInFirestore,
-  deleteTagFolder as deleteTagFolderFromFirestore
+  deleteTagFolder as deleteTagFolderFromFirestore,
+  addFocus as addFocusToFirestore,
+  updateFocus as updateFocusInFirestore,
+  deleteFocus as deleteFocusFromFirestore
 } from './services/dataService';
 
 
@@ -165,6 +169,7 @@ const App: React.FC = () => {
   // Dainandini State
   const [logs, setLogs] = useState<Log[]>([]);
   const [logTemplates, setLogTemplates] = useState<LogTemplate[]>([]);
+  const [foci, setFoci] = useState<Focus[]>([]);
 
   // Abhyasa State
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -253,6 +258,7 @@ const App: React.FC = () => {
     const unsubscribeTags = subscribeToUserTags(setTags);
     const unsubscribeListFolders = subscribeToUserListFolders(setListFolders);
     const unsubscribeTagFolders = subscribeToUserTagFolders(setTagFolders);
+    const unsubscribeFoci = subscribeToUserFoci(setFoci);
 
     // Cleanup function to unsubscribe from all listeners
     return () => {
@@ -267,6 +273,7 @@ const App: React.FC = () => {
       unsubscribeListFolders();
       unsubscribeTags();
       unsubscribeTagFolders();
+      unsubscribeFoci();
     };
   }, [user, dataLoading, dataError]);
 
@@ -395,16 +402,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const newLogId = await addLogToFirestore(newLogData);
-      
-      // Add to local state with the ID from Firestore
-      const completeLog = {
-        id: newLogId,
-        createdAt: new Date(),
-        ...newLogData
-      } as Log;
-      
-      setLogs(prevLogs => [completeLog, ...prevLogs]);
+      await addLogToFirestore(newLogData);
     } catch (error) {
       console.error('Error adding log:', error);
     }
@@ -429,10 +427,7 @@ const App: React.FC = () => {
   }, [logs]);
   const handleAddLogTemplate = useCallback(async (templateData: Omit<LogTemplate, 'id'>) => {
     try {
-      const newTemplateId = await addLogTemplateToFirestore(templateData);
-      const newTemplate = { ...templateData, id: newTemplateId };
-      setLogTemplates(prev => [...prev, newTemplate]);
-      return newTemplate;
+      await addLogTemplateToFirestore(templateData);
     } catch (error) {
       console.error('Error adding log template:', error);
       throw error;
@@ -455,12 +450,34 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleAddFocus = useCallback(async (focusData: Omit<Focus, 'id'>) => {
+    try {
+      await addFocusToFirestore(focusData);
+    } catch (error) {
+      console.error('Error adding focus:', error);
+      throw error;
+    }
+  }, []);
+
+  const handleUpdateFocus = useCallback(async (focusId: string, updates: Partial<Focus>) => {
+    try {
+      await updateFocusInFirestore(focusId, updates);
+    } catch (error) {
+      console.error('Error updating focus:', error);
+    }
+  }, []);
+
+  const handleDeleteFocus = useCallback(async (focusId: string) => {
+    try {
+      await deleteFocusFromFirestore(focusId);
+    } catch (error) {
+      console.error('Error deleting focus:', error);
+    }
+  }, []);
+
   const handleAddList = useCallback(async (listData: Omit<List, 'id'>) => {
     try {
-      const newListId = await addListToFirestore(listData);
-      const newList = { ...listData, id: newListId };
-      setCustomLists(prev => [...prev, newList]);
-      return newList;
+      await addListToFirestore(listData);
     } catch (error) {
       console.error('Error adding list:', error);
       throw error;
@@ -487,10 +504,7 @@ const App: React.FC = () => {
 
   const handleAddTag = useCallback(async (tagData: Omit<Tag, 'id'>) => {
     try {
-      const newTagId = await addTagToFirestore(tagData);
-      const newTag = { ...tagData, id: newTagId };
-      setTags(prev => [...prev, newTag]);
-      return newTag;
+      await addTagToFirestore(tagData);
     } catch (error) {
       console.error('Error adding tag:', error);
       throw error;
@@ -517,10 +531,7 @@ const App: React.FC = () => {
 
   const handleAddListFolder = useCallback(async (folderData: Omit<ListFolder, 'id'>) => {
     try {
-      const newFolderId = await addListFolderToFirestore(folderData);
-      const newFolder = { ...folderData, id: newFolderId };
-      setListFolders(prev => [...prev, newFolder]);
-      return newFolder;
+      await addListFolderToFirestore(folderData);
     } catch (error) {
       console.error('Error adding list folder:', error);
       throw error;
@@ -547,10 +558,7 @@ const App: React.FC = () => {
 
   const handleAddTagFolder = useCallback(async (folderData: Omit<TagFolder, 'id'>) => {
     try {
-      const newFolderId = await addTagFolderToFirestore(folderData);
-      const newFolder = { ...folderData, id: newFolderId };
-      setTagFolders(prev => [...prev, newFolder]);
-      return newFolder;
+      await addTagFolderToFirestore(folderData);
     } catch (error) {
       console.error('Error adding tag folder:', error);
       throw error;
@@ -577,9 +585,7 @@ const App: React.FC = () => {
 
   const handleAddGoal = useCallback(async (goalData: Omit<Goal, 'id' | 'startDate'>) => {
     try {
-      const newGoalId = await addGoalToFirestore(goalData);
-      const newGoal: Goal = { id: newGoalId, startDate: new Date(), ...goalData };
-      setGoals(prev => [newGoal, ...prev]);
+      await addGoalToFirestore(goalData);
     } catch (error) {
       console.error('Error adding goal:', error);
     }
@@ -618,9 +624,7 @@ const App: React.FC = () => {
 
   const handleAddMilestone = useCallback(async (milestoneData: Omit<Milestone, 'id'>) => {
     try {
-      const newMilestoneId = await addMilestoneToFirestore(milestoneData);
-      const newMilestone: Milestone = { id: newMilestoneId, ...milestoneData };
-      setMilestones(prev => [newMilestone, ...prev]);
+      await addMilestoneToFirestore(milestoneData);
     } catch (error) {
       console.error('Error adding milestone:', error);
     }
@@ -654,9 +658,7 @@ const App: React.FC = () => {
   
   const handleAddQuickWin = useCallback(async (quickWinData: Omit<QuickWin, 'id'|'createdAt'>) => {
     try {
-      const newQuickWinId = await addQuickWinToFirestore(quickWinData);
-      const newQuickWin: QuickWin = { id: newQuickWinId, createdAt: new Date(), ...quickWinData };
-      setQuickWins(prev => [newQuickWin, ...prev]);
+      await addQuickWinToFirestore(quickWinData);
     } catch (error) {
       console.error('Error adding quick win:', error);
     }
@@ -673,9 +675,7 @@ const App: React.FC = () => {
 
   const handleAddHabit = useCallback(async (habitData: Omit<Habit, 'id' | 'createdAt'>) => {
     try {
-      const newHabitId = await addHabitToFirestore(habitData);
-      const newHabit: Habit = { id: newHabitId, createdAt: new Date(), status: HabitStatus.YET_TO_START, ...habitData };
-      setHabits(prev => [newHabit, ...prev]);
+      await addHabitToFirestore(habitData);
     } catch (error) {
       console.error('Error adding habit:', error);
     }
@@ -797,13 +797,18 @@ const App: React.FC = () => {
             return <DainandiniView 
                         allLogs={logs}
                         logTemplates={logTemplates}
+                        allFoci={foci}
                         onAddLog={handleAddLog}
                         onDeleteLog={handleDeleteLog}
                         onUpdateLog={handleUpdateLog}
                         onAddLogTemplate={handleAddLogTemplate}
                         onUpdateLogTemplate={handleUpdateLogTemplate}
                         onDeleteLogTemplate={handleDeleteLogTemplate}
-                        onToggleKaryTask={handleToggleKaryTask} 
+                        onAddFocus={handleAddFocus}
+                        onUpdateFocus={handleUpdateFocus}
+                        onDeleteFocus={handleDeleteFocus}
+                        onToggleKaryTask={handleToggleKaryTask}
+                        onReorderFoci={setFoci} 
                     />;
         case 'kary':
             return <KaryView 
@@ -811,10 +816,10 @@ const App: React.FC = () => {
                         onAddTask={async (taskData) => {
                           try {
                             const taskId = await addTaskToFirestore(taskData);
-                            const newTask = { id: taskId, ...taskData, createdAt: new Date() };
-                            setTasks(prev => [newTask, ...prev]);
+                            return taskId; // Return the Firestore-generated ID
                           } catch (error) {
                             console.error('Error adding task:', error);
+                            throw error; // Re-throw to propagate the error
                           }
                         }}
                         onUpdateTask={async (taskId, updates) => {
@@ -893,13 +898,18 @@ const App: React.FC = () => {
             return <DainandiniView 
                         allLogs={logs}
                         logTemplates={logTemplates}
+                        allFoci={foci}
                         onAddLog={handleAddLog}
                         onDeleteLog={handleDeleteLog}
                         onUpdateLog={handleUpdateLog}
                         onAddLogTemplate={handleAddLogTemplate}
                         onUpdateLogTemplate={handleUpdateLogTemplate}
                         onDeleteLogTemplate={handleDeleteLogTemplate}
-                        onToggleKaryTask={handleToggleKaryTask} 
+                        onAddFocus={handleAddFocus}
+                        onUpdateFocus={handleUpdateFocus}
+                        onDeleteFocus={handleDeleteFocus}
+                        onToggleKaryTask={handleToggleKaryTask}
+                        onReorderFoci={setFoci} 
                     />;
     }
   };

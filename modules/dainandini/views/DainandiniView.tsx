@@ -19,23 +19,27 @@ import LogEntryModal from '../components/LogEntryModal';
 interface DainandiniViewProps {
     allLogs: Log[];
     logTemplates: LogTemplate[];
+    allFoci: Focus[];
     onAddLog: (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => void;
     onDeleteLog: (logId: string) => void;
     onUpdateLog: (logId: string, updates: Partial<Log>) => void;
-    onAddLogTemplate: (templateData: Omit<LogTemplate, 'id'>) => LogTemplate;
+    onAddLogTemplate: (templateData: Omit<LogTemplate, 'id'>) => Promise<string>;
     onUpdateLogTemplate: (templateId: string, updates: Partial<LogTemplate>) => void;
     onDeleteLogTemplate: (templateId: string) => void;
     onToggleKaryTask: (taskId: string) => void;
+    onAddFocus: (focusData: Omit<Focus, 'id'>) => Promise<string>;
+    onUpdateFocus: (focusId: string, updates: Partial<Focus>) => void;
+    onDeleteFocus: (focusId: string) => void;
+    onReorderFoci: (reorderedFoci: Focus[]) => void;
 }
 
 const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     const {
-        allLogs, logTemplates, onAddLog, onDeleteLog, onUpdateLog,
+        allLogs, logTemplates, allFoci, onAddLog, onDeleteLog, onUpdateLog,
         onAddLogTemplate, onUpdateLogTemplate, onDeleteLogTemplate,
-        onToggleKaryTask
+        onToggleKaryTask, onAddFocus, onUpdateFocus, onDeleteFocus, onReorderFoci
     } = props;
 
-    const [foci, setFoci] = useState<Focus[]>(initialFoci);
     const [selection, setSelection] = useState<DainandiniSelection>({ type: 'today' });
     const [modal, setModal] = useState<'add-focus' | 'select-template' | null>(null);
     const [editingFocus, setEditingFocus] = useState<Focus | null>(null);
@@ -53,9 +57,9 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                d1.getDate() === d2.getDate();
     }, []);
     
-    const handleReorderFoci = useCallback((reorderedFoci: Focus[]) => {
-        setFoci(reorderedFoci);
-    }, []);
+    const handleReorderFociProp = useCallback((reorderedFoci: Focus[]) => {
+        onReorderFoci(reorderedFoci);
+    }, [onReorderFoci]);
 
     const groupedLogs = useMemo((): GroupedLogs => {
         const sortedLogs = [...allLogs].sort((a, b) => b.logDate.getTime() - a.logDate.getTime());
@@ -63,8 +67,8 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         const groups = new Map<string, Log[]>();
 
         if (selection.type === 'today') {
-            // Pre-populate groups to maintain the order from the `foci` state
-            foci.forEach(focus => {
+            // Pre-populate groups to maintain the order from the `allFoci` state
+            allFoci.forEach(focus => {
                 groups.set(focus.name, []);
             });
 
@@ -74,7 +78,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
             });
 
             todayLogs.forEach(log => {
-                const focus = foci.find(f => f.id === log.focusId);
+                const focus = allFoci.find(f => f.id === log.focusId);
                 const groupName = focus ? focus.name : 'Uncategorized';
                 if (!groups.has(groupName)) {
                     groups.set(groupName, []);
@@ -110,7 +114,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
             });
         }
         return groups;
-    }, [allLogs, selection, foci, isSameDay]);
+    }, [allLogs, selection, allFoci, isSameDay]);
 
     const todayLogsForTimeline = useMemo(() => {
         if (selection.type !== 'today') return [];
@@ -134,30 +138,28 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         return [];
     }, [allLogs, selection, isSameDay]);
 
-    const handleSaveFocus = (focusData: Omit<Focus, 'id'>, focusId?: string) => {
+    const handleSaveFocus = async (focusData: Omit<Focus, 'id'>, focusId?: string) => {
         if (focusId) {
-            setFoci(foci.map(f => (f.id === focusId ? { ...f, ...focusData, id: focusId } : f)));
+            await onUpdateFocus(focusId, focusData);
         } else {
-            const newFocus = { ...focusData, id: crypto.randomUUID() };
-            setFoci(prev => [...prev, newFocus]);
-            setSelection({ type: 'focus', id: newFocus.id });
+            const newFocusId = await onAddFocus(focusData);
+            setSelection({ type: 'focus', id: newFocusId });
         }
         setModal(null);
         setEditingFocus(null);
     };
 
-    const handleDeleteFocus = (focusId: string) => {
+    const handleDeleteFocus = async (focusId: string) => {
         if (selection.type === 'focus' && selection.id === focusId) {
             setSelection({ type: 'today' });
         }
-        // This is a simple delete. A more robust solution might re-assign logs to a default focus.
-        setFoci(foci.filter(f => f.id !== focusId));
+        await onDeleteFocus(focusId);
         setModal(null);
         setEditingFocus(null);
     };
 
     const handleOpenEditFocusModal = (focusId: string) => {
-        const focusToEdit = foci.find(f => f.id === focusId);
+        const focusToEdit = allFoci.find(f => f.id === focusId);
         if (focusToEdit) {
             setEditingFocus(focusToEdit);
             setModal('add-focus');
@@ -174,7 +176,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         setContextualFocusId(contextId);
 
         if (contextId) {
-            const currentFocus = foci.find(f => f.id === contextId);
+            const currentFocus = allFoci.find(f => f.id === contextId);
             if (currentFocus?.defaultTemplateId) {
                 if (currentFocus.defaultTemplateId === 'BLANK') {
                     setLogEntryModalState({ isOpen: true, template: null, initialFocusId: contextId });
@@ -189,7 +191,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         }
         // If no context or no default template, open selection modal
         setModal('select-template');
-    }, [selection, foci, logTemplates]);
+    }, [selection, allFoci, logTemplates]);
 
     const handleTemplateSelected = (template: LogTemplate | null) => {
         setModal(null);
@@ -228,14 +230,14 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
              return "Calendar";
         }
         if (selection.type === 'focus') {
-            return foci.find(t => t.id === selection.id)?.name || '';
+            return allFoci.find(t => t.id === selection.id)?.name || '';
         }
         if (selection.type === 'template') {
             if (selection.id === 'new') return 'Create New Template';
             const template = logTemplates.find(t => t.id === selection.id);
             return template ? `Editing: ${template.name}` : 'Template';
         }
-    }, [selection, foci, logTemplates]);
+    }, [selection, allFoci, logTemplates]);
     
     const selectedLog = useMemo(() => {
         return allLogs.find(log => log.id === selectedLogId) || null;
@@ -278,14 +280,14 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
             return <TemplateDetail
                         key={selection.id} // Re-mounts the component when template changes
                         template={selection.id === 'new' ? null : selectedTemplate}
-                        foci={foci}
+                        allFoci={allFoci}
                         onSave={handleTemplateDetailSave}
                         onDelete={handleDeleteTemplate}
                    />
         }
         return <LogDetail 
                     log={selectedLog}
-                    foci={foci}
+                    allFoci={allFoci}
                     onUpdateLog={onUpdateLog}
                     onDeleteLog={handleDeleteAndReselect}
                />
@@ -294,7 +296,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     return (
         <>
             <DainandiniSidebar
-                foci={foci}
+                foci={allFoci}
                 templates={logTemplates}
                 selection={selection}
                 onSelect={(sel) => {
@@ -313,14 +315,14 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                 onOpenModal={handleOpenAddFocusModal}
                 onCreateTemplate={handleCreateTemplate}
                 onEditFocus={handleOpenEditFocusModal}
-                onReorderFoci={handleReorderFoci}
+                onReorderFoci={handleReorderFociProp}
             />
             <main className="flex-1 flex min-w-0">
                  <ResizablePanels initialLeftWidth={50}>
                     <div className="h-full w-full bg-white/80">
                         {selection.type === 'calendar' ? (
                             <CalendarView 
-                                allFoci={foci}
+                                allFoci={allFoci}
                                 logs={allLogs}
                                 selectedDate={selection.date ? new Date(selection.date) : null}
                                 onDateSelect={(date) => {
@@ -342,7 +344,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                                 todayViewMode={todayViewMode}
                                 onSetTodayViewMode={setTodayViewMode}
                                 viewName={currentViewName || "Journal"}
-                                allFoci={foci}
+                                allFoci={allFoci}
                                 selection={selection}
                                 onAddLogClick={handleOpenTemplateSelection}
                                 onToggleKaryTask={onToggleKaryTask}
@@ -360,7 +362,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                         initialData={editingFocus}
                         onSave={handleSaveFocus}
                         onDelete={handleDeleteFocus}
-                        templates={logTemplates}
+                        allFoci={allFoci}
                     />
                 </Modal>
             )}
@@ -377,7 +379,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                     isOpen={true}
                     onClose={() => setLogEntryModalState({ isOpen: false, template: null })}
                     onAddLog={onAddLog}
-                    allFoci={foci}
+                    allFoci={allFoci}
                     template={logEntryModalState.template}
                     initialFocusId={logEntryModalState.initialFocusId}
                 />

@@ -10,10 +10,10 @@ interface AddFocusFormProps {
     onSave: (focus: Omit<Focus, 'id'>, id?: string) => void;
     onDelete: (id: string) => void;
     initialData: Focus | null;
-    templates: LogTemplate[];
+    allFoci: Focus[];
 }
 
-const AddFocusForm: React.FC<AddFocusFormProps> = ({ onSave, onDelete, initialData, templates }) => {
+const AddFocusForm: React.FC<AddFocusFormProps> = ({ onSave, onDelete, initialData, allFoci }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [color, setColor] = useState('gray-500');
@@ -133,9 +133,7 @@ const AddFocusForm: React.FC<AddFocusFormProps> = ({ onSave, onDelete, initialDa
                 >
                     <option value="">Ask each time</option>
                     <option value="BLANK">Blank Log (Don't ask)</option>
-                    {templates.map(template => (
-                        <option key={template.id} value={template.id}>{template.name}</option>
-                    ))}
+                    {/* Removed templates.map as templates prop is removed */}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">Assign a template to skip the selection step when adding a log to this focus area.</p>
             </div>

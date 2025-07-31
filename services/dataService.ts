@@ -108,11 +108,14 @@ export const addList = async (listData: Omit<List, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   
-  const docRef = await addDoc(getUserCollection('lists'), {
+  const listToAdd = {
     ...listData,
     createdAt: new Date(),
-    userId: user.uid
-  });
+    userId: user.uid,
+    folderId: listData.folderId || null,
+  };
+
+  const docRef = await addDoc(getUserCollection('lists'), listToAdd);
   return docRef.id;
 };
 
@@ -317,12 +320,48 @@ export const getUserLogTemplates = async (): Promise<FirestoreDoc<LogTemplate>[]
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// Focus Areas (shared globally, but allow user customization)
+// Focus Areas
+export const addFocus = async (focusData: Omit<Focus, 'id'>): Promise<string> => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const docRef = await addDoc(getUserCollection('foci'), {
+    ...focusData,
+    userId: user.uid
+  });
+  return docRef.id;
+};
+
+export const updateFocus = async (focusId: string, updates: Partial<Focus>): Promise<void> => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+  const focusRef = doc(db, 'users', user.uid, 'foci', focusId);
+  return updateDoc(focusRef, updates);
+};
+
+export const deleteFocus = async (focusId: string): Promise<void> => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+  const focusRef = doc(db, 'users', user.uid, 'foci', focusId);
+  return deleteDoc(focusRef);
+};
+
 export const getUserFoci = async (): Promise<FirestoreDoc<Focus>[]> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const snapshot = await getDocs(getUserCollection('foci'));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const subscribeToUserFoci = (callback: (foci: FirestoreDoc<Focus>[]) => void) => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const q = query(getUserCollection('foci'));
+  return onSnapshot(q, (snapshot) => {
+    const foci = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(foci);
+  });
 };
 
 // ============= ABHYASA MODULE =============
@@ -655,56 +694,65 @@ export const initializeUserData = async () => {
   
   // Add default focus areas
   initialFoci.forEach(focus => {
-    const docRef = doc(getUserCollection('foci'), focus.id);
-    batch.set(docRef, { ...focus, userId: user.uid });
+    const { id, ...dataWithoutId } = focus; // Destructure to remove id
+    const docRef = doc(getUserCollection('foci')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default habits
   habits.forEach(habit => {
-    const docRef = doc(getUserCollection('habits'), habit.id);
-    batch.set(docRef, { ...habit, userId: user.uid });
+    const { id, ...dataWithoutId } = habit; // Destructure to remove id
+    const docRef = doc(getUserCollection('habits')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default goals
   initialGoals.forEach(goal => {
-    const docRef = doc(getUserCollection('goals'), goal.id);
-    batch.set(docRef, { ...goal, userId: user.uid });
+    const { id, ...dataWithoutId } = goal; // Destructure to remove id
+    const docRef = doc(getUserCollection('goals')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default milestones
   initialMilestones.forEach(milestone => {
-    const docRef = doc(getUserCollection('milestones'), milestone.id);
-    batch.set(docRef, { ...milestone, userId: user.uid });
+    const { id, ...dataWithoutId } = milestone; // Destructure to remove id
+    const docRef = doc(getUserCollection('milestones')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default quick wins
   initialQuickWins.forEach(quickWin => {
-    const docRef = doc(getUserCollection('quickWins'), quickWin.id);
-    batch.set(docRef, { ...quickWin, userId: user.uid });
+    const { id, ...dataWithoutId } = quickWin; // Destructure to remove id
+    const docRef = doc(getUserCollection('quickWins')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default custom lists
   customLists.forEach(list => {
-    const docRef = doc(getUserCollection('lists'), list.id);
-    batch.set(docRef, { ...list, userId: user.uid });
+    const { id, ...dataWithoutId } = list; // Destructure to remove id
+    const docRef = doc(getUserCollection('lists')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default list folders
   listFolders.forEach(folder => {
-    const docRef = doc(getUserCollection('listFolders'), folder.id);
-    batch.set(docRef, { ...folder, userId: user.uid });
+    const { id, ...dataWithoutId } = folder; // Destructure to remove id
+    const docRef = doc(getUserCollection('listFolders')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default tags
   tags.forEach(tag => {
-    const docRef = doc(getUserCollection('tags'), tag.id);
-    batch.set(docRef, { ...tag, userId: user.uid });
+    const { id, ...dataWithoutId } = tag; // Destructure to remove id
+    const docRef = doc(getUserCollection('tags')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default tag folders
   tagFolders.forEach(folder => {
-    const docRef = doc(getUserCollection('tagFolders'), folder.id);
-    batch.set(docRef, { ...folder, userId: user.uid });
+    const { id, ...dataWithoutId } = folder; // Destructure to remove id
+    const docRef = doc(getUserCollection('tagFolders')); // Let Firestore generate ID
+    batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   await batch.commit();

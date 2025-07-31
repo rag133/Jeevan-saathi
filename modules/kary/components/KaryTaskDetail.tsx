@@ -12,7 +12,8 @@ import TaskLogItem from './TaskLogItem';
 import { NewTaskData } from '../views/KaryView';
 
 interface KaryTaskDetailProps {
-    task: Task | null;
+    selectedTaskId: string | null;
+    tasks: Task[];
     allTags: Tag[];
     allLists: List[];
     allLogs: Log[];
@@ -91,7 +92,8 @@ const TagPill: React.FC<{tag: Tag, onRemove: (tagId: string) => void}> = ({ tag,
 };
 
 const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
-    task,
+    selectedTaskId,
+    tasks,
     allTags,
     allLists,
     allLogs,
@@ -104,6 +106,7 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     onAddTask,
     onOpenLogModal,
 }) => {
+    const task = useMemo(() => tasks.find(t => t.id === selectedTaskId) || null, [selectedTaskId, tasks]);
     const [activePopup, setActivePopup] = useState<PopupType | null>(null);
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [descriptionInput, setDescriptionInput] = useState('');
@@ -180,7 +183,10 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     const availableTags = allTags.filter(t => !(task.tags || []).includes(t.id));
 
     const handleUpdate = (updates: Partial<Omit<Task, 'id'>>) => {
-        onUpdateTask(task.id, updates);
+        console.log('Updating task:', task?.id, updates);
+        if (task?.id) {
+            onUpdateTask(task.id, updates);
+        }
         setActivePopup(null);
     };
 
