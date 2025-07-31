@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitStatus, HabitType, HabitFrequency, HabitFrequencyType, HabitTargetComparison, HabitTargetType } from '../types';
+import { Habit, HabitLog, HabitLogStatus, HabitStatus, HabitType, HabitFrequency, HabitFrequencyType, HabitTargetComparison } from '../types';
 import * as Icons from '../../../components/Icons';
 import { Log } from '../../dainandini/types';
 import HabitLogItem from './HabitLogItem';
@@ -81,18 +81,29 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
     };
     
     const formatTarget = (h: Habit) => {
-        if (!h.target) return 'No specific target.';
         const unit = h.type === HabitType.DURATION ? 'minutes' : 'times';
-        const comparisonText = {
+        const comparisonText = (comparison?: HabitTargetComparison) => ({
             [HabitTargetComparison.AT_LEAST]: 'At least',
             [HabitTargetComparison.EXACTLY]: 'Exactly',
             [HabitTargetComparison.LESS_THAN]: 'Less than',
             [HabitTargetComparison.ANY_VALUE]: 'Any value'
-        }[h.targetComparison || HabitTargetComparison.AT_LEAST];
-        
-        const frequencyText = h.type === HabitType.COUNT && h.targetType === HabitTargetType.PER_DAY ? ' per day' : h.targetType === HabitTargetType.TOTAL ? ' in total' : '';
+        }[comparison || HabitTargetComparison.AT_LEAST]);
 
-        return `${comparisonText} ${h.target} ${unit}${frequencyText}`;
+        let targetStrings: string[] = [];
+
+        if (h.dailyTarget) {
+            targetStrings.push(`${comparisonText(h.dailyTargetComparison)} ${h.dailyTarget} ${unit} per day`);
+        }
+
+        if (h.totalTarget) {
+            targetStrings.push(`${comparisonText(h.totalTargetComparison)} ${h.totalTarget} ${unit} in total`);
+        }
+
+        if (targetStrings.length === 0) {
+            return 'No specific target.';
+        }
+
+        return targetStrings.join(' and ');
     };
 
     if (!habit) {
@@ -189,13 +200,11 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
                              <span className="font-semibold text-gray-700 text-sm">Frequency:</span>
                              <span className="text-sm text-gray-600">{formatFrequency(habit.frequency)}</span>
                         </div>
-                         {(habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) && (
-                            <div className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                                 <Icons.TargetIcon className="w-4 h-4 text-gray-400" />
                                 <span className="font-semibold text-gray-700 text-sm">Goal:</span>
                                 <span className="text-sm text-gray-600">{formatTarget(habit)}</span>
                             </div>
-                        )}
                         <div className="flex items-center gap-2">
                             <Icons.CalendarIcon className="w-4 h-4 text-gray-400" />
                             <span className="font-semibold text-gray-700 text-sm">Timeline:</span>

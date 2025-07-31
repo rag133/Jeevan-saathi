@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Habit, HabitType, HabitFrequency, HabitFrequencyType, HabitChecklistItem, HabitTargetComparison, HabitTargetType } from '../../types';
+import { Habit, HabitType, HabitFrequency, HabitFrequencyType, HabitChecklistItem, HabitTargetComparison } from '../../types';
 import * as Icons from '../../../../components/Icons';
 import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
@@ -36,9 +36,10 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSave, onClose, onD
     const [color, setColor] = useState('blue-500');
     const [habitType, setHabitType] = useState<HabitType>(HabitType.BINARY);
     const [frequency, setFrequency] = useState<HabitFrequency>({ type: HabitFrequencyType.DAILY });
-    const [target, setTarget] = useState<number | undefined>(1);
-    const [targetComparison, setTargetComparison] = useState<HabitTargetComparison>(HabitTargetComparison.AT_LEAST);
-    const [targetType, setTargetType] = useState<HabitTargetType>(HabitTargetType.PER_DAY);
+    const [dailyTarget, setDailyTarget] = useState<number | undefined>(undefined);
+    const [dailyTargetComparison, setDailyTargetComparison] = useState<HabitTargetComparison>(HabitTargetComparison.AT_LEAST);
+    const [totalTarget, setTotalTarget] = useState<number | undefined>(undefined);
+    const [totalTargetComparison, setTotalTargetComparison] = useState<HabitTargetComparison>(HabitTargetComparison.AT_LEAST);
     const [checklistItems, setChecklistItems] = useState<HabitChecklistItem[]>([]);
     const [newChecklistItemText, setNewChecklistItemText] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -55,9 +56,10 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSave, onClose, onD
             setColor(initialHabit.color);
             setHabitType(initialHabit.type);
             setFrequency(initialHabit.frequency);
-            setTarget(initialHabit.target);
-            setTargetComparison(initialHabit.targetComparison || HabitTargetComparison.AT_LEAST);
-            setTargetType(initialHabit.targetType || HabitTargetType.PER_DAY);
+            setDailyTarget(initialHabit.dailyTarget);
+            setDailyTargetComparison(initialHabit.dailyTargetComparison || HabitTargetComparison.AT_LEAST);
+            setTotalTarget(initialHabit.totalTarget);
+            setTotalTargetComparison(initialHabit.totalTargetComparison || HabitTargetComparison.AT_LEAST);
             setChecklistItems(initialHabit.checklist || []);
             setStartDate(new Date(initialHabit.startDate).toISOString().split('T')[0]);
             setEndDate(initialHabit.endDate ? new Date(initialHabit.endDate).toISOString().split('T')[0] : '');
@@ -124,9 +126,10 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSave, onClose, onD
         const data: Omit<Habit, 'id' | 'createdAt' | 'status'> = {
             title: title.trim(),
             description, icon, color, type: habitType, frequency,
-            target: habitType === HabitType.COUNT || habitType === HabitType.DURATION ? target : undefined,
-            targetComparison: habitType === HabitType.COUNT ? targetComparison : undefined,
-            targetType: habitType === HabitType.COUNT ? targetType : undefined,
+            ...(dailyTarget !== undefined && { dailyTarget }),
+            ...(dailyTargetComparison !== undefined && { dailyTargetComparison }),
+            ...(totalTarget !== undefined && { totalTarget }),
+            ...(totalTargetComparison !== undefined && { totalTargetComparison }),
             checklist: finalChecklist,
             goalId: goalId || undefined, milestoneId: milestoneId || undefined,
             startDate: new Date(startDate), endDate: endDate ? new Date(endDate) : undefined,
@@ -175,26 +178,35 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({ onSave, onClose, onD
                 </div>
             </div>
             
-            {(habitType === HabitType.COUNT || habitType === HabitType.DURATION) && (
+            <>
+                {(habitType === HabitType.COUNT || habitType === HabitType.DURATION) && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Daily Goal (Optional)</label>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <select value={dailyTargetComparison} onChange={e => setDailyTargetComparison(e.target.value as HabitTargetComparison)} className="px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
+                                <option value={HabitTargetComparison.AT_LEAST}>At least</option>
+                                <option value={HabitTargetComparison.EXACTLY}>Exactly</option>
+                                <option value={HabitTargetComparison.LESS_THAN}>Less than</option>
+                            </select>
+                            <input type="number" value={dailyTarget || ''} onChange={e => setDailyTarget(parseInt(e.target.value) || undefined)} min="1" className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900" placeholder="e.g., 30"/>
+                            <span>{habitType === HabitType.DURATION ? 'minutes' : 'times'} per day</span>
+                        </div>
+                    </div>
+                )}
+
                 <div className="p-4 bg-gray-50 rounded-lg">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Goal</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Total Goal (Optional)</label>
                     <div className="flex flex-wrap items-center gap-4">
-                        <select value={targetComparison} onChange={e => setTargetComparison(e.target.value as HabitTargetComparison)} className="px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
+                        <select value={totalTargetComparison} onChange={e => setTotalTargetComparison(e.target.value as HabitTargetComparison)} className="px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
                             <option value={HabitTargetComparison.AT_LEAST}>At least</option>
                             <option value={HabitTargetComparison.EXACTLY}>Exactly</option>
                             <option value={HabitTargetComparison.LESS_THAN}>Less than</option>
                         </select>
-                        <input type="number" value={target} onChange={e => setTarget(parseInt(e.target.value) || 1)} min="1" className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900"/>
-                        <span>{habitType === HabitType.DURATION ? 'minutes' : 'times'}</span>
-                        {habitType === HabitType.COUNT && (
-                             <select value={targetType} onChange={e => setTargetType(e.target.value as HabitTargetType)} className="px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm text-sm">
-                                <option value={HabitTargetType.PER_DAY}>per day</option>
-                                <option value={HabitTargetType.TOTAL}>in total</option>
-                            </select>
-                        )}
+                        <input type="number" value={totalTarget || ''} onChange={e => setTotalTarget(parseInt(e.target.value) || undefined)} min="1" className="w-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900" placeholder="e.g., 300"/>
+                        <span>{habitType === HabitType.DURATION ? 'minutes' : 'times'} in total</span>
                     </div>
                 </div>
-            )}
+            </>
 
             {habitType === HabitType.CHECKLIST && (
                 <div>

@@ -14,7 +14,12 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "modules/*": ["modules/*"],
+      "services/*": ["services/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }

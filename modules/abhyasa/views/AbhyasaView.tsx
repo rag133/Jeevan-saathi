@@ -60,7 +60,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
 
     const habits = useMemo(() => rawHabits || [], [rawHabits]);
     
-    const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('goals');
+    const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('calendar');
     const [modal, setModal] = useState<AbhyasaModalType>(null);
     const [preselectedGoalIdForMilestone, setPreselectedGoalIdForMilestone] = useState<string | null>(null);
     const [preselectedGoalIdForHabit, setPreselectedGoalIdForHabit] = useState<string | null>(null);

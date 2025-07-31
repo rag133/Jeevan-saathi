@@ -33,10 +33,7 @@ export enum HabitTargetComparison {
     ANY_VALUE = 'any-value',
 }
 
-export enum HabitTargetType {
-    PER_DAY = 'per-day',
-    TOTAL = 'total',
-}
+
 
 export enum HabitStatus {
     YET_TO_START = 'Yet to Start',
@@ -55,9 +52,12 @@ export interface Habit {
     frequency: HabitFrequency;
     type: HabitType;
     status: HabitStatus;
-    target?: number; // For COUNT or DURATION (in minutes)
-    targetComparison?: HabitTargetComparison; // For COUNT
-    targetType?: HabitTargetType; // For COUNT
+    // Daily Target
+    dailyTarget?: number;
+    dailyTargetComparison?: HabitTargetComparison;
+    // Total Target (over the entire habit duration)
+    totalTarget?: number;
+    totalTargetComparison?: HabitTargetComparison;
     checklist?: HabitChecklistItem[]; // For CHECKLIST
     milestoneId?: string;
     goalId?: string;

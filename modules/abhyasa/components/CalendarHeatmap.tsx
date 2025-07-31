@@ -26,7 +26,7 @@ const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({ habit, logs }) => {
                 return `bg-${baseColor}-500`;
             case HabitLogStatus.PARTIALLY_COMPLETED:
                 if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-                    const percentage = Math.min(1, (log.value || 0) / (habit.target || 1));
+                    const percentage = Math.min(1, (log.value || 0) / (habit.dailyTarget || 1));
                     if (percentage > 0.66) return `bg-${baseColor}-400`;
                     if (percentage > 0.33) return `bg-${baseColor}-300`;
                     return `bg-${baseColor}-200`;

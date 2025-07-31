@@ -29,7 +29,17 @@ async function buildProject() {
       },
       define: {
         'process.env.NODE_ENV': '"production"'
-      }
+      },
+      plugins: [
+        {
+          name: 'path-resolver',
+          setup(build) {
+            build.onResolve({ filter: /(?:\.\.\/)*(modules|services)\/.*\.ts$/ }, args => {
+              return { path: join(args.resolveDir, args.path) };
+            });
+          },
+        },
+      ],
     });
 
     // Copy static files

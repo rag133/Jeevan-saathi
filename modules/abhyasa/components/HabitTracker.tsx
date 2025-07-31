@@ -50,8 +50,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     };
 
     const handleCounterLog = () => {
-        const target = habit.target || 1;
-        const comparison = habit.targetComparison || HabitTargetComparison.AT_LEAST;
+        const target = habit.dailyTarget || 1;
+        const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
         
         let status: HabitLogStatus;
         
@@ -89,12 +89,12 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
             return <button onClick={() => handleLog(HabitLogStatus.COMPLETED)} className={`w-full py-2 text-lg font-bold rounded-lg transition-colors bg-${habit.color}/20 text-${habit.color} hover:bg-${habit.color}/30`}>Done</button>;
         
         case HabitType.COUNT:
-            const showTarget = habit.targetComparison !== HabitTargetComparison.ANY_VALUE;
+            const showDailyTarget = habit.dailyTargetComparison !== HabitTargetComparison.ANY_VALUE && habit.dailyTarget !== undefined;
             return (
                 <div className="flex items-center gap-2">
                     <button onClick={() => setCount(c => Math.max(0, c - 1))} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300">-</button>
                     <input type="number" value={count} onChange={e => setCount(parseInt(e.target.value) || 0)} className="w-16 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none" />
-                    {showTarget && <span className="text-gray-500">/ {habit.target}</span>}
+                    {showDailyTarget && <span className="text-gray-500">/ {habit.dailyTarget}</span>}
                     <button onClick={() => setCount(c => c + 1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300">+</button>
                     <button onClick={handleCounterLog} className={`ml-auto px-4 py-2 font-semibold rounded-lg bg-${habit.color}/80 text-white hover:bg-${habit.color}`}>Log</button>
                 </div>
@@ -105,8 +105,8 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
                  <div className="flex items-center gap-2">
                     <input type="number" value={durationH} onChange={e => setDurationH(parseInt(e.target.value) || 0)} className="w-12 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none" /> <span className="text-gray-500">h</span>
                     <input type="number" value={durationM} onChange={e => setDurationM(parseInt(e.target.value) || 0)} className="w-12 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none" /> <span className="text-gray-500">m</span>
-                    <span className="text-gray-500">/ {habit.target} m</span>
-                    <button onClick={() => handleLog(durationH * 60 + durationM >= (habit.target || 1) ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED, durationH * 60 + durationM)} className={`ml-auto px-4 py-2 font-semibold rounded-lg bg-${habit.color}/80 text-white hover:bg-${habit.color}`}>Log</button>
+                    <span className="text-gray-500">/ {habit.dailyTarget} m</span>
+                    <button onClick={() => handleLog(durationH * 60 + durationM >= (habit.dailyTarget || 1) ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED, durationH * 60 + durationM)} className={`ml-auto px-4 py-2 font-semibold rounded-lg bg-${habit.color}/80 text-white hover:bg-${habit.color}`}>Log</button>
                 </div>
             );
 

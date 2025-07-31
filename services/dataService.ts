@@ -510,7 +510,15 @@ export const updateHabit = async (habitId: string, updates: Partial<Habit>): Pro
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const habitRef = doc(db, 'users', user.uid, 'habits', habitId);
-  return updateDoc(habitRef, updates);
+
+  const cleanedUpdates: Partial<Habit> = {};
+  for (const key in updates) {
+    if (updates[key as keyof Partial<Habit>] !== undefined) {
+      cleanedUpdates[key as keyof Partial<Habit>] = updates[key as keyof Partial<Habit>];
+    }
+  }
+
+  return updateDoc(habitRef, cleanedUpdates);
 };
 
 export const deleteHabit = async (habitId: string): Promise<void> => {
@@ -564,6 +572,17 @@ export const getUserHabitLogs = async (): Promise<FirestoreDoc<HabitLog>[]> => {
   const q = query(getUserCollection('habitLogs'), orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+};
+
+export const subscribeToUserHabitLogs = (callback: (habitLogs: FirestoreDoc<HabitLog>[]) => void) => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+  
+  const q = query(getUserCollection('habitLogs'), orderBy('date', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const habitLogs = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    callback(habitLogs);
+  });
 };
 
 // ============= REAL-TIME LISTENERS =============

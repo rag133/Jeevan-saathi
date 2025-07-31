@@ -1,7 +1,8 @@
 
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Habit, HabitLog, HabitFrequencyType, HabitLogStatus, HabitType, HabitChecklistItem } from '../types';
+import { Habit, HabitLog, HabitFrequencyType, HabitLogStatus, HabitType, HabitChecklistItem, HabitTargetComparison } from '../types';
+import { subscribeToUserHabitLogs } from 'services/dataService';
 import * as Icons from '../../../components/Icons';
 import { Focus } from '../../dainandini/types';
 import Checkbox from '../../../components/common/Checkbox';
@@ -81,8 +82,22 @@ const HabitListItem: React.FC<{
         
         if (log.status === HabitLogStatus.COMPLETED) return true;
         
-        if ((habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) && habit.target != null && log.value != null) {
-            return log.value >= habit.target;
+        if ((habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) && habit.dailyTarget != null && log.value != null) {
+            // Apply comparison logic based on dailyTargetComparison
+            const target = habit.dailyTarget;
+            const value = log.value;
+            switch (habit.dailyTargetComparison) {
+                case HabitTargetComparison.AT_LEAST:
+                    return value >= target;
+                case HabitTargetComparison.EXACTLY:
+                    return value === target;
+                case HabitTargetComparison.LESS_THAN:
+                    return value < target;
+                case HabitTargetComparison.ANY_VALUE:
+                    return value > 0; // If any value is considered a goal met
+                default:
+                    return value >= target; // Default to AT_LEAST
+            }
         }
         
         if (habit.type === HabitType.CHECKLIST) {
@@ -98,8 +113,25 @@ const HabitListItem: React.FC<{
     const handleLog = (status: HabitLogStatus, value?: number, completedItems?: string[]) => {
         let finalStatus = status;
 
-        if ((habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) && habit.target != null && value != null) {
-            finalStatus = value >= habit.target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
+        if ((habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) && habit.dailyTarget != null && value != null) {
+            const target = habit.dailyTarget;
+            switch (habit.dailyTargetComparison) {
+                case HabitTargetComparison.AT_LEAST:
+                    finalStatus = value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
+                    break;
+                case HabitTargetComparison.EXACTLY:
+                    finalStatus = value === target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
+                    break;
+                case HabitTargetComparison.LESS_THAN:
+                    finalStatus = value < target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
+                    break;
+                case HabitTargetComparison.ANY_VALUE:
+                    finalStatus = value > 0 ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED; // If any value is considered a goal met
+                    break;
+                default:
+                    finalStatus = value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED; // Default to AT_LEAST
+                    break;
+            }
         }
         if (habit.type === HabitType.CHECKLIST) {
             const total = habit.checklist?.length || 0;
@@ -245,7 +277,6 @@ const HabitListItem: React.FC<{
 // --- Main Component ---
 interface HabitDashboardProps {
     habits: Habit[];
-    habitLogs: HabitLog[];
     allFoci: Focus[];
     onAddHabitLog: (logData: Omit<HabitLog, 'id'>) => void;
     onDeleteHabitLog: (habitId: string, date: Date) => void;
@@ -255,23 +286,29 @@ interface HabitDashboardProps {
     onDateSelect: (date: Date) => void;
 }
 
-const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], habitLogs = [], allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
+const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], allFoci, onAddHabitLog, onDeleteHabitLog, onSelectHabit, selectedHabitId, selectedDate, onDateSelect }) => {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const datePickerRef = useRef<HTMLDivElement>(null);
+    const [allHabitLogs, setAllHabitLogs] = useState<HabitLog[]>([]);
 
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (isDatePickerOpen && datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
-                setIsDatePickerOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isDatePickerOpen]);
+        const unsubscribe = subscribeToUserHabitLogs(setAllHabitLogs);
+        return () => unsubscribe();
+    }, []);
     
     const habitsForSelectedDay = useMemo(() => {
         const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
+        const selectedDateMs = selectedDate.setHours(0, 0, 0, 0);
+
         return (habits ?? []).filter(habit => {
+            const habitStartDateMs = habit.startDate.setHours(0, 0, 0, 0);
+            const habitEndDateMs = habit.endDate ? habit.endDate.setHours(0, 0, 0, 0) : Infinity;
+
+            // Check if selectedDate is within the habit's start and end dates
+            if (selectedDateMs < habitStartDateMs || selectedDateMs > habitEndDateMs) {
+                return false;
+            }
+
             const { frequency } = habit;
             switch(frequency.type) {
                 case HabitFrequencyType.DAILY: return true;
@@ -286,11 +323,11 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({ habits = [], habitLogs 
     const logsByHabitId = useMemo(() => {
         const map = new Map<string, HabitLog>();
         const dateStr = selectedDate.toISOString().split('T')[0];
-        habitLogs.filter(log => log.date === dateStr).forEach(log => {
+        allHabitLogs.filter(log => log.date === dateStr).forEach(log => {
             map.set(log.habitId, log);
         });
         return map;
-    }, [habitLogs, selectedDate]);
+    }, [allHabitLogs, selectedDate]);
 
     const getHeaderText = () => {
         const today = new Date();
