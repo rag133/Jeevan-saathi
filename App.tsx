@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as Icons from './components/Icons';
 import ApiKeyModal from './components/ApiKeyModal';
+import ProfileModal from './components/ProfileModal';
 import DainandiniView from './modules/dainandini/views/DainandiniView';
 import KaryView from './modules/kary/views/KaryView';
 import VidyaView from './modules/vidya/views/VidyaView';
@@ -10,7 +11,8 @@ import { Task } from './modules/kary/types';
 import { Log, LogType, LogTemplate, Focus } from './modules/dainandini/types';
 import { Habit, HabitLog, Goal, Milestone, QuickWin, QuickWinStatus, HabitStatus } from './modules/abhyasa/types';
 import AuthModal from './components/AuthModal';
-import { onAuthStateChange, getCurrentUser, signOutUser } from './services/authService';
+import { onAuthStateChange, getCurrentUser, signOutUser, updateUserProfile } from './services/authService';
+import { uploadProfilePicture } from './services/storageService';
 import { 
   getAllUserData, 
   initializeUserData,
@@ -86,9 +88,7 @@ const NavItem: React.FC<{
     return (
         <button
             onClick={onClick}
-            className={`relative flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                isActive ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-200'
-            }`}
+            className={`relative flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-200'}`}
             aria-label={label}
         >
             <IconComponent className="w-6 h-6" />
@@ -99,17 +99,18 @@ const NavItem: React.FC<{
     );
 };
 
-const IconSidebar: React.FC<{
-    activeView: View;
-    onSetView: (view: View) => void;
-    onProfileClick: () => void;
-    onSignOut: () => void;
-}> = ({ activeView, onSetView, onProfileClick, onSignOut }) => {
+const IconSidebar: React.FC<{ 
+    activeView: View; 
+    onSetView: (view: View) => void; 
+    onProfileClick: () => void; 
+    onSignOut: () => void; 
+    user: any 
+}> = ({ activeView, onSetView, onProfileClick, onSignOut, user }) => {
     return (
         <aside className="w-20 bg-gray-50/80 flex-shrink-0 flex flex-col items-center border-r border-gray-200">
             <div className="py-4 mt-2">
                 <button onClick={onProfileClick} className="relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full" aria-label="User Profile and Settings">
-                    <img src="https://i.pravatar.cc/40?u=a042581f4e29026704d" alt="User" className="w-10 h-10 rounded-full"/>
+                    <img src={user?.photoURL || "https://i.pravatar.cc/40?u=a042581f4e29026704d"} alt="User" className="w-10 h-10 rounded-full"/>
                     <span className="absolute -top-1 -left-1 text-lg" role="img" aria-label="premium">👑</span>
                 </button>
             </div>
@@ -148,6 +149,7 @@ const App: React.FC = () => {
     return localStorage.getItem('gemini-api-key');
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   // --- Auth State ---
   const [user, setUser] = useState<any>(null);
@@ -319,6 +321,14 @@ const App: React.FC = () => {
         setApiKey(null);
     }
     setIsApiKeyModalOpen(false);
+  };
+
+  const handleUpdateProfilePicture = async (file: File) => {
+    if (user) {
+        const photoURL = await uploadProfilePicture(user.uid, file);
+        await updateUserProfile(user, { photoURL });
+        setUser({ ...user, photoURL });
+    }
   };
 
   const handleSignOut = useCallback(async () => {
@@ -919,8 +929,9 @@ const App: React.FC = () => {
       <IconSidebar 
         activeView={activeView} 
         onSetView={setActiveView} 
-        onProfileClick={() => setIsApiKeyModalOpen(true)}
+        onProfileClick={() => setIsProfileModalOpen(true)}
         onSignOut={handleSignOut}
+        user={user}
       />
       {renderActiveView()}
       {isApiKeyModalOpen && (
@@ -928,6 +939,14 @@ const App: React.FC = () => {
           currentApiKey={apiKey}
           onSave={handleSaveApiKey}
           onClose={() => setIsApiKeyModalOpen(false)}
+        />
+      )}
+      {isProfileModalOpen && user && (
+        <ProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => setIsProfileModalOpen(false)}
+            user={user}
+            onUpdateProfilePicture={handleUpdateProfilePicture}
         />
       )}
     </div>

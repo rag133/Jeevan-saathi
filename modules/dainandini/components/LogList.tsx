@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Log, Focus, DainandiniSelection, GroupedLogs } from '../types';
 import LogItem from './LogItem';
+import InlineLogForm from './InlineLogForm';
 import * as Icons from '../../../components/Icons';
 
 // --- LogList Container ---
@@ -15,6 +16,7 @@ interface LogListProps {
     allFoci: Focus[];
     selection: DainandiniSelection;
     onAddLogClick: (focusId?: string) => void;
+    onAddQuickLog: (title: string) => void; // New prop for quick log
     onToggleKaryTask: (taskId: string) => void;
     selectedLogId: string | null;
     onSelectLog: (id: string) => void;
@@ -29,6 +31,7 @@ const LogList: React.FC<LogListProps> = ({
     allFoci, 
     selection, 
     onAddLogClick, 
+    onAddQuickLog, // New prop
     onToggleKaryTask,
     selectedLogId,
     onSelectLog
@@ -158,6 +161,7 @@ const LogList: React.FC<LogListProps> = ({
                     )
                 )}
             </div>
+            <InlineLogForm onAddLog={onAddQuickLog} />
         </div>
     );
 };

@@ -215,7 +215,7 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
                 </button>
             </header>
             
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+            <div className="flex-1 flex flex-col overflow-y-auto pr-2 -mr-2">
                 <div className="flex items-start gap-3 mb-6">
                     <LogTypeIcon className="w-6 h-6 text-gray-400 mt-1 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -241,7 +241,7 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
                     <div className="mb-6"><StarRatingInput rating={log.rating || 0} onSetRating={handleRatingUpdate} /></div>
                 )}
                 
-                <div className="prose max-w-none text-gray-800 mb-6">
+                <div className="prose max-w-none text-gray-800 mb-6 flex-1 flex flex-col">
                     <h3 className="font-semibold text-gray-600 text-sm uppercase tracking-wider mb-2">Description</h3>
                     {isEditingDescription ? (
                         <textarea
@@ -250,13 +250,12 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
                             onChange={(e) => setDescriptionInput(e.target.value)}
                             onBlur={handleDescriptionSave}
                             onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setIsEditingDescription(false); } }}
-                            className="w-full text-base p-2 text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"
+                            className="w-full flex-1 text-base p-2 text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"
                             placeholder="Add more details..."
-                            rows={4}
                         />
                     ) : (
                         <div
-                            className="p-2 -m-2 rounded-md cursor-text hover:bg-gray-100/70"
+                            className="p-2 -m-2 rounded-md cursor-text hover:bg-gray-100/70 h-full"
                             onClick={() => setIsEditingDescription(true)}
                         >
                         {descriptionInput.trim() ? <p className="whitespace-pre-wrap">{descriptionInput}</p> : <p className="text-gray-400 italic">No description provided. Click to add.</p>}

@@ -218,7 +218,7 @@ const LogEntryModal: React.FC<LogEntryModalProps> = ({
                     <input type="text" value={newChecklistItem} onChange={(e) => setNewChecklistItem(e.target.value)} onKeyDown={handleAddChecklistItem} placeholder="Add item and press Enter..." className="w-full bg-gray-50 rounded px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
             );
-            case LogType.TEXT: default: return <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add a description... (optional)" className="w-full bg-transparent text-gray-700 placeholder-gray-400 text-sm outline-none resize-none" rows={2}/>;
+            case LogType.TEXT: default: return <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add a description... (optional)" className="w-full bg-transparent text-gray-700 placeholder-gray-400 text-sm outline-none resize-none" rows={4}/>;
         }
     };
 

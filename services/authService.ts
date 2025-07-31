@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
+  updateProfile,
   User,
   UserCredential 
 } from 'firebase/auth';
@@ -28,3 +29,8 @@ export const onAuthStateChange = (callback: (user: User | null) => void) =>
   onAuthStateChanged(auth, callback);
 
 export const getCurrentUser = () => auth.currentUser;
+
+export const updateUserProfile = async (user: User, updates: { displayName?: string; photoURL?: string }) => {
+    await updateProfile(user, updates);
+    await setDoc(doc(db, 'users', user.uid), updates, { merge: true });
+};

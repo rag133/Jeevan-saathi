@@ -17,7 +17,7 @@ async function buildProject() {
     await build({
       entryPoints: ['index.tsx'],
       bundle: true,
-      outdir: BUILD_DIR,
+      outfile: join(BUILD_DIR, 'index.mjs'),
       format: 'esm',
       target: 'es2020',
       jsx: 'automatic',

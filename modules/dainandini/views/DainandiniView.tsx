@@ -3,7 +3,7 @@
 
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Focus, Log, DainandiniSelection, GroupedLogs, LogTemplate } from '../types';
+import { Focus, Log, DainandiniSelection, GroupedLogs, LogTemplate, LogType } from '../types';
 import { initialFoci } from '../data';
 import DainandiniSidebar from '../components/DainandiniSidebar';
 import LogList from '../components/LogList';
@@ -60,6 +60,17 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     const handleReorderFociProp = useCallback((reorderedFoci: Focus[]) => {
         onReorderFoci(reorderedFoci);
     }, [onReorderFoci]);
+
+    const handleAddQuickLog = (title: string) => {
+        const newLog: Partial<Omit<Log, 'id' | 'createdAt'>> = {
+            title,
+            logType: LogType.TEXT,
+            focusId: 'general', // Default to 'general' focus area
+            logDate: new Date(),
+            description: '',
+        };
+        onAddLog(newLog);
+    };
 
     const groupedLogs = useMemo((): GroupedLogs => {
         const sortedLogs = [...allLogs].sort((a, b) => b.logDate.getTime() - a.logDate.getTime());
@@ -347,6 +358,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                                 allFoci={allFoci}
                                 selection={selection}
                                 onAddLogClick={handleOpenTemplateSelection}
+                                onAddQuickLog={handleAddQuickLog}
                                 onToggleKaryTask={onToggleKaryTask}
                                 selectedLogId={selectedLogId}
                                 onSelectLog={handleSelectLog}
