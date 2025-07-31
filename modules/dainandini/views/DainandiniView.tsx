@@ -280,14 +280,14 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
             return <TemplateDetail
                         key={selection.id} // Re-mounts the component when template changes
                         template={selection.id === 'new' ? null : selectedTemplate}
-                        allFoci={allFoci}
+                        foci={allFoci}
                         onSave={handleTemplateDetailSave}
                         onDelete={handleDeleteTemplate}
                    />
         }
         return <LogDetail 
                     log={selectedLog}
-                    allFoci={allFoci}
+                    foci={allFoci}
                     onUpdateLog={onUpdateLog}
                     onDeleteLog={handleDeleteAndReselect}
                />

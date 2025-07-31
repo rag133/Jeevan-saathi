@@ -292,10 +292,14 @@ export const addLogTemplate = async (templateData: Omit<LogTemplate, 'id'>): Pro
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   
-  const docRef = await addDoc(getUserCollection('logTemplates'), {
+  const templateToAdd = {
     ...templateData,
-    userId: user.uid
-  });
+    userId: user.uid,
+    checklist: templateData.checklist || null,
+    rating: templateData.rating || null,
+  };
+
+  const docRef = await addDoc(getUserCollection('logTemplates'), templateToAdd);
   return docRef.id;
 };
 
