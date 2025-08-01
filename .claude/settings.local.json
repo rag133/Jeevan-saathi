@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
@@ -8,7 +9,11 @@
       "Bash(ls:*)",
       "Bash(powershell:*)",
       "Bash(cp:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)",
+      "Bash(firebase projects:list:*)"
     ],
     "deny": []
   }

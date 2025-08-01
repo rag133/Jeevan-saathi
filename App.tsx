@@ -116,7 +116,7 @@ const IconSidebar: React.FC<{
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<View>('kary');
   const [apiKey, setApiKey] = useState<string | null>(() => {
-    const envApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const envApiKey = "AIzaSyBAVXKA-ko41iIzXkv_59jR615RqYz8Zv0";
     if (envApiKey) {
       return envApiKey;
     }

@@ -29,6 +29,14 @@ async function buildProject() {
       },
       define: {
         'process.env.NODE_ENV': '"production"',
+        'import.meta.env.VITE_FIREBASE_API_KEY': '"AIzaSyAtc3vYe6tV14w37NEJkaDfTR096fb7q1Y"',
+        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': '"jeevan-saathi-39bf5.firebaseapp.com"',
+        'import.meta.env.VITE_FIREBASE_PROJECT_ID': '"jeevan-saathi-39bf5"',
+        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': '"jeevan-saathi-39bf5.firebasestorage.app"',
+        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': '"65030332753"',
+        'import.meta.env.VITE_FIREBASE_APP_ID': '"1:65030332753:web:e4eb572e4a4c3ca772b370"',
+        'import.meta.env.VITE_FIREBASE_MEASUREMENT_ID': '"G-274K2278C1"',
+        'import.meta.env.VITE_GEMINI_API_KEY': '"AIzaSyBAVXKA-ko41iIzXkv_59jR615RqYz8Zv0"',
       },
       plugins: [
         {
