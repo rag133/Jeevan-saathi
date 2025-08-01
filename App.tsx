@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as Icons from './components/Icons';
 import ApiKeyModal from './components/ApiKeyModal';
 import ProfileModal from './components/ProfileModal';
-import DainandiniView from './modules/dainandini/views/DainandiniView';
-import KaryView from './modules/kary/views/KaryView';
-import VidyaView from './modules/vidya/views/VidyaView';
-import AbhyasaView from './modules/abhyasa/views/AbhyasaView';
+const DainandiniView = React.lazy(() => import('./modules/dainandini/views/DainandiniView'));
+const KaryView = React.lazy(() => import('./modules/kary/views/KaryView'));
+const VidyaView = React.lazy(() => import('./modules/vidya/views/VidyaView'));
+const AbhyasaView = React.lazy(() => import('./modules/abhyasa/views/AbhyasaView'));
 import AuthModal from './components/AuthModal';
 import {
   onAuthStateChange,
@@ -15,6 +15,7 @@ import {
 import { uploadProfilePicture } from './services/storageService';
 import { useKaryStore } from './modules/kary/karyStore';
 import { useDainandiniStore } from './modules/dainandini/dainandiniStore';
+import { Toaster, toast } from 'react-hot-toast';
 import { useAbhyasaStore } from './modules/abhyasa/abhyasaStore';
 
 const navItems = [
@@ -123,6 +124,24 @@ const App: React.FC = () => {
   const abhyasaState = useAbhyasaStore();
 
   useEffect(() => {
+    if (karyState.error) {
+      toast.error(karyState.error);
+    }
+  }, [karyState.error]);
+
+  useEffect(() => {
+    if (dainandiniState.error) {
+      toast.error(dainandiniState.error);
+    }
+  }, [dainandiniState.error]);
+
+  useEffect(() => {
+    if (abhyasaState.error) {
+      toast.error(abhyasaState.error);
+    }
+  }, [abhyasaState.error]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {
       setUser(user);
       setAuthLoading(false);
@@ -219,6 +238,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen font-sans text-gray-800 bg-transparent">
+      <Toaster />
       <IconSidebar
         activeView={activeView}
         onSetView={setActiveView}
@@ -226,7 +246,7 @@ const App: React.FC = () => {
         onSignOut={handleSignOut}
         user={user}
       />
-      {renderActiveView()}
+      <React.Suspense fallback={<div>Loading...</div>}>{renderActiveView()}</React.Suspense>
       {isApiKeyModalOpen && (
         <ApiKeyModal
           currentApiKey={apiKey}

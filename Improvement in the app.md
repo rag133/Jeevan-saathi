@@ -4,119 +4,26 @@ Here is a list of potential improvements for the application, ranging from immed
 
 ---
 
-### 1. Code Quality and Maintainability
+### Recommended Implementation Order:
 
-These changes will make the code easier to read, debug, and expand in the future.
+- [x] **Step 1: Code Quality and Maintainability**
+  - [x] Introduce a Linter and Formatter (ESLint + Prettier).
+  - [x] Configure absolute imports.
+  - [x] Refactor `App.tsx`
 
-*   **Introduce a Linter and Formatter (e.g., ESLint + Prettier):**
-    *   **What:** ESLint analyzes your code to find problems, and Prettier automatically formats it to have a consistent style.
-    *   **Why:** This is the single most impactful change for long-term maintainability. It enforces a consistent coding style, catches common bugs, and makes the codebase look and feel uniform.
-    *   **How:**
-        1.  Install packages: `npm install --save-dev eslint prettier eslint-plugin-react eslint-config-prettier eslint-plugin-prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin`
-        2.  Create configuration files (`.eslintrc.json`, `.prettierrc.json`).
-        3.  Add scripts to `package.json`: `"lint": "eslint . --ext .ts,.tsx"`, `"format": "prettier --write ."`.
+- [x] **Step 2: State Management**
+  - [x] Implement a Global State Management Library (Zustand).
 
-*   **Absolute Imports:**
-    *   **What:** Change imports from relative paths like `../../components/Icons` to absolute paths like `~/components/Icons`.
-    *   **Why:** Relative paths become confusing and hard to manage in large projects. Absolute paths are cleaner and more stable.
-    *   **How:** Configure a path alias in `tsconfig.json` and `vite.config.ts`.
+- [x] **Step 3: User Experience (UX) and Performance**
+  - [x] Optimistic UI Updates.
+  - [x] Consolidate Loading and Error States.
+  - [x] Code Splitting.
 
-*   **Refactor `App.tsx`:**
-    *   **What:** `App.tsx` is currently a "God Component" that manages state and logic for almost every feature.
-    *   **Why:** Breaking it down improves separation of concerns, making the code easier to understand and modify.
-    *   **How:** Move state management and logic into the respective view components (`KaryView`, `DainandiniView`, etc.) or into a dedicated state management solution.
+- [x] **Step 4: Firebase and Data Fetching**
+  - [x] Refactor `dataService.ts`.
 
----
-
-### 2. State Management
-
-This is the most significant architectural improvement you can make.
-
-*   **Implement a Global State Management Library (e.g., Zustand or Redux Toolkit):**
-    *   **What:** Use a central "store" to hold your application's state instead of passing props down through many layers of components.
-    *   **Why:** This solves "prop drilling" and dramatically simplifies state updates, especially in a complex app like this one. Zustand is recommended for its simplicity.
-    *   **How:**
-        1.  Install the library: `npm install zustand`.
-        2.  Create a "store" for each module (e.g., `karyStore.ts` to hold tasks, lists, and their related functions).
-        3.  Components would then use hooks from the store to access state and actions directly.
-
----
-
-### 3. User Experience (UX) and Performance
-
-These changes will make the app feel faster and more professional.
-
-*   **Optimistic UI Updates for All Operations:**
-    *   **What:** You already do this for toggling tasks. Apply the same pattern everywhere: update the UI immediately after a user action, before waiting for the server response.
-    *   **Why:** This makes the application feel instantaneous.
-    *   **How:** In your data handling functions, update the local state first, then `await` the Firestore call inside a `try...catch` block to handle any potential errors.
-
-*   **Consolidate Loading and Error States:**
-    *   **What:** You have multiple loading and error states. These can be simplified.
-    *   **Why:** This cleans up the initial loading logic and allows for a better error-handling experience, such as using non-blocking "toast" notifications for minor errors.
-    *   **How:** Use a library like `react-hot-toast` to show small error messages instead of a full-page error screen.
-
-*   **Code Splitting by Route/View:**
-    *   **What:** Load the code for each main view (`KaryView`, `DainandiniView`) only when the user navigates to it.
-    *   **Why:** This can dramatically reduce the initial load time of the application.
-    *   **How:** Implement `React.lazy` and `Suspense` in the `renderActiveView` function in `App.tsx`.
-
----
-
-### 4. Firebase and Data Fetching
-
-*   **Refactor `dataService.ts`:**
-    *   **What:** The `dataService.ts` file exports a very large number of individual functions.
-    *   **Why:** Grouping related functions into objects or classes makes the service easier to import, mock for testing, and understand.
-    *   **How:** Instead of many individual exports, create service objects. For example:
-        ```typescript
-        export const taskService = {
-          add: addTaskToFirestore,
-          update: updateTaskInFirestore,
-          delete: deleteTaskFromFirestore,
-        };
-        ```
-
-Recommended Implementation Order:
-
-   1. Step 1: Code Quality and Maintainability
-       * Sub-steps:
-           1. Introduce a Linter and Formatter (ESLint + Prettier).
-           2. Configure absolute imports.
-       * Reasoning: This should be the absolute first step. Setting up a linter and formatter ensures that all future code changes,
-         including the major refactoring steps that follow, are clean and consistent. It prevents technical debt from accumulating while
-         you work on the other improvements. Fixing the import paths makes the code easier to navigate before you start moving logic
-         around.
-
-   2. Step 4: Firebase and Data Fetching
-       * Sub-step: Refactor dataService.ts.
-       * Reasoning: Before you implement a new state management system, it's best to clean up the API it will be communicating with.
-         Refactoring dataService.ts into organized service objects will provide a much cleaner and more manageable interface for your
-         new state management stores to use.
-
-   3. Step 2: State Management
-       * Sub-step: Implement a Global State Management Library (e.g., Zustand).
-       * Reasoning: This is the core architectural change. With a clean data service layer in place, you can now introduce a state
-         management library. This will solve the "prop drilling" issue and provide the necessary structure to properly dismantle the
-         "God Component".
-
-   4. Step 1 (Continued): Refactor `App.tsx`
-       * Reasoning: Now that you have a global state management solution, you can effectively execute the main part of Step 1: breaking
-         down App.tsx. The state and logic that currently live in App.tsx can be moved into the new state management stores, making the
-         component much simpler.
-
-   5. Step 3: User Experience (UX) and Performance
-       * Sub-steps:
-           1. Optimistic UI Updates.
-           2. Consolidate Loading and Error States.
-           3. Code Splitting.
-       * Reasoning: These improvements are best implemented last. With a centralized state management system, implementing optimistic
-         updates and handling global loading/error states becomes significantly easier and cleaner. Code splitting is a final
-         optimization that can be applied once the core application logic and state are stable.
-
-  In short, the most logical flow is:
-  Foundation (Linting & Imports) -> Data Layer (Refactor Services) -> Architecture (State Management) -> Component Logic (Refactor 
-  App.tsx) -> Final Polish (UX/Performance).
+In short, the most logical flow is:
+Foundation (Linting & Imports) -> Data Layer (Refactor Services) -> Architecture (State Management) -> Component Logic (Refactor App.tsx) -> Final Polish (UX/Performance).
 
 ---
 

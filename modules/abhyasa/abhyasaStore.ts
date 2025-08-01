@@ -55,163 +55,180 @@ export const useAbhyasaStore = create<AbhyasaState>()(
         }
       },
       addHabit: async (habit) => {
-        const currentHabits = get().habits;
-        const optimisticHabit = { ...habit, id: 'temp-id', createdAt: new Date() } as Habit;
-        set({ habits: [...currentHabits, optimisticHabit] });
+        const optimisticHabit = { ...habit, id: `temp-${Date.now()}`, createdAt: new Date() } as Habit;
+        const previousHabits = get().habits;
+        set({ habits: [...previousHabits, optimisticHabit] });
         try {
           const newId = await habitService.add(habit);
-          const newHabit = { ...habit, id: newId, createdAt: new Date() } as Habit;
-          set({ habits: [...currentHabits, newHabit] });
+          set((state) => ({
+            habits: state.habits.map((h) => (h.id === optimisticHabit.id ? { ...h, id: newId } : h)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, habits: currentHabits });
+          set({ error: (error as Error).message, habits: previousHabits });
         }
       },
       updateHabit: async (habitId, updates) => {
-        const currentHabits = get().habits;
-        const updatedHabits = currentHabits.map((h) => (h.id === habitId ? { ...h, ...updates } : h));
+        const previousHabits = get().habits;
+        const updatedHabits = previousHabits.map((h) =>
+          h.id === habitId ? { ...h, ...updates } : h
+        );
         set({ habits: updatedHabits });
         try {
           await habitService.update(habitId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, habits: currentHabits });
+          set({ error: (error as Error).message, habits: previousHabits });
         }
       },
       deleteHabit: async (habitId) => {
-        const currentHabits = get().habits;
-        const updatedHabits = currentHabits.filter((h) => h.id !== habitId);
+        const previousHabits = get().habits;
+        const updatedHabits = previousHabits.filter((h) => h.id !== habitId);
         set({ habits: updatedHabits });
         try {
           await habitService.delete(habitId);
         } catch (error) {
-          set({ error: (error as Error).message, habits: currentHabits });
+          set({ error: (error as Error).message, habits: previousHabits });
         }
       },
       addHabitLog: async (log) => {
-        const currentLogs = get().habitLogs;
-        const optimisticLog = { ...log, id: 'temp-id' } as HabitLog;
-        set({ habitLogs: [...currentLogs, optimisticLog] });
+        const optimisticLog = { ...log, id: `temp-${Date.now()}` } as HabitLog;
+        const previousLogs = get().habitLogs;
+        set({ habitLogs: [...previousLogs, optimisticLog] });
         try {
           const newId = await habitLogService.add(log);
-          const newLog = { ...log, id: newId } as HabitLog;
-          set({ habitLogs: [...currentLogs, newLog] });
+          set((state) => ({
+            habitLogs: state.habitLogs.map((l) => (l.id === optimisticLog.id ? { ...l, id: newId } : l)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, habitLogs: currentLogs });
+          set({ error: (error as Error).message, habitLogs: previousLogs });
         }
       },
       updateHabitLog: async (logId, updates) => {
-        const currentLogs = get().habitLogs;
-        const updatedLogs = currentLogs.map((l) => (l.id === logId ? { ...l, ...updates } : l));
+        const previousLogs = get().habitLogs;
+        const updatedLogs = previousLogs.map((l) =>
+          l.id === logId ? { ...l, ...updates } : l
+        );
         set({ habitLogs: updatedLogs });
         try {
           await habitLogService.update(logId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, habitLogs: currentLogs });
+          set({ error: (error as Error).message, habitLogs: previousLogs });
         }
       },
       deleteHabitLog: async (logId) => {
-        const currentLogs = get().habitLogs;
-        const updatedLogs = currentLogs.filter((l) => l.id !== logId);
+        const previousLogs = get().habitLogs;
+        const updatedLogs = previousLogs.filter((l) => l.id !== logId);
         set({ habitLogs: updatedLogs });
         try {
           await habitLogService.delete(logId);
         } catch (error) {
-          set({ error: (error as Error).message, habitLogs: currentLogs });
+          set({ error: (error as Error).message, habitLogs: previousLogs });
         }
       },
       addGoal: async (goal) => {
-        const currentGoals = get().goals;
-        const optimisticGoal = { ...goal, id: 'temp-id', startDate: new Date() } as Goal;
-        set({ goals: [...currentGoals, optimisticGoal] });
+        const optimisticGoal = { ...goal, id: `temp-${Date.now()}`, startDate: new Date() } as Goal;
+        const previousGoals = get().goals;
+        set({ goals: [...previousGoals, optimisticGoal] });
         try {
           const newId = await goalService.add(goal);
-          const newGoal = { ...goal, id: newId, startDate: new Date() } as Goal;
-          set({ goals: [...currentGoals, newGoal] });
+          set((state) => ({
+            goals: state.goals.map((g) => (g.id === optimisticGoal.id ? { ...g, id: newId } : g)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, goals: currentGoals });
+          set({ error: (error as Error).message, goals: previousGoals });
         }
       },
       updateGoal: async (goalId, updates) => {
-        const currentGoals = get().goals;
-        const updatedGoals = currentGoals.map((g) => (g.id === goalId ? { ...g, ...updates } : g));
+        const previousGoals = get().goals;
+        const updatedGoals = previousGoals.map((g) =>
+          g.id === goalId ? { ...g, ...updates } : g
+        );
         set({ goals: updatedGoals });
         try {
           await goalService.update(goalId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, goals: currentGoals });
+          set({ error: (error as Error).message, goals: previousGoals });
         }
       },
       deleteGoal: async (goalId) => {
-        const currentGoals = get().goals;
-        const updatedGoals = currentGoals.filter((g) => g.id !== goalId);
+        const previousGoals = get().goals;
+        const updatedGoals = previousGoals.filter((g) => g.id !== goalId);
         set({ goals: updatedGoals });
         try {
           await goalService.delete(goalId);
         } catch (error) {
-          set({ error: (error as Error).message, goals: currentGoals });
+          set({ error: (error as Error).message, goals: previousGoals });
         }
       },
       addMilestone: async (milestone) => {
-        const currentMilestones = get().milestones;
-        const optimisticMilestone = { ...milestone, id: 'temp-id' } as Milestone;
-        set({ milestones: [...currentMilestones, optimisticMilestone] });
+        const optimisticMilestone = { ...milestone, id: `temp-${Date.now()}` } as Milestone;
+        const previousMilestones = get().milestones;
+        set({ milestones: [...previousMilestones, optimisticMilestone] });
         try {
           const newId = await milestoneService.add(milestone);
-          const newMilestone = { ...milestone, id: newId } as Milestone;
-          set({ milestones: [...currentMilestones, newMilestone] });
+          set((state) => ({
+            milestones: state.milestones.map((m) =>
+              m.id === optimisticMilestone.id ? { ...m, id: newId } : m
+            ),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, milestones: currentMilestones });
+          set({ error: (error as Error).message, milestones: previousMilestones });
         }
       },
       updateMilestone: async (milestoneId, updates) => {
-        const currentMilestones = get().milestones;
-        const updatedMilestones = currentMilestones.map((m) => (m.id === milestoneId ? { ...m, ...updates } : m));
+        const previousMilestones = get().milestones;
+        const updatedMilestones = previousMilestones.map((m) =>
+          m.id === milestoneId ? { ...m, ...updates } : m
+        );
         set({ milestones: updatedMilestones });
         try {
           await milestoneService.update(milestoneId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, milestones: currentMilestones });
+          set({ error: (error as Error).message, milestones: previousMilestones });
         }
       },
       deleteMilestone: async (milestoneId) => {
-        const currentMilestones = get().milestones;
-        const updatedMilestones = currentMilestones.filter((m) => m.id !== milestoneId);
+        const previousMilestones = get().milestones;
+        const updatedMilestones = previousMilestones.filter((m) => m.id !== milestoneId);
         set({ milestones: updatedMilestones });
         try {
           await milestoneService.delete(milestoneId);
         } catch (error) {
-          set({ error: (error as Error).message, milestones: currentMilestones });
+          set({ error: (error as Error).message, milestones: previousMilestones });
         }
       },
       addQuickWin: async (win) => {
-        const currentWins = get().quickWins;
-        const optimisticWin = { ...win, id: 'temp-id', createdAt: new Date() } as QuickWin;
-        set({ quickWins: [...currentWins, optimisticWin] });
+        const optimisticWin = { ...win, id: `temp-${Date.now()}`, createdAt: new Date() } as QuickWin;
+        const previousWins = get().quickWins;
+        set({ quickWins: [...previousWins, optimisticWin] });
         try {
           const newId = await quickWinService.add(win);
-          const newWin = { ...win, id: newId, createdAt: new Date() } as QuickWin;
-          set({ quickWins: [...currentWins, newWin] });
+          set((state) => ({
+            quickWins: state.quickWins.map((w) => (w.id === optimisticWin.id ? { ...w, id: newId } : w)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, quickWins: currentWins });
+          set({ error: (error as Error).message, quickWins: previousWins });
         }
       },
       updateQuickWin: async (winId, updates) => {
-        const currentWins = get().quickWins;
-        const updatedWins = currentWins.map((w) => (w.id === winId ? { ...w, ...updates } : w));
+        const previousWins = get().quickWins;
+        const updatedWins = previousWins.map((w) =>
+          w.id === winId ? { ...w, ...updates } : w
+        );
         set({ quickWins: updatedWins });
         try {
           await quickWinService.update(winId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, quickWins: currentWins });
+          set({ error: (error as Error).message, quickWins: previousWins });
         }
       },
       deleteQuickWin: async (winId) => {
-        const currentWins = get().quickWins;
-        const updatedWins = currentWins.filter((w) => w.id !== winId);
+        const previousWins = get().quickWins;
+        const updatedWins = previousWins.filter((w) => w.id !== winId);
         set({ quickWins: updatedWins });
         try {
           await quickWinService.delete(winId);
         } catch (error) {
-          set({ error: (error as Error).message, quickWins: currentWins });
+          set({ error: (error as Error).message, quickWins: previousWins });
         }
       },
     }),

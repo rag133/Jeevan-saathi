@@ -200,7 +200,33 @@ This module is planned to be a knowledge management and learning hub. It is curr
 
 ## Technical Stack
 
-- **Firebase:** For authentication and potentially backend services (Firestore, etc.)
+- **React:** For building the user interface.
+- **Vite:** As the build tool and development server.
+- **Firebase:** For authentication and backend services (Firestore, etc.)
+- **Zustand:** For global state management.
+
+## Architecture
+
+Jeevan Saathi uses a modern, modular architecture designed for scalability and maintainability.
+
+### State Management
+
+The application uses **Zustand** for global state management. This provides a simple, unopinionated, and scalable way to manage state across the application.
+
+- **Root Store:** A root store combines the state and actions from all the individual module stores.
+- **Module Stores:** Each module (`kary`, `dainandini`, `abhyasa`) has its own store that manages the state for that module. This keeps the state management organized and easy to maintain.
+
+### Data Flow
+
+The data flow in the application is unidirectional and follows these steps:
+
+1.  **Component Interaction:** A user interacts with a component, which triggers an action (e.g., clicking a button to add a task).
+2.  **Store Action:** The component calls an action from the relevant Zustand store.
+3.  **Data Service:** The store action calls a function from the `dataService.ts` file to interact with the backend (Firebase).
+4.  **State Update:** The `dataService` function returns data to the store, which then updates its state.
+5.  **Component Re-render:** The component re-renders with the new state from the store.
+
+This architecture ensures a clear separation of concerns and makes the application easier to debug and test.
 
 ## Layout\*\*
 

@@ -31,7 +31,8 @@ type KaryState = {
 
 export const useKaryStore = create<KaryState>()(
   devtools(
-    (set, get) => ({      tasks: [],
+    (set, get) => ({
+      tasks: [],
       lists: [],
       tags: [],
       listFolders: [],
@@ -54,163 +55,182 @@ export const useKaryStore = create<KaryState>()(
         }
       },
       addTask: async (task) => {
-        const currentTasks = get().tasks;
-        const optimisticTask = { ...task, id: 'temp-id', createdAt: new Date() } as Task;
-        set({ tasks: [...currentTasks, optimisticTask] });
+        const optimisticTask = { ...task, id: `temp-${Date.now()}`, createdAt: new Date() } as Task;
+        const previousTasks = get().tasks;
+        set({ tasks: [...previousTasks, optimisticTask] });
         try {
           const newId = await taskService.add(task);
-          const newTask = { ...task, id: newId, createdAt: new Date() } as Task;
-          set({ tasks: [...currentTasks, newTask] });
+          set((state) => ({
+            tasks: state.tasks.map((t) => (t.id === optimisticTask.id ? { ...t, id: newId } : t)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, tasks: currentTasks });
+          set({ error: (error as Error).message, tasks: previousTasks });
         }
       },
       updateTask: async (taskId, updates) => {
-        const currentTasks = get().tasks;
-        const updatedTasks = currentTasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t));
+        const previousTasks = get().tasks;
+        const updatedTasks = previousTasks.map((t) =>
+          t.id === taskId ? { ...t, ...updates } : t
+        );
         set({ tasks: updatedTasks });
         try {
           await taskService.update(taskId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, tasks: currentTasks });
+          set({ error: (error as Error).message, tasks: previousTasks });
         }
       },
       deleteTask: async (taskId) => {
-        const currentTasks = get().tasks;
-        const updatedTasks = currentTasks.filter((t) => t.id !== taskId);
+        const previousTasks = get().tasks;
+        const updatedTasks = previousTasks.filter((t) => t.id !== taskId);
         set({ tasks: updatedTasks });
         try {
           await taskService.delete(taskId);
         } catch (error) {
-          set({ error: (error as Error).message, tasks: currentTasks });
+          set({ error: (error as Error).message, tasks: previousTasks });
         }
       },
       addList: async (list) => {
-        const currentLists = get().lists;
-        const optimisticList = { ...list, id: 'temp-id' } as List;
-        set({ lists: [...currentLists, optimisticList] });
+        const optimisticList = { ...list, id: `temp-${Date.now()}` } as List;
+        const previousLists = get().lists;
+        set({ lists: [...previousLists, optimisticList] });
         try {
           const newId = await listService.add(list);
-          const newList = { ...list, id: newId } as List;
-          set({ lists: [...currentLists, newList] });
+          set((state) => ({
+            lists: state.lists.map((l) => (l.id === optimisticList.id ? { ...l, id: newId } : l)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, lists: currentLists });
+          set({ error: (error as Error).message, lists: previousLists });
         }
       },
       updateList: async (listId, updates) => {
-        const currentLists = get().lists;
-        const updatedLists = currentLists.map((l) => (l.id === listId ? { ...l, ...updates } : l));
+        const previousLists = get().lists;
+        const updatedLists = previousLists.map((l) =>
+          l.id === listId ? { ...l, ...updates } : l
+        );
         set({ lists: updatedLists });
         try {
           await listService.update(listId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, lists: currentLists });
+          set({ error: (error as Error).message, lists: previousLists });
         }
       },
       deleteList: async (listId) => {
-        const currentLists = get().lists;
-        const updatedLists = currentLists.filter((l) => l.id !== listId);
+        const previousLists = get().lists;
+        const updatedLists = previousLists.filter((l) => l.id !== listId);
         set({ lists: updatedLists });
         try {
           await listService.delete(listId);
         } catch (error) {
-          set({ error: (error as Error).message, lists: currentLists });
+          set({ error: (error as Error).message, lists: previousLists });
         }
       },
       addTag: async (tag) => {
-        const currentTags = get().tags;
-        const optimisticTag = { ...tag, id: 'temp-id' } as Tag;
-        set({ tags: [...currentTags, optimisticTag] });
+        const optimisticTag = { ...tag, id: `temp-${Date.now()}` } as Tag;
+        const previousTags = get().tags;
+        set({ tags: [...previousTags, optimisticTag] });
         try {
           const newId = await tagService.add(tag);
-          const newTag = { ...tag, id: newId } as Tag;
-          set({ tags: [...currentTags, newTag] });
+          set((state) => ({
+            tags: state.tags.map((t) => (t.id === optimisticTag.id ? { ...t, id: newId } : t)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, tags: currentTags });
+          set({ error: (error as Error).message, tags: previousTags });
         }
       },
       updateTag: async (tagId, updates) => {
-        const currentTags = get().tags;
-        const updatedTags = currentTags.map((t) => (t.id === tagId ? { ...t, ...updates } : t));
+        const previousTags = get().tags;
+        const updatedTags = previousTags.map((t) =>
+          t.id === tagId ? { ...t, ...updates } : t
+        );
         set({ tags: updatedTags });
         try {
           await tagService.update(tagId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, tags: currentTags });
+          set({ error: (error as Error).message, tags: previousTags });
         }
       },
       deleteTag: async (tagId) => {
-        const currentTags = get().tags;
-        const updatedTags = currentTags.filter((t) => t.id !== tagId);
+        const previousTags = get().tags;
+        const updatedTags = previousTags.filter((t) => t.id !== tagId);
         set({ tags: updatedTags });
         try {
           await tagService.delete(tagId);
         } catch (error) {
-          set({ error: (error as Error).message, tags: currentTags });
+          set({ error: (error as Error).message, tags: previousTags });
         }
       },
       addListFolder: async (folder) => {
-        const currentFolders = get().listFolders;
-        const optimisticFolder = { ...folder, id: 'temp-id' } as ListFolder;
-        set({ listFolders: [...currentFolders, optimisticFolder] });
+        const optimisticFolder = { ...folder, id: `temp-${Date.now()}` } as ListFolder;
+        const previousFolders = get().listFolders;
+        set({ listFolders: [...previousFolders, optimisticFolder] });
         try {
           const newId = await listFolderService.add(folder);
-          const newFolder = { ...folder, id: newId } as ListFolder;
-          set({ listFolders: [...currentFolders, newFolder] });
+          set((state) => ({
+            listFolders: state.listFolders.map((f) =>
+              f.id === optimisticFolder.id ? { ...f, id: newId } : f
+            ),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, listFolders: currentFolders });
+          set({ error: (error as Error).message, listFolders: previousFolders });
         }
       },
       updateListFolder: async (folderId, updates) => {
-        const currentFolders = get().listFolders;
-        const updatedFolders = currentFolders.map((f) => (f.id === folderId ? { ...f, ...updates } : f));
+        const previousFolders = get().listFolders;
+        const updatedFolders = previousFolders.map((f) =>
+          f.id === folderId ? { ...f, ...updates } : f
+        );
         set({ listFolders: updatedFolders });
         try {
           await listFolderService.update(folderId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, listFolders: currentFolders });
+          set({ error: (error as Error).message, listFolders: previousFolders });
         }
       },
       deleteListFolder: async (folderId) => {
-        const currentFolders = get().listFolders;
-        const updatedFolders = currentFolders.filter((f) => f.id !== folderId);
+        const previousFolders = get().listFolders;
+        const updatedFolders = previousFolders.filter((f) => f.id !== folderId);
         set({ listFolders: updatedFolders });
         try {
           await listFolderService.delete(folderId);
         } catch (error) {
-          set({ error: (error as Error).message, listFolders: currentFolders });
+          set({ error: (error as Error).message, listFolders: previousFolders });
         }
       },
       addTagFolder: async (folder) => {
-        const currentFolders = get().tagFolders;
-        const optimisticFolder = { ...folder, id: 'temp-id' } as TagFolder;
-        set({ tagFolders: [...currentFolders, optimisticFolder] });
+        const optimisticFolder = { ...folder, id: `temp-${Date.now()}` } as TagFolder;
+        const previousFolders = get().tagFolders;
+        set({ tagFolders: [...previousFolders, optimisticFolder] });
         try {
           const newId = await tagFolderService.add(folder);
-          const newFolder = { ...folder, id: newId } as TagFolder;
-          set({ tagFolders: [...currentFolders, newFolder] });
+          set((state) => ({
+            tagFolders: state.tagFolders.map((f) =>
+              f.id === optimisticFolder.id ? { ...f, id: newId } : f
+            ),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, tagFolders: currentFolders });
+          set({ error: (error as Error).message, tagFolders: previousFolders });
         }
       },
       updateTagFolder: async (folderId, updates) => {
-        const currentFolders = get().tagFolders;
-        const updatedFolders = currentFolders.map((f) => (f.id === folderId ? { ...f, ...updates } : f));
+        const previousFolders = get().tagFolders;
+        const updatedFolders = previousFolders.map((f) =>
+          f.id === folderId ? { ...f, ...updates } : f
+        );
         set({ tagFolders: updatedFolders });
         try {
           await tagFolderService.update(folderId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, tagFolders: currentFolders });
+          set({ error: (error as Error).message, tagFolders: previousFolders });
         }
       },
       deleteTagFolder: async (folderId) => {
-        const currentFolders = get().tagFolders;
-        const updatedFolders = currentFolders.filter((f) => f.id !== folderId);
+        const previousFolders = get().tagFolders;
+        const updatedFolders = previousFolders.filter((f) => f.id !== folderId);
         set({ tagFolders: updatedFolders });
         try {
           await tagFolderService.delete(folderId);
         } catch (error) {
-          set({ error: (error as Error).message, tagFolders: currentFolders });
+          set({ error: (error as Error).message, tagFolders: previousFolders });
         }
       },
     }),

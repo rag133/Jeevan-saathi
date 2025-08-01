@@ -43,99 +43,110 @@ export const useDainandiniStore = create<DainandiniState>()(
         }
       },
       addLog: async (log) => {
-        const currentLogs = get().logs;
-        const optimisticLog = { ...log, id: 'temp-id', createdAt: new Date() } as Log;
-        set({ logs: [...currentLogs, optimisticLog] });
+        const optimisticLog = { ...log, id: `temp-${Date.now()}`, createdAt: new Date() } as Log;
+        const previousLogs = get().logs;
+        set({ logs: [...previousLogs, optimisticLog] });
         try {
           const newId = await logService.add(log);
-          const newLog = { ...log, id: newId, createdAt: new Date() } as Log;
-          set({ logs: [...currentLogs, newLog] });
+          set((state) => ({
+            logs: state.logs.map((l) => (l.id === optimisticLog.id ? { ...l, id: newId } : l)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, logs: currentLogs });
+          set({ error: (error as Error).message, logs: previousLogs });
         }
       },
       updateLog: async (logId, updates) => {
-        const currentLogs = get().logs;
-        const updatedLogs = currentLogs.map((l) => (l.id === logId ? { ...l, ...updates } : l));
+        const previousLogs = get().logs;
+        const updatedLogs = previousLogs.map((l) =>
+          l.id === logId ? { ...l, ...updates } : l
+        );
         set({ logs: updatedLogs });
         try {
           await logService.update(logId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, logs: currentLogs });
+          set({ error: (error as Error).message, logs: previousLogs });
         }
       },
       deleteLog: async (logId) => {
-        const currentLogs = get().logs;
-        const updatedLogs = currentLogs.filter((l) => l.id !== logId);
+        const previousLogs = get().logs;
+        const updatedLogs = previousLogs.filter((l) => l.id !== logId);
         set({ logs: updatedLogs });
         try {
           await logService.delete(logId);
         } catch (error) {
-          set({ error: (error as Error).message, logs: currentLogs });
+          set({ error: (error as Error).message, logs: previousLogs });
         }
       },
       addLogTemplate: async (template) => {
-        const currentTemplates = get().logTemplates;
-        const optimisticTemplate = { ...template, id: 'temp-id' } as LogTemplate;
-        set({ logTemplates: [...currentTemplates, optimisticTemplate] });
+        const optimisticTemplate = { ...template, id: `temp-${Date.now()}` } as LogTemplate;
+        const previousTemplates = get().logTemplates;
+        set({ logTemplates: [...previousTemplates, optimisticTemplate] });
         try {
           const newId = await logTemplateService.add(template);
-          const newTemplate = { ...template, id: newId } as LogTemplate;
-          set({ logTemplates: [...currentTemplates, newTemplate] });
+          set((state) => ({
+            logTemplates: state.logTemplates.map((t) =>
+              t.id === optimisticTemplate.id ? { ...t, id: newId } : t
+            ),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, logTemplates: currentTemplates });
+          set({ error: (error as Error).message, logTemplates: previousTemplates });
         }
       },
       updateLogTemplate: async (templateId, updates) => {
-        const currentTemplates = get().logTemplates;
-        const updatedTemplates = currentTemplates.map((t) => (t.id === templateId ? { ...t, ...updates } : t));
+        const previousTemplates = get().logTemplates;
+        const updatedTemplates = previousTemplates.map((t) =>
+          t.id === templateId ? { ...t, ...updates } : t
+        );
         set({ logTemplates: updatedTemplates });
         try {
           await logTemplateService.update(templateId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, logTemplates: currentTemplates });
+          set({ error: (error as Error).message, logTemplates: previousTemplates });
         }
       },
       deleteLogTemplate: async (templateId) => {
-        const currentTemplates = get().logTemplates;
-        const updatedTemplates = currentTemplates.filter((t) => t.id !== templateId);
+        const previousTemplates = get().logTemplates;
+        const updatedTemplates = previousTemplates.filter((t) => t.id !== templateId);
         set({ logTemplates: updatedTemplates });
         try {
           await logTemplateService.delete(templateId);
         } catch (error) {
-          set({ error: (error as Error).message, logTemplates: currentTemplates });
+          set({ error: (error as Error).message, logTemplates: previousTemplates });
         }
       },
       addFocus: async (focus) => {
-        const currentFoci = get().foci;
-        const optimisticFocus = { ...focus, id: 'temp-id' } as Focus;
-        set({ foci: [...currentFoci, optimisticFocus] });
+        const optimisticFocus = { ...focus, id: `temp-${Date.now()}` } as Focus;
+        const previousFoci = get().foci;
+        set({ foci: [...previousFoci, optimisticFocus] });
         try {
           const newId = await focusService.add(focus);
-          const newFocus = { ...focus, id: newId } as Focus;
-          set({ foci: [...currentFoci, newFocus] });
+          set((state) => ({
+            foci: state.foci.map((f) => (f.id === optimisticFocus.id ? { ...f, id: newId } : f)),
+          }));
         } catch (error) {
-          set({ error: (error as Error).message, foci: currentFoci });
+          set({ error: (error as Error).message, foci: previousFoci });
         }
       },
       updateFocus: async (focusId, updates) => {
-        const currentFoci = get().foci;
-        const updatedFoci = currentFoci.map((f) => (f.id === focusId ? { ...f, ...updates } : f));
+        const previousFoci = get().foci;
+        const updatedFoci = previousFoci.map((f) =>
+          f.id === focusId ? { ...f, ...updates } : f
+        );
         set({ foci: updatedFoci });
         try {
           await focusService.update(focusId, updates);
         } catch (error) {
-          set({ error: (error as Error).message, foci: currentFoci });
+          set({ error: (error as Error).message, foci: previousFoci });
         }
       },
       deleteFocus: async (focusId) => {
-        const currentFoci = get().foci;
-        const updatedFoci = currentFoci.filter((f) => f.id !== focusId);
+        const previousFoci = get().foci;
+        const updatedFoci = previousFoci.filter((f) => f.id !== focusId);
         set({ foci: updatedFoci });
         try {
           await focusService.delete(focusId);
         } catch (error) {
-          set({ error: (error as Error).message, foci: currentFoci });
+          set({ error: (error as Error).message, foci: previousFoci });
         }
       },
     }),
