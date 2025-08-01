@@ -1,23 +1,21 @@
-
-
 import * as Icons from '../../components/Icons';
 
 export enum LogType {
-    TEXT = 'text',
-    CHECKLIST = 'checklist',
-    RATING = 'rating',
+  TEXT = 'text',
+  CHECKLIST = 'checklist',
+  RATING = 'rating',
 }
 
 export const logTypeDetails: Record<LogType, { name: string; icon: keyof typeof Icons }> = {
-    [LogType.TEXT]: { name: 'Text', icon: 'Edit3Icon' },
-    [LogType.CHECKLIST]: { name: 'Checklist', icon: 'CheckSquareIcon' },
-    [LogType.RATING]: { name: 'Rating', icon: 'StarIcon' },
+  [LogType.TEXT]: { name: 'Text', icon: 'Edit3Icon' },
+  [LogType.CHECKLIST]: { name: 'Checklist', icon: 'CheckSquareIcon' },
+  [LogType.RATING]: { name: 'Rating', icon: 'StarIcon' },
 };
 
 export interface ChecklistItem {
-    id: string;
-    text: string;
-    completed: boolean;
+  id: string;
+  text: string;
+  completed: boolean;
 }
 
 export interface Focus {
@@ -31,7 +29,7 @@ export interface Focus {
 }
 
 export interface Log {
-  id:string;
+  id: string;
   focusId: string;
   logType: LogType;
   title: string;
@@ -60,7 +58,7 @@ export interface LogTemplate {
   rating?: number;
 }
 
-export type DainandiniSelection = 
+export type DainandiniSelection =
   | { type: 'today' }
   | { type: 'calendar'; date?: string } // date is ISO string
   | { type: 'focus'; id: string }

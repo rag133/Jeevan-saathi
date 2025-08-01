@@ -21,7 +21,7 @@ const ResizablePanels: React.FC<ResizablePanelsProps> = ({ children, initialLeft
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging.current || !containerRef.current) return;
-    
+
     const containerRect = containerRef.current.getBoundingClientRect();
     const newLeftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
 
@@ -45,10 +45,7 @@ const ResizablePanels: React.FC<ResizablePanelsProps> = ({ children, initialLeft
 
   return (
     <div ref={containerRef} className="flex-1 flex overflow-hidden">
-      <div
-        className="h-full relative"
-        style={{ width: `${leftPanelWidth}%` }}
-      >
+      <div className="h-full relative" style={{ width: `${leftPanelWidth}%` }}>
         {leftPanel}
       </div>
       <div
@@ -57,10 +54,7 @@ const ResizablePanels: React.FC<ResizablePanelsProps> = ({ children, initialLeft
       >
         <div className="w-0.5 h-10 bg-gray-400 rounded-full"></div>
       </div>
-      <div
-        className="h-full flex-1"
-        style={{ width: `${100 - leftPanelWidth}%` }}
-      >
+      <div className="h-full flex-1" style={{ width: `${100 - leftPanelWidth}%` }}>
         {rightPanel}
       </div>
     </div>

@@ -1,16 +1,16 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  orderBy, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  doc,
+  updateDoc,
+  deleteDoc,
   onSnapshot,
   writeBatch,
   where,
-  Timestamp 
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getCurrentUser } from './authService';
@@ -37,20 +37,24 @@ const getUserCollection = (collectionName: string) => {
 // Helper function to convert Firestore timestamps to Date objects
 const convertTimestamps = (data: any): any => {
   if (!data) return data;
-  
+
   const converted = { ...data };
-  Object.keys(converted).forEach(key => {
+  Object.keys(converted).forEach((key) => {
     if (converted[key] instanceof Timestamp) {
       converted[key] = converted[key].toDate();
-    } else if (converted[key] && typeof converted[key] === 'object' && !Array.isArray(converted[key])) {
+    } else if (
+      converted[key] &&
+      typeof converted[key] === 'object' &&
+      !Array.isArray(converted[key])
+    ) {
       converted[key] = convertTimestamps(converted[key]);
     } else if (Array.isArray(converted[key])) {
-      converted[key] = converted[key].map((item: any) => 
+      converted[key] = converted[key].map((item: any) =>
         typeof item === 'object' ? convertTimestamps(item) : item
       );
     }
   });
-  
+
   return converted;
 };
 
@@ -100,14 +104,14 @@ export const getUserTasks = async (): Promise<FirestoreDoc<Task>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('tasks'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Lists
 export const addList = async (listData: Omit<List, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const listToAdd = {
     ...listData,
     createdAt: new Date(),
@@ -138,18 +142,18 @@ export const getUserLists = async (): Promise<FirestoreDoc<List>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('lists'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Tags
 export const addTag = async (tagData: Omit<Tag, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('tags'), {
     ...tagData,
     createdAt: new Date(),
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
@@ -173,24 +177,25 @@ export const getUserTags = async (): Promise<FirestoreDoc<Tag>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('tags'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
-
-
 
 // List Folders
 export const addListFolder = async (folderData: Omit<ListFolder, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('listFolders'), {
     ...folderData,
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
 
-export const updateListFolder = async (folderId: string, updates: Partial<ListFolder>): Promise<void> => {
+export const updateListFolder = async (
+  folderId: string,
+  updates: Partial<ListFolder>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const folderRef = doc(db, 'users', user.uid, 'listFolders', folderId);
@@ -208,22 +213,25 @@ export const getUserListFolders = async (): Promise<FirestoreDoc<ListFolder>[]> 
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const snapshot = await getDocs(getUserCollection('listFolders'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
 // Tag Folders
 export const addTagFolder = async (folderData: Omit<TagFolder, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('tagFolders'), {
     ...folderData,
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
 
-export const updateTagFolder = async (folderId: string, updates: Partial<TagFolder>): Promise<void> => {
+export const updateTagFolder = async (
+  folderId: string,
+  updates: Partial<TagFolder>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const folderRef = doc(db, 'users', user.uid, 'tagFolders', folderId);
@@ -237,17 +245,11 @@ export const deleteTagFolder = async (folderId: string): Promise<void> => {
   return deleteDoc(folderRef);
 };
 
-
-
-
-
-
-
 export const getUserTagFolders = async (): Promise<FirestoreDoc<TagFolder>[]> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const snapshot = await getDocs(getUserCollection('tagFolders'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
 // ============= DAINANDINI MODULE =============
@@ -256,11 +258,11 @@ export const getUserTagFolders = async (): Promise<FirestoreDoc<TagFolder>[]> =>
 export const addLog = async (logData: Omit<Log, 'id' | 'createdAt'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('logs'), {
     ...logData,
     createdAt: new Date(),
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
@@ -284,14 +286,14 @@ export const getUserLogs = async (): Promise<FirestoreDoc<Log>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('logs'), orderBy('logDate', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Log Templates
 export const addLogTemplate = async (templateData: Omit<LogTemplate, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const templateToAdd = {
     ...templateData,
     userId: user.uid,
@@ -303,7 +305,10 @@ export const addLogTemplate = async (templateData: Omit<LogTemplate, 'id'>): Pro
   return docRef.id;
 };
 
-export const updateLogTemplate = async (templateId: string, updates: Partial<LogTemplate>): Promise<void> => {
+export const updateLogTemplate = async (
+  templateId: string,
+  updates: Partial<LogTemplate>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const templateRef = doc(db, 'users', user.uid, 'logTemplates', templateId);
@@ -321,17 +326,17 @@ export const getUserLogTemplates = async (): Promise<FirestoreDoc<LogTemplate>[]
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const snapshot = await getDocs(getUserCollection('logTemplates'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
 // Focus Areas
 export const addFocus = async (focusData: Omit<Focus, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('foci'), {
     ...focusData,
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
@@ -354,16 +359,16 @@ export const getUserFoci = async (): Promise<FirestoreDoc<Focus>[]> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const snapshot = await getDocs(getUserCollection('foci'));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 };
 
 export const subscribeToUserFoci = (callback: (foci: FirestoreDoc<Focus>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('foci'));
   return onSnapshot(q, (snapshot) => {
-    const foci = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     callback(foci);
   });
 };
@@ -374,7 +379,7 @@ export const subscribeToUserFoci = (callback: (foci: FirestoreDoc<Focus>[]) => v
 export const addGoal = async (goalData: Omit<Goal, 'id' | 'startDate'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const goalToAdd = {
     ...goalData,
     startDate: new Date(),
@@ -405,14 +410,14 @@ export const getUserGoals = async (): Promise<FirestoreDoc<Goal>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('goals'), orderBy('startDate', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Milestones
 export const addMilestone = async (milestoneData: Omit<Milestone, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const milestoneToAdd = {
     ...milestoneData,
     userId: user.uid,
@@ -425,7 +430,10 @@ export const addMilestone = async (milestoneData: Omit<Milestone, 'id'>): Promis
   return docRef.id;
 };
 
-export const updateMilestone = async (milestoneId: string, updates: Partial<Milestone>): Promise<void> => {
+export const updateMilestone = async (
+  milestoneId: string,
+  updates: Partial<Milestone>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const milestoneRef = doc(db, 'users', user.uid, 'milestones', milestoneId);
@@ -444,23 +452,28 @@ export const getUserMilestones = async (): Promise<FirestoreDoc<Milestone>[]> =>
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('milestones'), orderBy('startDate', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Quick Wins
-export const addQuickWin = async (quickWinData: Omit<QuickWin, 'id' | 'createdAt'>): Promise<string> => {
+export const addQuickWin = async (
+  quickWinData: Omit<QuickWin, 'id' | 'createdAt'>
+): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const docRef = await addDoc(getUserCollection('quickWins'), {
     ...quickWinData,
     createdAt: new Date(),
-    userId: user.uid
+    userId: user.uid,
   });
   return docRef.id;
 };
 
-export const updateQuickWin = async (quickWinId: string, updates: Partial<QuickWin>): Promise<void> => {
+export const updateQuickWin = async (
+  quickWinId: string,
+  updates: Partial<QuickWin>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const quickWinRef = doc(db, 'users', user.uid, 'quickWins', quickWinId);
@@ -479,14 +492,14 @@ export const getUserQuickWins = async (): Promise<FirestoreDoc<QuickWin>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('quickWins'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Habits
 export const addHabit = async (habitData: Omit<Habit, 'id' | 'createdAt'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const habitToAdd = {
     ...habitData,
     createdAt: new Date(),
@@ -533,14 +546,14 @@ export const getUserHabits = async (): Promise<FirestoreDoc<Habit>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('habits'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
 // Habit Logs
 export const addHabitLog = async (habitLogData: Omit<HabitLog, 'id'>): Promise<string> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const habitLogToAdd = {
     ...habitLogData,
     userId: user.uid,
@@ -552,7 +565,10 @@ export const addHabitLog = async (habitLogData: Omit<HabitLog, 'id'>): Promise<s
   return docRef.id;
 };
 
-export const updateHabitLog = async (habitLogId: string, updates: Partial<HabitLog>): Promise<void> => {
+export const updateHabitLog = async (
+  habitLogId: string,
+  updates: Partial<HabitLog>
+): Promise<void> => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
   const habitLogRef = doc(db, 'users', user.uid, 'habitLogs', habitLogId);
@@ -571,16 +587,18 @@ export const getUserHabitLogs = async (): Promise<FirestoreDoc<HabitLog>[]> => {
   if (!user) throw new Error('User not authenticated');
   const q = query(getUserCollection('habitLogs'), orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
 };
 
-export const subscribeToUserHabitLogs = (callback: (habitLogs: FirestoreDoc<HabitLog>[]) => void) => {
+export const subscribeToUserHabitLogs = (
+  callback: (habitLogs: FirestoreDoc<HabitLog>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('habitLogs'), orderBy('date', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const habitLogs = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const habitLogs = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(habitLogs);
   });
 };
@@ -590,10 +608,10 @@ export const subscribeToUserHabitLogs = (callback: (habitLogs: FirestoreDoc<Habi
 export const subscribeToUserTasks = (callback: (tasks: FirestoreDoc<Task>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('tasks'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const tasks = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const tasks = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(tasks);
   });
 };
@@ -601,10 +619,10 @@ export const subscribeToUserTasks = (callback: (tasks: FirestoreDoc<Task>[]) => 
 export const subscribeToUserLogs = (callback: (logs: FirestoreDoc<Log>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('logs'), orderBy('logDate', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const logs = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const logs = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(logs);
   });
 };
@@ -612,10 +630,10 @@ export const subscribeToUserLogs = (callback: (logs: FirestoreDoc<Log>[]) => voi
 export const subscribeToUserHabits = (callback: (habits: FirestoreDoc<Habit>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('habits'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const habits = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const habits = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(habits);
   });
 };
@@ -623,43 +641,49 @@ export const subscribeToUserHabits = (callback: (habits: FirestoreDoc<Habit>[]) 
 export const subscribeToUserGoals = (callback: (goals: FirestoreDoc<Goal>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('goals'), orderBy('startDate', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const goals = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const goals = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(goals);
   });
 };
 
-export const subscribeToUserMilestones = (callback: (milestones: FirestoreDoc<Milestone>[]) => void) => {
+export const subscribeToUserMilestones = (
+  callback: (milestones: FirestoreDoc<Milestone>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('milestones'), orderBy('startDate', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const milestones = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const milestones = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(milestones);
   });
 };
 
-export const subscribeToUserQuickWins = (callback: (quickWins: FirestoreDoc<QuickWin>[]) => void) => {
+export const subscribeToUserQuickWins = (
+  callback: (quickWins: FirestoreDoc<QuickWin>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('quickWins'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const quickWins = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const quickWins = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(quickWins);
   });
 };
 
-export const subscribeToUserLogTemplates = (callback: (templates: FirestoreDoc<LogTemplate>[]) => void) => {
+export const subscribeToUserLogTemplates = (
+  callback: (templates: FirestoreDoc<LogTemplate>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('logTemplates'));
   return onSnapshot(q, (snapshot) => {
-    const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const templates = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     callback(templates);
   });
 };
@@ -667,10 +691,10 @@ export const subscribeToUserLogTemplates = (callback: (templates: FirestoreDoc<L
 export const subscribeToUserLists = (callback: (lists: FirestoreDoc<List>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('lists'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const lists = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const lists = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(lists);
   });
 };
@@ -678,32 +702,36 @@ export const subscribeToUserLists = (callback: (lists: FirestoreDoc<List>[]) => 
 export const subscribeToUserTags = (callback: (tags: FirestoreDoc<Tag>[]) => void) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('tags'), orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const tags = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    const tags = snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
     callback(tags);
   });
 };
 
-export const subscribeToUserListFolders = (callback: (listFolders: FirestoreDoc<ListFolder>[]) => void) => {
+export const subscribeToUserListFolders = (
+  callback: (listFolders: FirestoreDoc<ListFolder>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('listFolders'));
   return onSnapshot(q, (snapshot) => {
-    const listFolders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const listFolders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     callback(listFolders);
   });
 };
 
-export const subscribeToUserTagFolders = (callback: (tagFolders: FirestoreDoc<TagFolder>[]) => void) => {
+export const subscribeToUserTagFolders = (
+  callback: (tagFolders: FirestoreDoc<TagFolder>[]) => void
+) => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
-  
+
   const q = query(getUserCollection('tagFolders'));
   return onSnapshot(q, (snapshot) => {
-    const tagFolders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const tagFolders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     callback(tagFolders);
   });
 };
@@ -716,67 +744,67 @@ export const initializeUserData = async () => {
 
   // Initialize default foci for new users
   const { initialFoci } = await import('../modules/dainandini/data');
-  
+
   const batch = writeBatch(db);
-  
+
   // Add default focus areas
-  initialFoci.forEach(focus => {
+  initialFoci.forEach((focus) => {
     const { id, ...dataWithoutId } = focus; // Destructure to remove id
     const docRef = doc(getUserCollection('foci')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default habits
-  habits.forEach(habit => {
+  habits.forEach((habit) => {
     const { id, ...dataWithoutId } = habit; // Destructure to remove id
     const docRef = doc(getUserCollection('habits')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default goals
-  initialGoals.forEach(goal => {
+  initialGoals.forEach((goal) => {
     const { id, ...dataWithoutId } = goal; // Destructure to remove id
     const docRef = doc(getUserCollection('goals')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default milestones
-  initialMilestones.forEach(milestone => {
+  initialMilestones.forEach((milestone) => {
     const { id, ...dataWithoutId } = milestone; // Destructure to remove id
     const docRef = doc(getUserCollection('milestones')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default quick wins
-  initialQuickWins.forEach(quickWin => {
+  initialQuickWins.forEach((quickWin) => {
     const { id, ...dataWithoutId } = quickWin; // Destructure to remove id
     const docRef = doc(getUserCollection('quickWins')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default custom lists
-  customLists.forEach(list => {
+  customLists.forEach((list) => {
     const { id, ...dataWithoutId } = list; // Destructure to remove id
     const docRef = doc(getUserCollection('lists')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default list folders
-  listFolders.forEach(folder => {
+  listFolders.forEach((folder) => {
     const { id, ...dataWithoutId } = folder; // Destructure to remove id
     const docRef = doc(getUserCollection('listFolders')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default tags
-  tags.forEach(tag => {
+  tags.forEach((tag) => {
     const { id, ...dataWithoutId } = tag; // Destructure to remove id
     const docRef = doc(getUserCollection('tags')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
   });
 
   // Add default tag folders
-  tagFolders.forEach(folder => {
+  tagFolders.forEach((folder) => {
     const { id, ...dataWithoutId } = folder; // Destructure to remove id
     const docRef = doc(getUserCollection('tagFolders')); // Let Firestore generate ID
     batch.set(docRef, { ...dataWithoutId, userId: user.uid });
@@ -791,7 +819,20 @@ export const getAllUserData = async () => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
 
-  const [tasks, logs, habits, goals, milestones, quickWins, logTemplates, lists, tags, foci, listFolders, tagFolders] = await Promise.all([
+  const [
+    tasks,
+    logs,
+    habits,
+    goals,
+    milestones,
+    quickWins,
+    logTemplates,
+    lists,
+    tags,
+    foci,
+    listFolders,
+    tagFolders,
+  ] = await Promise.all([
     getUserTasks(),
     getUserLogs(),
     getUserHabits(),
@@ -803,7 +844,7 @@ export const getAllUserData = async () => {
     getUserTags(),
     getUserFoci(),
     getUserListFolders(),
-    getUserTagFolders()
+    getUserTagFolders(),
   ]);
 
   return {
@@ -818,6 +859,6 @@ export const getAllUserData = async () => {
     tags,
     foci,
     listFolders,
-    tagFolders
+    tagFolders,
   };
 };

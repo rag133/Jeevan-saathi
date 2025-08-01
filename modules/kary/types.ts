@@ -1,14 +1,13 @@
-
 import type { Log } from '../dainandini/types';
 
 export interface ListFolder {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 export interface TagFolder {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 export interface List {
@@ -21,11 +20,11 @@ export interface List {
 }
 
 export interface Tag {
-    id:string;
-    name: string;
-    color: string; // e.g. 'red-500'
-    icon?: keyof typeof import('../../../components/Icons');
-    folderId?: string;
+  id: string;
+  name: string;
+  color: string; // e.g. 'red-500'
+  icon?: keyof typeof import('../../../components/Icons');
+  folderId?: string;
 }
 
 export interface Task {
@@ -44,7 +43,7 @@ export interface Task {
   source?: {
     text: string;
     url: string;
-  }
+  };
 }
 
 export type Selection = { type: 'list'; id: string } | { type: 'tag'; id: string };

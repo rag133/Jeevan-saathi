@@ -25,16 +25,16 @@ async function buildProject() {
       sourcemap: true,
       loader: {
         '.tsx': 'tsx',
-        '.ts': 'ts'
+        '.ts': 'ts',
       },
       define: {
-        'process.env.NODE_ENV': '"production"'
+        'process.env.NODE_ENV': '"production"',
       },
       plugins: [
         {
           name: 'path-resolver',
           setup(build) {
-            build.onResolve({ filter: /(?:\.\.\/)*(modules|services)\/.*\.ts$/ }, args => {
+            build.onResolve({ filter: /(?:\.\.\/)*(modules|services)\/.*\.ts$/ }, (args) => {
               return { path: join(args.resolveDir, args.path) };
             });
           },
@@ -45,7 +45,10 @@ async function buildProject() {
     // Copy and modify index.html
     const { readFile, writeFile } = await import('fs/promises');
     let htmlContent = await readFile('index.html', 'utf-8');
-    htmlContent = htmlContent.replace('<script type="module" src="/index.tsx"></script>', '<script type="module" src="/index.mjs"></script>');
+    htmlContent = htmlContent.replace(
+      '<script type="module" src="/index.tsx"></script>',
+      '<script type="module" src="/index.mjs"></script>'
+    );
     await writeFile(join(BUILD_DIR, 'index.html'), htmlContent);
 
     console.log('✅ Build completed successfully!');

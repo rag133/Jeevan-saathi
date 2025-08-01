@@ -14,12 +14,10 @@ export const listFolders: ListFolder[] = [];
 
 export const customLists: List[] = [];
 
-
 // --- Tag Folders & Tags ---
 export const tagFolders: TagFolder[] = [];
 
 export const tags: Tag[] = [];
-
 
 // --- Tasks ---
 export const tasks: Task[] = [];
