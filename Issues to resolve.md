@@ -30,3 +30,5 @@ onClick@KaryTaskDetail.tsx:275
 - Verify that `getUserTasks()` in `dataService.ts` is consistently returning Firestore-generated IDs for *all* tasks.
 - Consider a migration script or manual cleanup of Firestore data to ensure all existing task IDs are Firestore-generated.
 - Further debugging of the `task` object's `id` property at each stage of the update process (from `KaryTaskDetail` up to `dataService`) to pinpoint where the client-generated ID is being used instead of the Firestore ID.
+
+

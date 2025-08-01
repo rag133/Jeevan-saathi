@@ -42,9 +42,11 @@ async function buildProject() {
       ],
     });
 
-    // Copy static files
-    const { copyFile } = await import('fs/promises');
-    await copyFile('index.html', join(BUILD_DIR, 'index.html'));
+    // Copy and modify index.html
+    const { readFile, writeFile } = await import('fs/promises');
+    let htmlContent = await readFile('index.html', 'utf-8');
+    htmlContent = htmlContent.replace('<script type="module" src="/index.tsx"></script>', '<script type="module" src="/index.mjs"></script>');
+    await writeFile(join(BUILD_DIR, 'index.html'), htmlContent);
 
     console.log('✅ Build completed successfully!');
     console.log(`📁 Output directory: ${BUILD_DIR}`);

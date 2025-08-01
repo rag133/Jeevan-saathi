@@ -3,6 +3,8 @@ import { Habit, HabitLog, HabitLogStatus, HabitStatus, HabitType, HabitFrequency
 import * as Icons from '../../../components/Icons';
 import { Log } from '../../dainandini/types';
 import HabitLogItem from './HabitLogItem';
+import { calculateHabitStats } from '../utils/habitStats';
+import HabitCalendar from './HabitCalendar';
 
 interface HabitDetailViewProps {
     habit: Habit | null;
@@ -61,6 +63,11 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
             progress = habitLogs.reduce((sum, log) => sum + (log.completedChecklistItems?.length || 0), 0);
         }
         return progress;
+    }, [habit, habitLogs]);
+
+    const stats = useMemo(() => {
+        if (!habit) return { currentStreak: 0, bestStreak: 0, completionRate: 0, totalCompletions: 0 };
+        return calculateHabitStats(habit, habitLogs);
     }, [habit, habitLogs]);
 
     const handleUpdate = (updates: Partial<Habit>) => {
@@ -260,7 +267,40 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
                         )}
                     </div>
                 </div>
-                 {/* Statistics section can be added here in the future */}
+
+                {/* Statistics section */}
+                <div>
+                    <label className="text-sm font-medium text-gray-500">Statistics</label>
+                    <div className="mt-2 p-4 bg-gray-50 rounded-lg space-y-3 border">
+                        <div className="flex items-center gap-2">
+                            <Icons.ActivityIcon className="w-4 h-4 text-gray-400" />
+                            <span className="font-semibold text-gray-700 text-sm">Current Streak:</span>
+                            <span className="text-sm text-gray-600">{stats.currentStreak} day{stats.currentStreak !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Icons.AwardIcon className="w-4 h-4 text-gray-400" />
+                            <span className="font-semibold text-gray-700 text-sm">Best Streak:</span>
+                            <span className="text-sm text-gray-600">{stats.bestStreak} day{stats.bestStreak !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Icons.CheckCircleIcon className="w-4 h-4 text-gray-400" />
+                            <span className="font-semibold text-gray-700 text-sm">Completion Rate:</span>
+                            <span className="text-sm text-gray-600">{stats.completionRate}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Icons.BarChart2Icon className="w-4 h-4 text-gray-400" />
+                            <span className="font-semibold text-gray-700 text-sm">Total Completions:</span>
+                            <span className="text-sm text-gray-600">{stats.totalCompletions} {habit.type === HabitType.DURATION ? 'minutes' : 'times'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Habit Calendar */}
+                <HabitCalendar
+                    habit={habit}
+                    habitLogs={habitLogs}
+                    selectedDate={selectedDate}
+                />
             </div>
         </div>
     );

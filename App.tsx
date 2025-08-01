@@ -28,6 +28,7 @@ import {
   subscribeToUserListFolders,
   subscribeToUserTagFolders,
   subscribeToUserFoci,
+  subscribeToUserHabitLogs,
   addTask as addTaskToFirestore,
   updateTask as updateTaskInFirestore,
   deleteTask as deleteTaskFromFirestore,
@@ -146,6 +147,10 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<View>('kary');
 
   const [apiKey, setApiKey] = useState<string | null>(() => {
+    const envApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (envApiKey) {
+      return envApiKey;
+    }
     return localStorage.getItem('gemini-api-key');
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -214,6 +219,7 @@ const App: React.FC = () => {
           setQuickWins(newUserData.quickWins);
           setHabits(newUserData.habits || []);
           setHabitLogs(newUserData.habitLogs || []);
+          setHabitLogs(newUserData.habitLogs || []);
           setCustomLists(newUserData.lists);
           setTags(newUserData.tags);
           setListFolders(newUserData.listFolders);
@@ -227,6 +233,7 @@ const App: React.FC = () => {
           setMilestones(userData.milestones);
           setQuickWins(userData.quickWins);
           setHabits(userData.habits);
+          setHabitLogs(userData.habitLogs || []);
           setHabitLogs(userData.habitLogs || []);
           setCustomLists(userData.lists);
           setTags(userData.tags);
@@ -252,6 +259,7 @@ const App: React.FC = () => {
     const unsubscribeTasks = subscribeToUserTasks(setTasks);
     const unsubscribeLogs = subscribeToUserLogs(setLogs);
     const unsubscribeHabits = subscribeToUserHabits((habitsData) => setHabits(habitsData || []));
+    const unsubscribeHabitLogs = subscribeToUserHabitLogs((habitLogsData) => setHabitLogs(habitLogsData || []));
     const unsubscribeGoals = subscribeToUserGoals(setGoals);
     const unsubscribeMilestones = subscribeToUserMilestones(setMilestones);
     const unsubscribeQuickWins = subscribeToUserQuickWins(setQuickWins);
@@ -267,6 +275,7 @@ const App: React.FC = () => {
       unsubscribeTasks();
       unsubscribeLogs();
       unsubscribeHabits();
+      unsubscribeHabitLogs();
       unsubscribeGoals();
       unsubscribeMilestones();
       unsubscribeQuickWins();

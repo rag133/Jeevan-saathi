@@ -364,7 +364,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
                     onClose={handleCloseModal}
                     onSave={(habitData, id) => {
                         if (id) onUpdateHabit(id, habitData);
-                        else onAddHabit(habitData);
+                        else onAddHabit({ ...habitData, status: HabitStatus.YET_TO_START });
                         handleCloseModal();
                     }}
                     onDelete={onDeleteHabit}
