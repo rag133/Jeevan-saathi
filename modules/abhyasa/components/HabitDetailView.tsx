@@ -12,6 +12,7 @@ interface HabitDetailViewProps {
     onDeleteHabitLog: (habitId: string, date: Date) => void;
     selectedDate: Date;
     allLogs: Log[];
+    habitLogs: HabitLog[];
     onOpenLogModal: (habit: Habit) => void;
 }
 
@@ -27,7 +28,7 @@ const getStatusDetails = (status: HabitStatus) => {
 };
 
 
-const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, onUpdateHabit, onAddHabitLog, onDeleteHabitLog, selectedDate, allLogs, onOpenLogModal }) => {
+const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, onUpdateHabit, onAddHabitLog, onDeleteHabitLog, selectedDate, allLogs, habitLogs, onOpenLogModal }) => {
     const [popup, setPopup] = useState<'status' | null>(null);
     const popupRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -46,6 +47,21 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
         if (!habit) return [];
         return allLogs.filter(log => log.habitId === habit.id).sort((a,b) => b.logDate.getTime() - a.logDate.getTime());
     }, [habit, allLogs]);
+
+    const totalProgress = useMemo(() => {
+        if (!habit) return 0;
+        let progress = 0;
+
+        if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
+            progress = habitLogs.reduce((sum, log) => sum + (log.value || 0), 0);
+        } else if (habit.type === HabitType.BINARY) {
+            progress = habitLogs.filter(log => log.status === HabitLogStatus.COMPLETED).length;
+        } else if (habit.type === HabitType.CHECKLIST) {
+            // For checklist, sum up the number of completed items across all logs
+            progress = habitLogs.reduce((sum, log) => sum + (log.completedChecklistItems?.length || 0), 0);
+        }
+        return progress;
+    }, [habit, habitLogs]);
 
     const handleUpdate = (updates: Partial<Habit>) => {
         if (habit) {
@@ -213,6 +229,13 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({ habit, onEditHabit, o
                                 {habit.endDate ? ` to ${new Date(habit.endDate).toLocaleDateString()}` : ''}
                             </span>
                         </div>
+                        {habit.totalTarget && (
+                            <div className="flex items-center gap-2">
+                                <Icons.TrendingUpIcon className="w-4 h-4 text-gray-400" />
+                                <span className="font-semibold text-gray-700 text-sm">Total Progress:</span>
+                                <span className="text-sm text-gray-600">{totalProgress} / {habit.totalTarget} {habit.type === HabitType.DURATION ? 'minutes' : 'times'}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

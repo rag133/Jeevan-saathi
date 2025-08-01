@@ -6,7 +6,9 @@
       "Bash(Stop-Process -Id 23696 -Force)",
       "Bash(sed:*)",
       "Bash(ls:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(cp:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

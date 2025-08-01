@@ -293,6 +293,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
                             onDeleteHabitLog={onDeleteHabitLog}
                             selectedDate={selectedDate}
                             allLogs={allLogs}
+                            habitLogs={habitLogs}
                             onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
                         />
                     </ResizablePanels>
@@ -321,6 +322,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
                             onDeleteHabitLog={onDeleteHabitLog}
                             selectedDate={selectedDate}
                             allLogs={allLogs}
+                            habitLogs={habitLogs}
                             onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
                         />
                     </ResizablePanels>

@@ -1,5 +1,4 @@
 import path from 'path';
-import path from 'path';
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
@@ -8,6 +7,11 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         input: 'index.html',
+        output: {
+          entryFileNames: 'index.mjs',
+          chunkFileNames: '[name].mjs',
+          assetFileNames: '[name].[ext]'
+        }
       },
     },
     define: {
