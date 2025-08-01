@@ -67,7 +67,7 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children }) => {
             </svg>
           </button>
         </div>
-        <div className="p-6 flex-1 overflow-y-auto">{children}</div>
+        <div className="p-4 md:p-6 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

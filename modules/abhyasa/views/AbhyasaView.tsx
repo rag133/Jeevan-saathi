@@ -31,8 +31,13 @@ import HabitList, { HabitFilter } from '~/modules/abhyasa/components/lists/Habit
 import { Log } from '~/modules/dainandini/types';
 import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
 import { useAbhyasaStore } from '../abhyasaStore';
+import useWindowSize from '~/hooks/useWindowSize';
 
-const AbhyasaView: React.FC = () => {
+const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State for AbhyasaSidebar visibility
+  const [showDetail, setShowDetail] = useState(false); // State for mobile detail view
   const {
     goals,
     milestones,
@@ -248,7 +253,7 @@ const AbhyasaView: React.FC = () => {
             <GoalList
               goals={filteredGoals}
               selectedGoalId={selectedGoalId}
-              onSelectGoal={setSelectedGoalId}
+              onSelectGoal={(id) => { setSelectedGoalId(id); if (isMobile) setShowDetail(true); }}
               activeFilter={goalFilter}
               onSetFilter={setGoalFilter}
               onAddGoalClick={() => handleOpenModal('goal')}
@@ -282,6 +287,7 @@ const AbhyasaView: React.FC = () => {
               }
               onEditGoal={(goal) => handleOpenModal('goal', { goal })}
               onOpenLogModal={(goal) => handleOpenLogModal({ goal })}
+              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -292,7 +298,7 @@ const AbhyasaView: React.FC = () => {
               milestones={filteredMilestones}
               goals={goals}
               selectedMilestoneId={selectedMilestoneId}
-              onSelectMilestone={setSelectedMilestoneId}
+              onSelectMilestone={(id) => { setSelectedMilestoneId(id); if (isMobile) setShowDetail(true); }}
               activeFilter={milestoneFilter}
               onSetFilter={setMilestoneFilter}
               onAddMilestoneClick={() => handleOpenModal('milestone')}
@@ -315,6 +321,7 @@ const AbhyasaView: React.FC = () => {
               }
               onOpenLogModal={(milestone) => handleOpenLogModal({ milestone })}
               onEditMilestone={(milestone) => handleOpenModal('milestone', { milestone })}
+              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -326,7 +333,7 @@ const AbhyasaView: React.FC = () => {
             <HabitList
               habits={filteredHabits}
               selectedHabitId={selectedHabitId}
-              onSelectHabit={setSelectedHabitId}
+              onSelectHabit={(id) => { setSelectedHabitId(id); if (isMobile) setShowDetail(true); }}
               activeFilter={habitFilter}
               onSetFilter={setHabitFilter}
               onAddHabitClick={() => handleOpenModal('habit')}
@@ -341,6 +348,7 @@ const AbhyasaView: React.FC = () => {
               allLogs={[]}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
+              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -355,7 +363,7 @@ const AbhyasaView: React.FC = () => {
               allFoci={[]}
               onAddHabitLog={addHabitLog}
               onDeleteHabitLog={deleteHabitLog}
-              onSelectHabit={setSelectedHabitId}
+              onSelectHabit={(id) => { setSelectedHabitId(id); if (isMobile) setShowDetail(true); }}
               selectedHabitId={selectedHabitId}
               selectedDate={selectedDate}
               onDateSelect={setSelectedDate}
@@ -370,6 +378,7 @@ const AbhyasaView: React.FC = () => {
               allLogs={[]}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
+              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -396,12 +405,78 @@ const AbhyasaView: React.FC = () => {
 
   return (
     <>
+      {isMobile && (
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="fixed top-4 left-4 z-40 p-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Toggle Abhyasa Sidebar"
+        >
+          <Icons.MenuIcon className="w-6 h-6" />
+        </button>
+      )}
       <AbhyasaSidebar
         onOpenModal={handleOpenModal}
         activeView={activeView}
-        onSelectView={(view) => setActiveView(view)}
+        onSelectView={(view) => {
+          setActiveView(view);
+          if (isMobile) setShowDetail(false); // Hide detail on sidebar item click
+        }}
+        isMobile={isMobile}
+        isSidebarOpen={isSidebarOpen}
       />
-      <main className="flex-1 flex min-w-0 bg-gray-50/80">{renderMainPanel()}</main>
+      {isSidebarOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-20"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+      <main className={`flex-1 flex min-w-0 bg-gray-50/80 ${isMobile && isAppSidebarOpen ? 'ml-20' : ''}`}> {/* Adjust main content margin */}
+        {isMobile && showDetail ? (
+          renderMainPanel() // Render detail view on mobile
+        ) : isMobile && !showDetail ? (
+          <div className="flex flex-col w-full h-full p-4">
+            {/* Mobile view for lists */}
+            {activeView === 'goals' && (
+              <GoalList
+                goals={filteredGoals}
+                selectedGoalId={selectedGoalId}
+                onSelectGoal={(id) => { setSelectedGoalId(id); setShowDetail(true); }}
+                activeFilter={goalFilter}
+                onSetFilter={setGoalFilter}
+                onAddGoalClick={() => handleOpenModal('goal')}
+                onEditGoal={(goal) => handleOpenModal('goal', { goal })}
+              />
+            )}
+            {activeView === 'milestones' && (
+              <MilestoneList
+                milestones={filteredMilestones}
+                goals={goals}
+                selectedMilestoneId={selectedMilestoneId}
+                onSelectMilestone={(id) => { setSelectedMilestoneId(id); setShowDetail(true); }}
+                activeFilter={milestoneFilter}
+                onSetFilter={setMilestoneFilter}
+                onAddMilestoneClick={() => handleOpenModal('milestone')}
+                onEditMilestone={(milestone) => handleOpenModal('milestone', { milestone })}
+              />
+            )}
+            {activeView === 'quick-wins' && (
+              <QuickWinList quickWins={quickWins} onStatusChange={updateQuickWin} />
+            )}
+            {(activeView === 'all-habits' || activeView === 'calendar') && (
+              <HabitList
+                habits={filteredHabits}
+                selectedHabitId={selectedHabitId}
+                onSelectHabit={(id) => { setSelectedHabitId(id); setShowDetail(true); }}
+                activeFilter={habitFilter}
+                onSetFilter={setHabitFilter}
+                onAddHabitClick={() => handleOpenModal('habit')}
+              />
+            )}
+          </div>
+        ) : (
+          renderMainPanel() // Render ResizablePanels on desktop
+        )}
+      </main>
       {modal === 'habit' && (
         <AddHabitModal
           isOpen={true}

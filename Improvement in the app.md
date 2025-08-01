@@ -38,9 +38,36 @@ This is the highest priority for improving the user experience on different devi
     *   **Collapsible Sidebar:** On mobile screens, the main navigation sidebar should be hidden by default and revealed by a "hamburger" menu icon (☰).
     *   **Single-Column Layout:** Instead of showing multiple panels side-by-side, stack them vertically on mobile. Tapping an item should navigate to a new view for its details.
     *   **Flexible Grids and Cards:** Content elements like task items and habit cards should resize to fit the screen width.
-*   **How to Implement:**
-    *   **CSS Media Queries:** Use CSS rules that apply only when the screen is below a certain width to change layouts.
-    *   **React Hooks for Responsiveness:** Create a custom hook (e.g., `useWindowSize`) to get the screen width and conditionally render different layouts or components in your JSX.
+
+**Detailed Implementation Plan (Tasks):**
+
+*   **Phase 1: Setup and Global Responsiveness**
+    *   [x] **Define Breakpoints:** Establish consistent breakpoints (e.g., `sm`, `md`, `lg`) in `tailwind.config.js` if not already defined, or document existing ones.
+    *   [x] **Global Layout Adjustment (App.tsx):**
+        *   [x] Implement a responsive main layout in `App.tsx` to switch between multi-column (desktop) and single-column (mobile) layouts.
+        *   [x] Introduce a "hamburger" menu icon for mobile view to toggle sidebar visibility.
+        *   [x] Implement a `useWindowSize` hook or similar to detect screen width for conditional rendering.
+*   **Phase 2: Sidebar Responsiveness**
+    *   [x] **Sidebar Component (`Sidebar.tsx` and module-specific sidebars):**
+        *   [x] Make the sidebar collapsible on smaller screens.
+        *   [x] Implement the logic to show/hide the sidebar based on the hamburger menu state.
+        *   [x] Ensure sidebar content is scrollable if it overflows on smaller screens.
+*   **Phase 3: Main Content Area Responsiveness (Module Views)**
+    *   [x] **Kary Module (`KaryView.tsx`):**
+        *   [x] Adjust `ResizablePanels` to stack vertically on mobile, or replace with a single-column layout.
+        *   [x] Implement navigation for task list to task detail view on mobile (e.g., clicking a task item navigates to its detail page).
+        *   [x] Ensure `KaryTaskList` and `KaryTaskDetail` components are responsive.
+    *   [x] **Abhyasa Module (`AbhyasaView.tsx`):**
+        *   [x] Apply similar responsive adjustments for its panels and components.
+    *   [x] **Dainandini Module (`DainandiniView.tsx`):**
+        *   [x] Apply similar responsive adjustments for its panels and components.
+*   **Phase 4: Component-Level Responsiveness**
+    *   [ ] **Forms and Inputs:** Ensure all forms (`AddListForm`, `AddTagForm`, etc.) and input fields are responsive and usable on small screens.
+    *   [ ] **Cards and Lists:** Verify that `TaskItem`, `HabitCard`, `LogItem`, etc., adapt their layout and font sizes for mobile.
+    *   [ ] **Modals:** Ensure modals (`Modal.tsx`, `LogEntryModal.tsx`) are properly centered and sized on all screen sizes.
+*   **Phase 5: Testing and Refinement**
+    *   [ ] **Cross-Device Testing:** Test the application on various mobile and tablet emulators/devices.
+    *   [ ] **Performance Optimization:** Ensure responsive changes don't negatively impact performance.
 
 #### 2. Modernize Forms and Inputs
 

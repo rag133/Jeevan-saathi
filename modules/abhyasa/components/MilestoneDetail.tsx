@@ -87,6 +87,7 @@ interface MilestoneDetailProps {
   onLinkHabit: (milestoneId: string) => void;
   onOpenLogModal: (milestone: Milestone) => void;
   onEditMilestone: (milestone: Milestone) => void;
+  onBack?: () => void; // Optional back button for mobile
 }
 
 const MilestoneDetail: React.FC<MilestoneDetailProps> = (props) => {
@@ -255,6 +256,15 @@ const MilestoneDetail: React.FC<MilestoneDetailProps> = (props) => {
     <div className="flex-1 bg-white p-6 flex flex-col h-full">
       <header className="flex justify-between items-start mb-6 pb-4 border-b border-gray-200">
         <div className="flex items-start gap-4 flex-1 min-w-0">
+          {props.onBack && (
+            <button
+              onClick={props.onBack}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full mr-2"
+              aria-label="Back to milestone list"
+            >
+              <Icons.ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          )}
           <Icons.FlagIcon className="w-10 h-10 text-gray-500 mt-1 flex-shrink-0" />
           <div className="flex-1 min-w-0">
             {isEditingTitle ? (

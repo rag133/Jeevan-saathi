@@ -25,6 +25,7 @@ interface HabitDetailViewProps {
   allLogs: Log[];
   habitLogs: HabitLog[];
   onOpenLogModal: (habit: Habit) => void;
+  onBack?: () => void; // Optional back button for mobile
 }
 
 const habitStatusItems: {
@@ -63,6 +64,7 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
   allLogs,
   habitLogs,
   onOpenLogModal,
+  onBack,
 }) => {
   const [popup, setPopup] = useState<'status' | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -189,9 +191,9 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     );
   }
 
-  const IconComponent = Icons[habit.icon];
+  const IconComponent = Icons[habit.icon] || Icons.TargetIcon;
   const statusDetails = getStatusDetails(habit.status);
-  const StatusIcon = Icons[statusDetails.icon];
+  const StatusIcon = Icons[statusDetails.icon] || Icons.TargetIcon;
 
   const renderPopup = () => {
     if (!popup) return null;
@@ -201,7 +203,7 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
         {popup === 'status' && (
           <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto">
             {habitStatusItems.map((item) => {
-              const ItemIcon = Icons[item.icon];
+              const ItemIcon = Icons[item.icon] || Icons.TargetIcon;
               return (
                 <li key={item.id}>
                   <button
@@ -224,6 +226,15 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     <div className="flex-1 bg-white p-6 flex flex-col h-full">
       <header className="flex justify-between items-start mb-6 pb-4 border-b border-gray-200">
         <div className="flex items-start gap-4">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full mr-2"
+              aria-label="Back to habit list"
+            >
+              <Icons.ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          )}
           <IconComponent className={`w-12 h-12 text-${habit.color}`} />
           <div>
             <h1 className="text-3xl font-bold text-gray-800">{habit.title}</h1>

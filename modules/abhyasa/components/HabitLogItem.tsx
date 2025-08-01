@@ -8,7 +8,7 @@ interface HabitLogItemProps {
 
 const HabitLogItem: React.FC<HabitLogItemProps> = ({ log }) => {
   const logDetails = logTypeDetails[log.logType];
-  const IconComponent = Icons[logDetails.icon];
+  const IconComponent = Icons[logDetails.icon] || Icons.TargetIcon;
 
   const formatDate = (date: Date): string => {
     const d = new Date(date);

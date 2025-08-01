@@ -89,7 +89,7 @@ const TaskItem: React.FC<{
   return (
     <li
       onClick={() => onSelect(task.id)}
-      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors duration-150 ${
+      className={`flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg cursor-pointer transition-colors duration-150 ${
         isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
     >
@@ -101,7 +101,7 @@ const TaskItem: React.FC<{
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+        <p className={`text-sm md:text-base ${task.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
           {task.title}
         </p>
         {task.source && (

@@ -37,7 +37,7 @@ const AddListForm: React.FC<AddListFormProps> = ({ folders, onAddList }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 p-1">
       <div>
         <label htmlFor="list-name" className="block text-sm font-medium text-gray-700">
           List Name

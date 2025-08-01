@@ -17,6 +17,7 @@ import { useKaryStore } from './modules/kary/karyStore';
 import { useDainandiniStore } from './modules/dainandini/dainandiniStore';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAbhyasaStore } from './modules/abhyasa/abhyasaStore';
+import useWindowSize from './hooks/useWindowSize'; // Import the custom hook
 
 const navItems = [
   { viewId: 'kary', icon: 'CheckSquareIcon', label: 'Kary' },
@@ -55,9 +56,17 @@ const IconSidebar: React.FC<{
   onProfileClick: () => void;
   onSignOut: () => void;
   user: any;
-}> = ({ activeView, onSetView, onProfileClick, onSignOut, user }) => {
+  isMobile: boolean;
+  isSidebarOpen: boolean;
+  onCloseSidebar: () => void;
+}> = ({ activeView, onSetView, onProfileClick, onSignOut, user, isMobile, isSidebarOpen, onCloseSidebar }) => {
   return (
-    <aside className="w-20 bg-gray-50/80 flex-shrink-0 flex flex-col items-center border-r border-gray-200">
+    <aside
+      className={`fixed inset-y-0 left-0 z-30 flex-shrink-0 w-20 bg-gray-50/80 border-r border-gray-200 transition-transform duration-300 ease-in-out
+        ${isMobile ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
+        ${isMobile ? '' : 'flex flex-col'}
+      `}
+    >
       <div className="py-4 mt-2">
         <button
           onClick={onProfileClick}
@@ -82,7 +91,10 @@ const IconSidebar: React.FC<{
             icon={icon}
             label={label}
             isActive={activeView === viewId}
-            onClick={() => onSetView(viewId)}
+            onClick={() => {
+              onSetView(viewId);
+              if (isMobile) onCloseSidebar();
+            }}
           />
         ))}
       </nav>
@@ -112,6 +124,10 @@ const App: React.FC = () => {
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar visibility
+
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
 
   // --- Auth State ---
   const [user, setUser] = useState<any>(null);
@@ -239,14 +255,34 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen font-sans text-gray-800 bg-transparent">
       <Toaster />
+      {isMobile && (
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="fixed top-4 left-4 z-40 p-2 rounded-md bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Toggle Sidebar"
+        >
+          <Icons.MenuIcon className="w-6 h-6" />
+        </button>
+      )}
       <IconSidebar
         activeView={activeView}
         onSetView={setActiveView}
         onProfileClick={() => setIsProfileModalOpen(true)}
         onSignOut={handleSignOut}
         user={user}
+        isMobile={isMobile}
+        isSidebarOpen={isSidebarOpen}
+        onCloseSidebar={() => setIsSidebarOpen(false)}
       />
-      <React.Suspense fallback={<div>Loading...</div>}>{renderActiveView()}</React.Suspense>
+      {isSidebarOpen && isMobile && (
+        <div
+          className="fixed inset-0 bg-black opacity-50 z-20"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+      <div className={`flex-1 flex transition-all duration-300 ease-in-out ${isMobile ? 'ml-0' : 'ml-20'}`}> {/* Adjust main content margin */}
+        <React.Suspense fallback={<div>Loading...</div>}>{renderActiveView()}</React.Suspense>
+      </div>
       {isApiKeyModalOpen && (
         <ApiKeyModal
           currentApiKey={apiKey}

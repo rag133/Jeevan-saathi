@@ -33,9 +33,10 @@ interface TemplateDetailProps {
     templateId?: string
   ) => void;
   onDelete: (templateId: string) => void;
+  onBack?: () => void; // Optional back button for mobile
 }
 
-const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, foci, onSave, onDelete }) => {
+const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, foci, onSave, onDelete, onBack }) => {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState<keyof typeof Icons>('ListIcon');
   const [focusId, setFocusId] = useState('');
@@ -93,6 +94,22 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, foci, onSave,
 
   return (
     <div className="flex-1 bg-white/90 p-6 flex flex-col h-full overflow-y-auto">
+      <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full mr-2"
+              aria-label="Back to templates list"
+            >
+              <Icons.ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          )}
+          <h1 className="text-2xl font-bold text-gray-800">
+            {template ? 'Edit Template' : 'Create New Template'}
+          </h1>
+        </div>
+      </header>
       <form onSubmit={handleSave} className="space-y-6">
         <div>
           <label htmlFor="template-name" className="block text-sm font-medium text-gray-700">

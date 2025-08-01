@@ -54,15 +54,24 @@ interface AbhyasaSidebarProps {
   onOpenModal: (type: AbhyasaModalType) => void;
   onSelectView: (type: AbhyasaViewType) => void;
   activeView: AbhyasaViewType;
+  isMobile: boolean;
+  isSidebarOpen: boolean;
 }
 
 const AbhyasaSidebar: React.FC<AbhyasaSidebarProps> = ({
   onOpenModal,
   onSelectView,
   activeView,
+  isMobile,
+  isSidebarOpen,
 }) => {
   return (
-    <aside className="w-72 flex-shrink-0 bg-gray-100/80 border-r border-gray-200 p-2 flex flex-col">
+    <aside
+      className={`w-72 flex-shrink-0 bg-gray-100/80 border-r border-gray-200 p-2 flex flex-col
+        ${isMobile ? 'fixed inset-y-0 left-0 z-20 transition-transform duration-300 ease-in-out' : ''}
+        ${isMobile && !isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+      `}
+    >
       <nav className="flex-1 overflow-y-auto">
         <div className="px-4 pt-4 pb-2 flex items-center gap-3 text-gray-800">
           <Icons.TargetIcon className="w-6 h-6 text-indigo-500" />

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import KarySidebar from '~/modules/kary/components/KarySidebar';
 import KaryTaskList from '~/modules/kary/components/KaryTaskList';
-import KaryTaskDetail from '~/modules/kary/components/KaryTaskDetail';
+import { KaryTaskDetail } from '~/modules/kary/components/KaryTaskDetail';
 import Modal from '~/components/common/Modal';
 import AddListForm from '~/modules/kary/components/forms/AddListForm';
 import AddTagForm from '~/modules/kary/components/forms/AddTagForm';
@@ -10,8 +10,9 @@ import { Task, List, ListFolder, Tag, TagFolder, Selection } from '~/modules/kar
 import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
 import { initialFoci } from '~/modules/dainandini/data';
 import { useKaryStore } from '../karyStore';
+import useWindowSize from '~/hooks/useWindowSize';
 
-const KaryView: React.FC = () => {
+const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
   const {
     tasks,
     lists,
@@ -35,6 +36,9 @@ const KaryView: React.FC = () => {
     deleteTagFolder,
   } = useKaryStore();
 
+  const { width } = useWindowSize();
+  const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
+
   const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     tasks.filter((t) => !t.parentId).length > 0 ? tasks.filter((t) => !t.parentId)[0].id : null
@@ -42,6 +46,7 @@ const KaryView: React.FC = () => {
   const [modal, setModal] = useState<'add-list' | 'add-tag' | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [logModalTask, setLogModalTask] = useState<Task | null>(null);
+  const [showDetail, setShowDetail] = useState(false); // New state for mobile detail view
 
   const allLists = useMemo(() => {
     const todayCount = tasks.filter(
@@ -189,25 +194,16 @@ const KaryView: React.FC = () => {
         tags={tags}
         tagFolders={tagFolders}
         selectedItem={selectedItem}
-        onSelectItem={setSelectedItem}
+        onSelectItem={(selection) => {
+          setSelectedItem(selection);
+          if (isMobile) setShowDetail(false); // Hide detail on sidebar item click
+        }}
         onOpenModal={setModal}
+        isMobile={isMobile}
+        isSidebarOpen={isAppSidebarOpen}
       />
       <main className="flex-1 flex min-w-0">
-        <ResizablePanels initialLeftWidth={45}>
-          <KaryTaskList
-            viewDetails={currentViewDetails}
-            tasks={displayedTasks}
-            allLists={allLists}
-            allTags={tags}
-            selectedTaskId={selectedTaskId}
-            expandedTasks={expandedTasks}
-            onSelectTask={setSelectedTaskId}
-            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
-            onAddTask={handleAddTask}
-            onToggleExpand={(taskId) =>
-              setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
-            }
-          />
+        {isMobile && showDetail && selectedTaskId ? (
           <KaryTaskDetail
             selectedTaskId={selectedTaskId}
             tasks={tasks}
@@ -219,11 +215,71 @@ const KaryView: React.FC = () => {
             onUpdateTask={updateTask}
             onDeleteTask={deleteTask}
             onDuplicateTask={handleDuplicateTask}
-            onSelectTask={setSelectedTaskId}
+            onSelectTask={(id) => {
+              setSelectedTaskId(id);
+              setShowDetail(true);
+            }}
             onAddTask={handleAddTask}
             onOpenLogModal={setLogModalTask}
+            onBack={() => setShowDetail(false)} // Back button for mobile
           />
-        </ResizablePanels>
+        ) : isMobile && !showDetail ? (
+          <KaryTaskList
+            viewDetails={currentViewDetails}
+            tasks={displayedTasks}
+            allLists={allLists}
+            allTags={tags}
+            selectedTaskId={selectedTaskId}
+            expandedTasks={expandedTasks}
+            onSelectTask={(id) => {
+              setSelectedTaskId(id);
+              setShowDetail(true);
+            }}
+            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+            onAddTask={handleAddTask}
+            onToggleExpand={(taskId) =>
+              setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
+            }
+          />
+        ) : (
+          <ResizablePanels initialLeftWidth={45}>
+            <KaryTaskList
+              viewDetails={currentViewDetails}
+              tasks={displayedTasks}
+              allLists={allLists}
+              allTags={tags}
+              selectedTaskId={selectedTaskId}
+              expandedTasks={expandedTasks}
+              onSelectTask={(id) => {
+                setSelectedTaskId(id);
+                setShowDetail(true);
+              }}
+              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+              onAddTask={handleAddTask}
+              onToggleExpand={(taskId) =>
+                setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
+              }
+            />
+            <KaryTaskDetail
+              selectedTaskId={selectedTaskId}
+              tasks={tasks}
+              allTags={tags}
+              allLists={allLists}
+              allLogs={[]}
+              childrenTasks={childrenOfSelectedTask}
+              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
+              onDuplicateTask={handleDuplicateTask}
+              onSelectTask={(id) => {
+                setSelectedTaskId(id);
+                setShowDetail(true);
+              }}
+              onAddTask={handleAddTask}
+              onOpenLogModal={setLogModalTask}
+            />
+          </ResizablePanels>
+        )}
       </main>
       {modal && (
         <Modal

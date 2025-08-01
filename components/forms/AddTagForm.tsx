@@ -41,7 +41,7 @@ const AddTagForm: React.FC<AddTagFormProps> = ({ folders, onAddTag }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 p-1">
       <div>
         <label htmlFor="tag-name" className="block text-sm font-medium text-gray-700">
           Tag Name

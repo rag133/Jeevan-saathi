@@ -30,6 +30,7 @@ interface LogDetailProps {
   foci: Focus[];
   onUpdateLog: (logId: string, updates: Partial<Log>) => void;
   onDeleteLog: (logId: string) => void;
+  onBack?: () => void; // Optional back button for mobile
 }
 
 const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteLog }) => {
@@ -208,6 +209,15 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
     <div className="flex-1 bg-white/90 p-6 flex flex-col h-full">
       <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-3 flex-wrap">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full mr-2"
+              aria-label="Back to log list"
+            >
+              <Icons.ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          )}
           {logFocus && (
             <button
               ref={triggerRefs.focus}

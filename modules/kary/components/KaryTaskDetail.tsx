@@ -25,6 +25,7 @@ interface KaryTaskDetailProps {
   onSelectTask: (taskId: string) => void;
   onAddTask: (taskData: NewTaskData, list?: List | null, parentId?: string) => void;
   onOpenLogModal: (task: Task) => void;
+  onBack?: () => void; // Optional back button for mobile
 }
 
 type PopupType = 'date' | 'priority' | 'tags' | 'more' | 'list';
@@ -105,7 +106,7 @@ const TagPill: React.FC<{ tag: Tag; onRemove: (tagId: string) => void }> = ({ ta
   );
 };
 
-const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
+export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
   selectedTaskId,
   tasks,
   allTags,
@@ -119,6 +120,7 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
   onSelectTask,
   onAddTask,
   onOpenLogModal,
+  onBack,
 }) => {
   const task = useMemo(
     () => tasks.find((t) => t.id === selectedTaskId) || null,
@@ -266,9 +268,9 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
 
     let newLine = line;
     if (newCheckedState) {
-      newLine = line.replace(/\[ \]/, '[x]');
+      newLine = line.replace(/ \[ \]/, '[x]');
     } else {
-      newLine = line.replace(/\[x\]/i, '[ ]');
+      newLine = line.replace(/ \[x\]/i, '[ ]');
     }
 
     if (newLine !== line) {
@@ -334,7 +336,7 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
                     className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100"
                   >
                     <span className={`w-2.5 h-2.5 rounded-full bg-${tag.color}`}></span>
-                    <span className="flex-1 truncate">{tag.name}</span>
+                    <span>{tag.name}</span>
                   </button>
                 </li>
               ))
@@ -356,7 +358,7 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
                       className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       <ListIcon
-                        className={`w-4 h-4 ${list.color ? `text-${list.color}` : 'text-gray-500'}`}
+                        className={`w-4 h-4 ${list.color ? `text-${list.color}` : ''}`}
                       />
                       <span className="flex-1 truncate">{list.name}</span>
                       {task.listId === list.id && (
@@ -401,6 +403,15 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     <div className="flex-1 bg-white/80 p-6 flex flex-col h-full">
       <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center gap-4 flex-wrap">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+              aria-label="Back to task list"
+            >
+              <Icons.ArrowLeftIcon className="w-5 h-5" />
+            </button>
+          )}
           <Checkbox
             checked={task.completed}
             onChange={() => onToggleComplete(task.id)}
@@ -658,5 +669,3 @@ const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     </div>
   );
 };
-
-export default KaryTaskDetail;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task, List, Tag } from '~/types';
 import TaskItem from './TaskItem';
-import { HamburgerMenuIcon, SortIcon, MoreHorizontalIcon } from './Icons';
+import { MenuIcon, SortIcon, MoreHorizontalIcon } from './Icons';
 import { ExtractedTaskData } from '~/services/geminiService';
 import InteractiveTaskInput from './InteractiveTaskInput';
 

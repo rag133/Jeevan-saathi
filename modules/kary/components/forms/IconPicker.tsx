@@ -22,7 +22,7 @@ const IconPicker: React.FC<IconPickerProps> = ({ selectedIcon, onSelectIcon }) =
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
         {availableIcons.map((iconName) => {
           const IconComponent = Icons[iconName];
           return (
