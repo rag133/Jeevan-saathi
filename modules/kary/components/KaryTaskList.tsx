@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { Task, List, Tag } from '../types';
+import { Task, List, Tag } from '~/modules/kary/types';
 import KaryTaskItem from './KaryTaskItem';
 import {
   HamburgerMenuIcon,
   SortIcon,
   MoreHorizontalIcon,
   ChevronRightIcon,
-} from '../../../components/Icons';
+} from '~/components/Icons';
 import InteractiveTaskInput from './InteractiveTaskInput';
 import { NewTaskData } from '../views/KaryView';
 

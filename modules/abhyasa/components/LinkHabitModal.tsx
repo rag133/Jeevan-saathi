@@ -1,7 +1,7 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import LinkHabitForm from './forms/LinkHabitForm';
-import { Habit } from '../types';
+import { Habit } from '~/modules/abhyasa/types';
 
 interface LinkHabitModalProps {
   isOpen: boolean;

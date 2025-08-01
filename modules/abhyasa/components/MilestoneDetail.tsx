@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Milestone, Habit, Goal, MilestoneStatus, HabitLog, HabitStatus } from '../types';
-import * as Icons from '../../../components/Icons';
-import DateTimePicker from '../../kary/components/DateTimePicker';
-import { Focus, Log } from '../../dainandini/types';
+import { Milestone, Habit, Goal, MilestoneStatus, HabitLog, HabitStatus } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
+import DateTimePicker from '~/modules/kary/components/DateTimePicker';
+import { Focus, Log } from '~/modules/dainandini/types';
 import HabitLogItem from './HabitLogItem';
 
 const milestoneStatusItems: {

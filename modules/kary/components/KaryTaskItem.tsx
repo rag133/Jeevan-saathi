@@ -1,7 +1,7 @@
 import React from 'react';
-import { Task, Tag } from '../types';
-import Checkbox from '../../../components/common/Checkbox';
-import { FlagIcon, ChevronRightIcon, ChevronDownIcon, ClockIcon } from '../../../components/Icons';
+import { Task, Tag } from '~/modules/kary/types';
+import Checkbox from '~/components/common/Checkbox';
+import { FlagIcon, ChevronRightIcon, ChevronDownIcon, ClockIcon } from '~/components/Icons';
 
 const formatDate = (date?: Date) => {
   if (!date) return '';

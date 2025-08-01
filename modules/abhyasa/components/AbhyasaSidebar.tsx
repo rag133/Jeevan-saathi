@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Icons from '../../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 type AbhyasaModalType = 'goal' | 'milestone' | 'habit' | 'quick-win';
 type AbhyasaViewType = 'goals' | 'milestones' | 'calendar' | 'all-habits' | 'quick-wins';

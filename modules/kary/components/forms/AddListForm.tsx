@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { List, ListFolder } from '../../types';
-import * as Icons from '../../../../components/Icons';
+import { List, ListFolder } from '~/modules/kary/types';
+import * as Icons from '~/components/Icons';
 import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
 

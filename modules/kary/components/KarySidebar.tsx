@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { List, ListFolder, Tag, TagFolder, Selection } from '../types';
-import * as Icons from '../../../components/Icons';
+import { List, ListFolder, Tag, TagFolder, Selection } from '~/modules/kary/types';
+import * as Icons from '~/components/Icons';
 
 interface KarySidebarProps {
   smartLists: List[];

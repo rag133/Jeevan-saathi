@@ -1,87 +1,40 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import KarySidebar from '../components/KarySidebar';
-import KaryTaskList from '../components/KaryTaskList';
-import KaryTaskDetail from '../components/KaryTaskDetail';
-import Modal from '../../../components/common/Modal';
-import AddListForm from '../components/forms/AddListForm';
-import AddTagForm from '../components/forms/AddTagForm';
-import ResizablePanels from '../../../components/common/ResizablePanels';
-import {
-  smartLists as initialSmartLists,
-  customLists as initialCustomLists,
-  listFolders as initialListFolders,
-  tags as initialTags,
-  tagFolders as initialTagFolders,
-} from '../data';
-import { Task, List, ListFolder, Tag, TagFolder, Selection } from '../types';
-import LogEntryModal from '../../dainandini/components/LogEntryModal';
-import { initialFoci } from '../../dainandini/data';
-import { Log, LogType } from '../../dainandini/types';
+import KarySidebar from '~/modules/kary/components/KarySidebar';
+import KaryTaskList from '~/modules/kary/components/KaryTaskList';
+import KaryTaskDetail from '~/modules/kary/components/KaryTaskDetail';
+import Modal from '~/components/common/Modal';
+import AddListForm from '~/modules/kary/components/forms/AddListForm';
+import AddTagForm from '~/modules/kary/components/forms/AddTagForm';
+import ResizablePanels from '~/components/common/ResizablePanels';
+import { Task, List, ListFolder, Tag, TagFolder, Selection } from '~/modules/kary/types';
+import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
+import { initialFoci } from '~/modules/dainandini/data';
+import { useKaryStore } from '../karyStore';
 
-// This is a new interface to replace ExtractedTaskData
-export interface NewTaskData {
-  title: string;
-  list?: List | null;
-  tagNames: string[];
-  priority: 1 | 2 | 3 | 4 | null;
-  dueDate: string | null;
-}
+const KaryView: React.FC = () => {
+  const {
+    tasks,
+    lists,
+    tags,
+    listFolders,
+    tagFolders,
+    addTask,
+    updateTask,
+    deleteTask,
+    addList,
+    updateList,
+    deleteList,
+    addTag,
+    updateTag,
+    deleteTag,
+    addListFolder,
+    updateListFolder,
+    deleteListFolder,
+    addTagFolder,
+    updateTagFolder,
+    deleteTagFolder,
+  } = useKaryStore();
 
-interface KaryViewProps {
-  tasks: Task[];
-  onAddTask: (taskData: Omit<Task, 'id'>) => Promise<void>;
-  onUpdateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  onDeleteTask: (taskId: string) => Promise<void>;
-  allLogs: Log[];
-  onAddLog: (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => void;
-  sentReminders: Set<string>;
-  setSentReminders: React.Dispatch<React.SetStateAction<Set<string>>>;
-  onToggleKaryTask: (taskId: string) => void;
-  customLists: List[];
-  tags: Tag[];
-  listFolders: ListFolder[];
-  tagFolders: TagFolder[];
-  onAddList: (listData: Omit<List, 'id'>) => Promise<List>;
-  onUpdateList: (listId: string, updates: Partial<List>) => Promise<void>;
-  onDeleteList: (listId: string) => Promise<void>;
-  onAddTag: (tagData: Omit<Tag, 'id'>) => Promise<Tag>;
-  onUpdateTag: (tagId: string, updates: Partial<Tag>) => Promise<void>;
-  onDeleteTag: (tagId: string) => Promise<void>;
-  onAddListFolder: (folderData: Omit<ListFolder, 'id'>) => Promise<ListFolder>;
-  onUpdateListFolder: (folderId: string, updates: Partial<ListFolder>) => Promise<void>;
-  onDeleteListFolder: (folderId: string) => Promise<void>;
-  onAddTagFolder: (folderData: Omit<TagFolder, 'id'>) => Promise<TagFolder>;
-  onUpdateTagFolder: (folderId: string, updates: Partial<TagFolder>) => Promise<void>;
-  onDeleteTagFolder: (folderId: string) => Promise<void>;
-}
-
-const KaryView: React.FC<KaryViewProps> = ({
-  tasks,
-  onAddTask,
-  onUpdateTask,
-  onDeleteTask,
-  allLogs,
-  onAddLog,
-  sentReminders,
-  setSentReminders,
-  onToggleKaryTask,
-  customLists,
-  tags,
-  listFolders,
-  tagFolders,
-  onAddList,
-  onUpdateList,
-  onDeleteList,
-  onAddTag,
-  onUpdateTag,
-  onDeleteTag,
-  onAddListFolder,
-  onUpdateListFolder,
-  onDeleteListFolder,
-  onAddTagFolder,
-  onUpdateTagFolder,
-  onDeleteTagFolder,
-}) => {
   const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     tasks.filter((t) => !t.parentId).length > 0 ? tasks.filter((t) => !t.parentId)[0].id : null
@@ -102,15 +55,14 @@ const KaryView: React.FC<KaryViewProps> = ({
     ).length;
     const inboxCount = tasks.filter((t) => t.listId === 'inbox' && !t.completed).length;
 
-    const updatedSmartLists: List[] = initialSmartLists.map((list) => {
-      if (list.id === 'today') return { ...list, count: todayCount };
-      if (list.id === 'upcoming') return { ...list, count: upcomingCount };
-      if (list.id === 'inbox') return { ...list, count: inboxCount };
-      return list as List;
-    });
+    const smartLists: List[] = [
+      { id: 'inbox', name: 'Inbox', icon: 'InboxIcon', count: inboxCount },
+      { id: 'today', name: 'Today', icon: 'CalendarIcon', count: todayCount },
+      { id: 'upcoming', name: 'Upcoming', icon: 'CalendarIcon', count: upcomingCount },
+    ];
 
-    return [...updatedSmartLists, ...customLists];
-  }, [tasks, customLists]);
+    return [...smartLists, ...lists];
+  }, [tasks, lists]);
 
   const displayedTasks = useMemo(() => {
     let filteredTasks: Task[] = [];
@@ -149,7 +101,7 @@ const KaryView: React.FC<KaryViewProps> = ({
     });
 
     return Array.from(tasksWithParents).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [selectedItem, tasks]);
 
@@ -161,24 +113,17 @@ const KaryView: React.FC<KaryViewProps> = ({
     if (!selectedTaskId) return [];
     return tasks
       .filter((t) => t.parentId === selectedTaskId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [selectedTaskId, tasks]);
 
   useEffect(() => {
     const topLevelTasks = displayedTasks.filter((t) => !t.parentId);
-    // If selectedTaskId is null or doesn't exist in the current tasks, select the first top-level task
     if (!selectedTaskId || !tasks.some((t) => t.id === selectedTaskId)) {
       setSelectedTaskId(topLevelTasks.length > 0 ? topLevelTasks[0].id : null);
-    } else {
-      // Ensure selectedTaskId refers to a task with a Firestore-generated ID
-      const currentSelectedTask = tasks.find((t) => t.id === selectedTaskId);
-      if (currentSelectedTask && currentSelectedTask.id !== selectedTaskId) {
-        setSelectedTaskId(currentSelectedTask.id);
-      }
     }
   }, [displayedTasks, selectedTaskId, tasks]);
 
-  const handleAddTask = async (taskData: NewTaskData, list?: List | null, parentId?: string) => {
+  const handleAddTask = async (taskData: any, list?: List | null, parentId?: string) => {
     const getListId = () => {
       if (parentId) return tasks.find((t) => t.id === parentId)?.listId || 'inbox';
       if (list) return list.id;
@@ -194,27 +139,13 @@ const KaryView: React.FC<KaryViewProps> = ({
 
     const newTags: string[] = [];
     if (taskData.tagNames) {
-      taskData.tagNames.forEach((tagName) => {
+      for (const tagName of taskData.tagNames) {
         let tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
         if (!tag) {
-          const colors = [
-            'red-500',
-            'blue-500',
-            'green-500',
-            'yellow-500',
-            'purple-500',
-            'teal-500',
-          ];
-          const newTag: Tag = {
-            id: crypto.randomUUID(),
-            name: tagName,
-            color: colors[Math.floor(Math.random() * colors.length)],
-          };
-          setTags((prev) => [...prev, newTag]);
-          tag = newTag;
+          const newTag = await addTag({ name: tagName, color: 'red-500' });
         }
         newTags.push(tag.id);
-      });
+      }
     }
 
     const newTask: Omit<Task, 'id'> = {
@@ -228,58 +159,18 @@ const KaryView: React.FC<KaryViewProps> = ({
       dueDate:
         taskData.dueDate && taskData.dueDate.trim() !== '' ? new Date(taskData.dueDate) : undefined,
     };
-    const firestoreTaskId = await onAddTask(newTask);
-    if (!parentId) {
-      setSelectedTaskId(firestoreTaskId);
-    }
-  };
-
-  const handleUpdateTask = async (taskId: string, updates: Partial<Omit<Task, 'id'>>) => {
-    await onUpdateTask(taskId, updates);
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    await onDeleteTask(taskId);
-
-    if (selectedTaskId === taskId) {
-      const topLevelTasks = displayedTasks.filter((t) => !t.parentId && t.id !== taskId);
-      setSelectedTaskId(topLevelTasks.length > 0 ? topLevelTasks[0].id : null);
-    }
+    await addTask(newTask);
   };
 
   const handleDuplicateTask = async (taskId: string) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
-    const newTask: Task = {
+    const newTask: Omit<Task, 'id'> = {
       ...task,
-      id: crypto.randomUUID(),
       title: `${task.title} (Copy)`,
       createdAt: new Date(),
     };
-    await onAddTask(newTask);
-    setSelectedTaskId(newTask.id);
-  };
-
-  const handleAddList = async (listData: Omit<List, 'id' | 'count'>, newFolderName?: string) => {
-    let folderId = listData.folderId;
-    if (newFolderName) {
-      const newFolder = await onAddListFolder({ name: newFolderName });
-      folderId = newFolder.id;
-    }
-    const newList = await onAddList({ ...listData, folderId: folderId });
-    setModal(null);
-    setSelectedItem({ type: 'list', id: newList.id });
-  };
-
-  const handleAddTag = async (tagData: Omit<Tag, 'id'>, newFolderName?: string) => {
-    let folderId = tagData.folderId;
-    if (newFolderName) {
-      const newFolder = await onAddTagFolder({ name: newFolderName });
-      folderId = newFolder.id;
-    }
-    const newTag = await onAddTag({ ...tagData, folderId });
-    setModal(null);
-    setSelectedItem({ type: 'tag', id: newTag.id });
+    await addTask(newTask);
   };
 
   const currentViewDetails = useMemo(() => {
@@ -293,7 +184,7 @@ const KaryView: React.FC<KaryViewProps> = ({
     <>
       <KarySidebar
         smartLists={allLists.filter((l) => ['inbox', 'today', 'upcoming'].includes(l.id))}
-        customLists={customLists}
+        customLists={lists}
         listFolders={listFolders}
         tags={tags}
         tagFolders={tagFolders}
@@ -311,7 +202,7 @@ const KaryView: React.FC<KaryViewProps> = ({
             selectedTaskId={selectedTaskId}
             expandedTasks={expandedTasks}
             onSelectTask={setSelectedTaskId}
-            onToggleComplete={onToggleKaryTask}
+            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
             onAddTask={handleAddTask}
             onToggleExpand={(taskId) =>
               setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
@@ -322,11 +213,11 @@ const KaryView: React.FC<KaryViewProps> = ({
             tasks={tasks}
             allTags={tags}
             allLists={allLists}
-            allLogs={allLogs}
+            allLogs={[]}
             childrenTasks={childrenOfSelectedTask}
-            onToggleComplete={onToggleKaryTask}
-            onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
+            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+            onUpdateTask={updateTask}
+            onDeleteTask={deleteTask}
             onDuplicateTask={handleDuplicateTask}
             onSelectTask={setSelectedTaskId}
             onAddTask={handleAddTask}
@@ -342,12 +233,12 @@ const KaryView: React.FC<KaryViewProps> = ({
           {modal === 'add-list' && (
             <AddListForm
               folders={listFolders}
-              onAddList={onAddList}
-              onAddListFolder={onAddListFolder}
+              onAddList={addList}
+              onAddListFolder={addListFolder}
             />
           )}
           {modal === 'add-tag' && (
-            <AddTagForm folders={tagFolders} onAddTag={onAddTag} onAddTagFolder={onAddTagFolder} />
+            <AddTagForm folders={tagFolders} onAddTag={addTag} onAddTagFolder={addTagFolder} />
           )}
         </Modal>
       )}
@@ -355,7 +246,7 @@ const KaryView: React.FC<KaryViewProps> = ({
         <LogEntryModal
           isOpen={true}
           onClose={() => setLogModalTask(null)}
-          onAddLog={(logData) => onAddLog({ ...logData, taskId: logModalTask.id })}
+          onAddLog={(logData) => {}}
           allFoci={initialFoci.filter((f) => f.id === 'kary' || f.id === 'general')}
           initialFocusId="kary"
           initialTitle={`Log for: ${logModalTask.title}`}

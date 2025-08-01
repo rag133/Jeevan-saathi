@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Focus, DainandiniSelection, LogTemplate } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Focus, DainandiniSelection, LogTemplate } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
 
 interface DainandiniSidebarProps {
   foci: Focus[];

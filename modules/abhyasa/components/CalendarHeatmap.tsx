@@ -1,5 +1,5 @@
 import React from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitType } from '../types';
+import { Habit, HabitLog, HabitLogStatus, HabitType } from '~/modules/abhyasa/types';
 
 interface CalendarHeatmapProps {
   habit: Habit;

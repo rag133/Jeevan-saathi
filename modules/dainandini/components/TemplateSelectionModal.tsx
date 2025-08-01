@@ -1,7 +1,7 @@
 import React from 'react';
-import { LogTemplate } from '../types';
-import Modal from '../../../components/Modal';
-import * as Icons from '../../../components/Icons';
+import { LogTemplate } from '~/modules/dainandini/types';
+import Modal from '~/components/Modal';
+import * as Icons from '~/components/Icons';
 
 interface TemplateSelectionModalProps {
   isOpen: boolean;

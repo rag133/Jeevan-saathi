@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Task, Tag, List } from '../types';
-import * as Icons from '../../../components/Icons';
-import Checkbox from '../../../components/common/Checkbox';
+import { Task, Tag, List } from '~/modules/kary/types';
+import * as Icons from '~/components/Icons';
+import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from './DateTimePicker';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import SubtaskItem from './SubtaskItem';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
-import { Log } from '../../dainandini/types';
+import LoadingSpinner from '~/components/common/LoadingSpinner';
+import { Log } from '~/modules/dainandini/types';
 import TaskLogItem from './TaskLogItem';
 import { NewTaskData } from '../views/KaryView';
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Focus, LogType, logTypeDetails, LogTemplate } from '../../types';
-import * as Icons from '../../../../components/Icons';
+import { Focus, LogType, logTypeDetails, LogTemplate } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
 import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
 

@@ -1,4 +1,4 @@
-import { Focus, Log, LogType, LogTemplate } from './types';
+import { Focus, Log, LogType, LogTemplate } from '~/modules/dainandini/types';
 
 export const initialFoci: Focus[] = [
   {

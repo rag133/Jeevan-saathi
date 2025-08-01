@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Goal, Milestone, Habit, GoalStatus, HabitLog } from '../types';
-import * as Icons from '../../../components/Icons';
-import DateTimePicker from '../../kary/components/DateTimePicker';
+import { Goal, Milestone, Habit, GoalStatus, HabitLog } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
+import DateTimePicker from '~/modules/kary/components/DateTimePicker';
 import GoalJourney from './GoalJourney';
-import { Focus, Log } from '../../dainandini/types';
+import { Focus, Log } from '~/modules/dainandini/types';
 import HabitLogItem from './HabitLogItem';
 
 const goalStatusItems: { id: GoalStatus; name: string; color: string; icon: keyof typeof Icons }[] =

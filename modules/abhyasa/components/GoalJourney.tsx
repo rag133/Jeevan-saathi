@@ -1,6 +1,6 @@
 import React from 'react';
-import { Milestone, Habit, MilestoneStatus, HabitLog, HabitStatus } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Milestone, Habit, MilestoneStatus, HabitLog, HabitStatus } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 
 const getMilestoneStatusClasses = (status: MilestoneStatus) => {
   switch (status) {

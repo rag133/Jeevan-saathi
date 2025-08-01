@@ -1,7 +1,7 @@
 import React from 'react';
-import { QuickWin, QuickWinStatus } from '../../types';
-import Checkbox from '../../../../components/common/Checkbox';
-import * as Icons from '../../../../components/Icons';
+import { QuickWin, QuickWinStatus } from '~/modules/abhyasa/types';
+import Checkbox from '~/components/common/Checkbox';
+import * as Icons from '~/components/Icons';
 
 const QuickWinItem: React.FC<{
   quickWin: QuickWin;

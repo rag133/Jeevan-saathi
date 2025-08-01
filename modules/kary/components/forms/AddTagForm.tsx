@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Tag, TagFolder } from '../../types';
-import * as Icons from '../../../../components/Icons';
+import { Tag, TagFolder } from '~/modules/kary/types';
+import * as Icons from '~/components/Icons';
 import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
 

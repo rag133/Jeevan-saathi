@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 
 interface HabitCalendarProps {
   habit: Habit;

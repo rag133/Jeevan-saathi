@@ -1,4 +1,4 @@
-import * as Icons from '../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 // --- Habit Types ---
 export enum HabitType {

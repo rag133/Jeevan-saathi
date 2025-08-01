@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Milestone, Goal } from '../../types';
-import { Focus } from '../../../dainandini/types';
+import { Milestone, Goal } from '~/modules/abhyasa/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddMilestoneFormProps {
   onSave: (data: Omit<Milestone, 'id' | 'status'>, id?: string) => void;

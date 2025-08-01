@@ -1,7 +1,7 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import AddQuickWinForm from './forms/AddQuickWinForm';
-import { QuickWin } from '../types';
+import { QuickWin } from '~/modules/abhyasa/types';
 
 interface AddQuickWinModalProps {
   isOpen: boolean;

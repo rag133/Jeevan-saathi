@@ -1,7 +1,7 @@
 import React from 'react';
-import { Log, ChecklistItem, LogType, Focus } from '../types';
-import * as Icons from '../../../components/Icons';
-import Checkbox from '../../../components/common/Checkbox';
+import { Log, ChecklistItem, LogType, Focus } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
+import Checkbox from '~/components/common/Checkbox';
 
 // --- Display Components ---
 const StarRatingDisplay: React.FC<{ rating?: number }> = ({ rating = 0 }) => (

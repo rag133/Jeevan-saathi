@@ -10,8 +10,8 @@ import {
   GoalStatus,
   MilestoneStatus,
   HabitStatus,
-} from '../types';
-import ResizablePanels from '../../../components/common/ResizablePanels';
+} from '~/modules/abhyasa/types';
+import ResizablePanels from '~/components/common/ResizablePanels';
 import AbhyasaSidebar from '../components/AbhyasaSidebar';
 import HabitDashboard from '../components/HabitDashboard';
 import HabitDetailView from '../components/HabitDetailView';
@@ -26,75 +26,36 @@ import MilestoneList from '../components/lists/MilestoneList';
 import QuickWinList from '../components/lists/QuickWinList';
 import LinkMilestoneModal from '../components/LinkMilestoneModal';
 import LinkHabitModal from '../components/LinkHabitModal';
-import { Focus } from '../../dainandini/types';
-import HabitList, { HabitFilter } from '../components/lists/HabitList';
-import { Log } from '../../dainandini/types';
-import LogEntryModal from '../../dainandini/components/LogEntryModal';
+import { Focus } from '~/modules/dainandini/types';
+import HabitList, { HabitFilter } from '~/modules/abhyasa/components/lists/HabitList';
+import { Log } from '~/modules/dainandini/types';
+import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
+import { useAbhyasaStore } from '../abhyasaStore';
 
-interface AbhyasaViewProps {
-  goals: Goal[];
-  milestones: Milestone[];
-  quickWins: QuickWin[];
-  habits: Habit[];
-  habitLogs: HabitLog[];
-  allFoci: Focus[];
-  allLogs: Log[];
-  onAddLog: (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => void;
-  onAddGoal: (data: Omit<Goal, 'id' | 'startDate'>) => void;
-  onUpdateGoal: (id: string, updates: Partial<Goal>) => void;
-  onDeleteGoal: (id: string) => void;
-  onAddMilestone: (data: Omit<Milestone, 'id'>) => void;
-  onUpdateMilestone: (id: string, updates: Partial<Milestone>) => void;
-  onDeleteMilestone: (id: string) => void;
-  onAddQuickWin: (data: Omit<QuickWin, 'id' | 'createdAt'>) => void;
-  onUpdateQuickWinStatus: (id: string, status: QuickWinStatus) => void;
-  onAddHabit: (data: Omit<Habit, 'id' | 'createdAt'>) => void;
-  onUpdateHabit: (id: string, updates: Partial<Habit>) => void;
-  onDeleteHabit: (id: string) => void;
-  onAddHabitLog: (logData: Omit<HabitLog, 'id'>) => void;
-  onDeleteHabitLog: (habitId: string, date: Date) => void;
-}
-
-type AbhyasaModalType =
-  | 'goal'
-  | 'milestone'
-  | 'habit'
-  | 'quick-win'
-  | 'link-milestone'
-  | 'link-habit'
-  | null;
-type GoalFilter = GoalStatus | 'All';
-type MilestoneFilter = MilestoneStatus | 'All';
-
-const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
+const AbhyasaView: React.FC = () => {
   const {
     goals,
     milestones,
     quickWins,
-    habits: rawHabits,
+    habits,
     habitLogs,
-    allFoci,
-    allLogs,
-    onAddLog,
-    onAddGoal,
-    onUpdateGoal,
-    onDeleteGoal,
-    onAddMilestone,
-    onUpdateMilestone,
-    onDeleteMilestone,
-    onAddQuickWin,
-    onUpdateQuickWinStatus,
-    onAddHabit,
-    onUpdateHabit,
-    onDeleteHabit,
-    onAddHabitLog,
-    onDeleteHabitLog,
-  } = props;
-
-  const habits = useMemo(() => rawHabits || [], [rawHabits]);
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    addMilestone,
+    updateMilestone,
+    deleteMilestone,
+    addQuickWin,
+    updateQuickWin,
+    addHabit,
+    updateHabit,
+    deleteHabit,
+    addHabitLog,
+    deleteHabitLog,
+  } = useAbhyasaStore();
 
   const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('calendar');
-  const [modal, setModal] = useState<AbhyasaModalType>(null);
+  const [modal, setModal] = useState<any>(null);
   const [preselectedGoalIdForMilestone, setPreselectedGoalIdForMilestone] = useState<string | null>(
     null
   );
@@ -115,12 +76,12 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
 
   // State for Goals View
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [goalFilter, setGoalFilter] = useState<GoalFilter>('All');
+  const [goalFilter, setGoalFilter] = useState<any>('All');
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   // State for Milestones View
   const [selectedMilestoneId, setSelectedMilestoneId] = useState<string | null>(null);
-  const [milestoneFilter, setMilestoneFilter] = useState<MilestoneFilter>('All');
+  const [milestoneFilter, setMilestoneFilter] = useState<any>('All');
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
 
   const filteredHabits = useMemo(() => {
@@ -222,7 +183,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
   ]);
 
   const handleOpenModal = (
-    type: AbhyasaModalType,
+    type: any,
     context?: { goalId?: string; habit?: Habit; milestone?: Milestone; goal?: Goal }
   ) => {
     if (type === 'habit') {
@@ -269,15 +230,13 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
     const { habit, milestone, goal } = logModalState.context;
     if (!habit && !milestone && !goal) return;
 
-    const contextData = useMemo(() => {
-      const data: { habitId?: string; milestoneId?: string; goalId?: string } = {};
-      if (habit) data.habitId = habit.id;
-      else if (milestone) data.milestoneId = milestone.id;
-      else if (goal) data.goalId = goal.id;
-      return data;
-    }, [habit, milestone, goal]);
+    const contextData = {
+      habitId: habit?.id,
+      milestoneId: milestone?.id,
+      goalId: goal?.id,
+    };
 
-    onAddLog({ ...logData, ...contextData });
+    // onAddLog({ ...logData, ...contextData });
     setLogModalState({ isOpen: false, context: {} });
   };
 
@@ -297,8 +256,8 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
             />
             <GoalDetail
               goal={selectedGoal}
-              allFoci={allFoci}
-              allLogs={allLogs}
+              allFoci={[]}
+              allLogs={[]}
               milestones={milestones.filter((m) => m.parentGoalId === selectedGoal?.id)}
               habits={(habits || []).filter(
                 (h) =>
@@ -309,8 +268,8 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
                     ))
               )}
               habitLogs={habitLogs}
-              onUpdateGoal={onUpdateGoal}
-              onDeleteGoal={onDeleteGoal}
+              onUpdateGoal={updateGoal}
+              onDeleteGoal={deleteGoal}
               onAddMilestone={() => handleOpenModal('milestone', { goalId: selectedGoal?.id })}
               onLinkMilestone={() => handleOpenModal('link-milestone')}
               onAddHabit={() => handleOpenModal('habit', { goalId: selectedGoal?.id })}
@@ -344,10 +303,10 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
               parentGoal={goals.find((g) => g.id === selectedMilestone?.parentGoalId)}
               habits={habits.filter((h) => h.milestoneId === selectedMilestoneId)}
               habitLogs={habitLogs}
-              allFoci={allFoci}
-              allLogs={allLogs}
-              onUpdateMilestone={onUpdateMilestone}
-              onDeleteMilestone={onDeleteMilestone}
+              allFoci={[]}
+              allLogs={[]}
+              onUpdateMilestone={updateMilestone}
+              onDeleteMilestone={deleteMilestone}
               onAddHabit={(milestoneId) =>
                 handleOpenModal('habit', { milestone: { id: milestoneId } as Milestone })
               }
@@ -360,7 +319,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           </ResizablePanels>
         );
       case 'quick-wins':
-        return <QuickWinList quickWins={quickWins} onStatusChange={onUpdateQuickWinStatus} />;
+        return <QuickWinList quickWins={quickWins} onStatusChange={updateQuickWin} />;
       case 'all-habits':
         return (
           <ResizablePanels initialLeftWidth={45}>
@@ -375,11 +334,11 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
             <HabitDetailView
               habit={selectedHabit}
               onEditHabit={(habitToEdit) => handleOpenModal('habit', { habit: habitToEdit })}
-              onUpdateHabit={onUpdateHabit}
-              onAddHabitLog={onAddHabitLog}
-              onDeleteHabitLog={onDeleteHabitLog}
+              onUpdateHabit={updateHabit}
+              onAddHabitLog={addHabitLog}
+              onDeleteHabitLog={deleteHabitLog}
               selectedDate={selectedDate}
-              allLogs={allLogs}
+              allLogs={[]}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
             />
@@ -393,9 +352,9 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
             <HabitDashboard
               habits={inProgressHabits}
               habitLogs={habitLogs}
-              allFoci={allFoci}
-              onAddHabitLog={onAddHabitLog}
-              onDeleteHabitLog={onDeleteHabitLog}
+              allFoci={[]}
+              onAddHabitLog={addHabitLog}
+              onDeleteHabitLog={deleteHabitLog}
               onSelectHabit={setSelectedHabitId}
               selectedHabitId={selectedHabitId}
               selectedDate={selectedDate}
@@ -404,11 +363,11 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
             <HabitDetailView
               habit={selectedHabit}
               onEditHabit={(habitToEdit) => handleOpenModal('habit', { habit: habitToEdit })}
-              onUpdateHabit={onUpdateHabit}
-              onAddHabitLog={onAddHabitLog}
-              onDeleteHabitLog={onDeleteHabitLog}
+              onUpdateHabit={updateHabit}
+              onAddHabitLog={addHabitLog}
+              onDeleteHabitLog={deleteHabitLog}
               selectedDate={selectedDate}
-              allLogs={allLogs}
+              allLogs={[]}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
             />
@@ -419,18 +378,18 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
 
   const handleSaveMilestone = (data: Omit<Milestone, 'id' | 'status'>, id?: string) => {
     if (id) {
-      onUpdateMilestone(id, data);
+      updateMilestone(id, data);
     } else {
-      onAddMilestone({ ...data, status: MilestoneStatus.NOT_STARTED });
+      addMilestone({ ...data, status: MilestoneStatus.NOT_STARTED });
     }
     handleCloseModal();
   };
 
   const handleSaveGoal = (data: Omit<Goal, 'id' | 'startDate' | 'status'>, id?: string) => {
     if (id) {
-      onUpdateGoal(id, data);
+      updateGoal(id, data);
     } else {
-      onAddGoal({ ...data, status: GoalStatus.NOT_STARTED });
+      addGoal({ ...data, status: GoalStatus.NOT_STARTED });
     }
     handleCloseModal();
   };
@@ -448,15 +407,15 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           isOpen={true}
           onClose={handleCloseModal}
           onSave={(habitData, id) => {
-            if (id) onUpdateHabit(id, habitData);
-            else onAddHabit({ ...habitData, status: HabitStatus.YET_TO_START });
+            if (id) updateHabit(id, habitData);
+            else addHabit({ ...habitData, status: HabitStatus.YET_TO_START });
             handleCloseModal();
           }}
-          onDelete={onDeleteHabit}
+          onDelete={deleteHabit}
           initialHabit={editingHabit}
           goalId={preselectedGoalIdForHabit}
           milestoneId={preselectedMilestoneIdForHabit}
-          allFoci={allFoci}
+          allFoci={[]}
         />
       )}
       {modal === 'goal' && (
@@ -464,9 +423,9 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           isOpen={true}
           onClose={handleCloseModal}
           onSave={handleSaveGoal}
-          onDelete={onDeleteGoal}
+          onDelete={deleteGoal}
           initialGoal={editingGoal}
-          allFoci={allFoci}
+          allFoci={[]}
         />
       )}
       {modal === 'milestone' && (
@@ -474,10 +433,10 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           isOpen={true}
           onClose={handleCloseModal}
           onSave={handleSaveMilestone}
-          onDelete={onDeleteMilestone}
+          onDelete={deleteMilestone}
           goals={goals}
           initialGoalId={preselectedGoalIdForMilestone}
-          allFoci={allFoci}
+          allFoci={[]}
           initialMilestone={editingMilestone}
         />
       )}
@@ -486,7 +445,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           isOpen={true}
           onClose={handleCloseModal}
           onSave={(data) => {
-            onAddQuickWin({ ...data, status: QuickWinStatus.PENDING });
+            addQuickWin({ ...data, status: QuickWinStatus.PENDING });
             handleCloseModal();
           }}
         />
@@ -495,7 +454,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
         <LinkMilestoneModal
           isOpen={true}
           onClose={handleCloseModal}
-          onUpdateMilestone={onUpdateMilestone}
+          onUpdateMilestone={updateMilestone}
           milestones={milestones.filter((m) => !m.parentGoalId)}
           currentGoalId={selectedGoal.id}
         />
@@ -504,7 +463,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
         <LinkHabitModal
           isOpen={true}
           onClose={handleCloseModal}
-          onUpdateHabit={onUpdateHabit}
+          onUpdateHabit={updateHabit}
           habits={habits.filter((h) => !h.goalId)}
           currentGoalId={activeParentGoalId || ''}
           milestoneId={preselectedMilestoneIdForHabit}
@@ -515,7 +474,7 @@ const AbhyasaView: React.FC<AbhyasaViewProps> = (props) => {
           isOpen={logModalState.isOpen}
           onClose={() => setLogModalState({ isOpen: false, context: {} })}
           onAddLog={handleAddLog}
-          allFoci={allFoci}
+          allFoci={[]}
           initialFocusId={
             logModalState.context.habit?.focusAreaId ||
             logModalState.context.milestone?.focusAreaId ||

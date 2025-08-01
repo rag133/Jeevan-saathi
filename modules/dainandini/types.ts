@@ -1,4 +1,4 @@
-import * as Icons from '../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 export enum LogType {
   TEXT = 'text',

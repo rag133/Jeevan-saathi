@@ -7,12 +7,11 @@ import {
   HabitType,
   HabitChecklistItem,
   HabitTargetComparison,
-} from '../types';
-import { subscribeToUserHabitLogs } from 'services/dataService';
-import * as Icons from '../../../components/Icons';
-import { Focus } from '../../dainandini/types';
-import Checkbox from '../../../components/common/Checkbox';
-import DateTimePicker from '../../kary/components/DateTimePicker';
+} from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
+import { Focus } from '~/modules/dainandini/types';
+import Checkbox from '~/components/common/Checkbox';
+import DateTimePicker from '~/modules/kary/components/DateTimePicker';
 
 const isSameDay = (d1?: Date | null, d2?: Date | null): boolean => {
   if (!d1 || !d2) return false;
@@ -113,7 +112,6 @@ const HabitListItem: React.FC<{
       habit.dailyTarget != null &&
       log.value != null
     ) {
-      // Apply comparison logic based on dailyTargetComparison
       const target = habit.dailyTarget;
       const value = log.value;
       switch (habit.dailyTargetComparison) {
@@ -124,9 +122,9 @@ const HabitListItem: React.FC<{
         case HabitTargetComparison.LESS_THAN:
           return value < target;
         case HabitTargetComparison.ANY_VALUE:
-          return value > 0; // If any value is considered a goal met
+          return value > 0;
         default:
-          return value >= target; // Default to AT_LEAST
+          return value >= target;
       }
     }
 
@@ -163,11 +161,11 @@ const HabitListItem: React.FC<{
             value < target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
           break;
         case HabitTargetComparison.ANY_VALUE:
-          finalStatus = value > 0 ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED; // If any value is considered a goal met
+          finalStatus = value > 0 ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
           break;
         default:
           finalStatus =
-            value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED; // Default to AT_LEAST
+            value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
           break;
       }
     }
@@ -401,6 +399,7 @@ const HabitListItem: React.FC<{
 // --- Main Component ---
 interface HabitDashboardProps {
   habits: Habit[];
+  habitLogs: HabitLog[];
   allFoci: Focus[];
   onAddHabitLog: (logData: Omit<HabitLog, 'id'>) => void;
   onDeleteHabitLog: (habitId: string, date: Date) => void;
@@ -412,6 +411,7 @@ interface HabitDashboardProps {
 
 const HabitDashboard: React.FC<HabitDashboardProps> = ({
   habits = [],
+  habitLogs,
   allFoci,
   onAddHabitLog,
   onDeleteHabitLog,
@@ -422,22 +422,15 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
 }) => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
-  const [allHabitLogs, setAllHabitLogs] = useState<HabitLog[]>([]);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToUserHabitLogs(setAllHabitLogs);
-    return () => unsubscribe();
-  }, []);
 
   const habitsForSelectedDay = useMemo(() => {
     const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
-    const selectedDateMs = selectedDate.setHours(0, 0, 0, 0);
+    const selectedDateMs = new Date(selectedDate).setHours(0, 0, 0, 0);
 
     return (habits ?? []).filter((habit) => {
-      const habitStartDateMs = habit.startDate.setHours(0, 0, 0, 0);
-      const habitEndDateMs = habit.endDate ? habit.endDate.setHours(0, 0, 0, 0) : Infinity;
+      const habitStartDateMs = new Date(habit.startDate).setHours(0, 0, 0, 0);
+      const habitEndDateMs = habit.endDate ? new Date(habit.endDate).setHours(0, 0, 0, 0) : Infinity;
 
-      // Check if selectedDate is within the habit's start and end dates
       if (selectedDateMs < habitStartDateMs || selectedDateMs > habitEndDateMs) {
         return false;
       }
@@ -450,7 +443,7 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
           return frequency.days.includes(dayOfWeek);
         case HabitFrequencyType.WEEKLY:
         case HabitFrequencyType.MONTHLY:
-          return true; // Simplified for now
+          return true;
         default:
           return false;
       }
@@ -460,13 +453,13 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
   const logsByHabitId = useMemo(() => {
     const map = new Map<string, HabitLog>();
     const dateStr = selectedDate.toISOString().split('T')[0];
-    allHabitLogs
+    habitLogs
       .filter((log) => log.date === dateStr)
       .forEach((log) => {
         map.set(log.habitId, log);
       });
     return map;
-  }, [allHabitLogs, selectedDate]);
+  }, [habitLogs, selectedDate]);
 
   const getHeaderText = () => {
     const today = new Date();
@@ -508,9 +501,7 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
                   onDateSelect(date);
                   setIsDatePickerOpen(false);
                 }}
-                onClear={() => {
-                  /* Consider action, e.g., select today */
-                }}
+                onClear={() => {}}
                 onClose={() => setIsDatePickerOpen(false)}
               />
             </div>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Habit, HabitLog, HabitLogStatus } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Habit, HabitLog, HabitLogStatus } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 
 const getHabitStatusForToday = (
   habit: Habit,

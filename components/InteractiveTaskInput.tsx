@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { List, Tag } from '../types';
-import { extractTaskDetails, ExtractedTaskData } from '../services/geminiService';
+import { List, Tag } from '~/types';
+import { extractTaskDetails, ExtractedTaskData } from '~/services/geminiService';
 import * as Icons from './Icons';
 import LoadingSpinner from './LoadingSpinner';
 import DateTimePicker from './DateTimePicker';

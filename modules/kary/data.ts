@@ -1,5 +1,5 @@
-import { List, Task, ListFolder, Tag, TagFolder } from './types';
-import { LogType } from '../dainandini/types';
+import { List, Task, ListFolder, Tag, TagFolder } from '~/modules/kary/types';
+import { LogType } from '~/modules/dainandini/types';
 
 // --- Smart Lists ---
 // The 'count' for smart lists will be calculated dynamically in App.tsx

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Focus, Log } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Focus, Log } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
 import LogItem from './LogItem';
-import DateTimePicker from '../../kary/components/DateTimePicker';
+import DateTimePicker from '~/modules/kary/components/DateTimePicker';
 
 const getMonthYearText = (date: Date): string => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });

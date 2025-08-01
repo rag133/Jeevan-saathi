@@ -1,7 +1,7 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import LinkMilestoneForm from './forms/LinkMilestoneForm';
-import { Milestone } from '../types';
+import { Milestone } from '~/modules/abhyasa/types';
 
 interface LinkMilestoneModalProps {
   isOpen: boolean;

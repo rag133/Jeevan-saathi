@@ -1,8 +1,8 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import AddMilestoneForm from './forms/AddMilestoneForm';
-import { Goal, Milestone } from '../types';
-import { Focus } from '../../dainandini/types';
+import { Goal, Milestone } from '~/modules/abhyasa/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddMilestoneModalProps {
   isOpen: boolean;

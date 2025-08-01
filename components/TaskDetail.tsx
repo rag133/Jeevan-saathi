@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task, Tag } from '../types';
+import { Task, Tag } from '~/types';
 import * as Icons from './Icons';
 import Checkbox from './Checkbox';
 import DateTimePicker from './DateTimePicker';

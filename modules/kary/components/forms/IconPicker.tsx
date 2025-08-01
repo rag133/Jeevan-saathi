@@ -1,5 +1,5 @@
 import React from 'react';
-import * as Icons from '../../../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 const availableIcons: (keyof typeof Icons)[] = [
   'ListIcon',

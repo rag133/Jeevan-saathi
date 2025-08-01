@@ -8,11 +8,11 @@ import {
   HabitFrequency,
   HabitFrequencyType,
   HabitTargetComparison,
-} from '../types';
-import * as Icons from '../../../components/Icons';
-import { Log } from '../../dainandini/types';
+} from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
+import { Log } from '~/modules/dainandini/types';
 import HabitLogItem from './HabitLogItem';
-import { calculateHabitStats } from '../utils/habitStats';
+import { calculateHabitStats } from '~/modules/abhyasa/utils/habitStats';
 import HabitCalendar from './HabitCalendar';
 
 interface HabitDetailViewProps {

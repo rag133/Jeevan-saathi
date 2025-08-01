@@ -3,6 +3,7 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vitest/globals", "node"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -17,8 +18,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "modules/*": ["modules/*"],
-      "services/*": ["services/*"]
+      "~/*": ["./*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"]

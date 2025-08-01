@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Habit, HabitStatus } from '../../types';
-import * as Icons from '../../../../components/Icons';
+import { Habit, HabitStatus } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 
 const getStatusColor = (status: HabitStatus) => {
   switch (status) {

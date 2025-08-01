@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task, Tag } from '../types';
+import { Task, Tag } from '~/types';
 import Checkbox from './Checkbox';
 import { FlagIcon } from './Icons';
 

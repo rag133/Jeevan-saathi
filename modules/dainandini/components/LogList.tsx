@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Log, Focus, DainandiniSelection, GroupedLogs } from '../types';
+import { Log, Focus, DainandiniSelection, GroupedLogs } from '~/modules/dainandini/types';
 import LogItem from './LogItem';
 import InlineLogForm from './InlineLogForm';
-import * as Icons from '../../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 // --- LogList Container ---
 interface LogListProps {

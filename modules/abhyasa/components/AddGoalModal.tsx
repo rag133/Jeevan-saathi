@@ -1,8 +1,8 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import AddGoalForm from './forms/AddGoalForm';
-import { Goal } from '../types';
-import { Focus } from '../../dainandini/types';
+import { Goal } from '~/modules/abhyasa/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddGoalModalProps {
   isOpen: boolean;

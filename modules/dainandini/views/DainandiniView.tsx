@@ -1,51 +1,32 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Focus, Log, DainandiniSelection, GroupedLogs, LogTemplate, LogType } from '../types';
-import { initialFoci } from '../data';
 import DainandiniSidebar from '../components/DainandiniSidebar';
 import LogList from '../components/LogList';
 import CalendarView from '../components/CalendarView';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import AddFocusForm from '../components/forms/AddTabForm';
-import ResizablePanels from '../../../components/common/ResizablePanels';
+import ResizablePanels from '~/components/common/ResizablePanels';
 import LogDetail from '../components/LogDetail';
 import TemplateDetail from '../components/TemplateDetail';
 import TemplateSelectionModal from '../components/TemplateSelectionModal';
 import LogEntryModal from '../components/LogEntryModal';
+import { useDainandiniStore } from '../dainandiniStore';
 
-interface DainandiniViewProps {
-  allLogs: Log[];
-  logTemplates: LogTemplate[];
-  allFoci: Focus[];
-  onAddLog: (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => void;
-  onDeleteLog: (logId: string) => void;
-  onUpdateLog: (logId: string, updates: Partial<Log>) => void;
-  onAddLogTemplate: (templateData: Omit<LogTemplate, 'id'>) => Promise<string>;
-  onUpdateLogTemplate: (templateId: string, updates: Partial<LogTemplate>) => void;
-  onDeleteLogTemplate: (templateId: string) => void;
-  onToggleKaryTask: (taskId: string) => void;
-  onAddFocus: (focusData: Omit<Focus, 'id'>) => Promise<string>;
-  onUpdateFocus: (focusId: string, updates: Partial<Focus>) => void;
-  onDeleteFocus: (focusId: string) => void;
-  onReorderFoci: (reorderedFoci: Focus[]) => void;
-}
-
-const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
+const DainandiniView: React.FC = () => {
   const {
-    allLogs,
+    logs,
     logTemplates,
-    allFoci,
-    onAddLog,
-    onDeleteLog,
-    onUpdateLog,
-    onAddLogTemplate,
-    onUpdateLogTemplate,
-    onDeleteLogTemplate,
-    onToggleKaryTask,
-    onAddFocus,
-    onUpdateFocus,
-    onDeleteFocus,
-    onReorderFoci,
-  } = props;
+    foci,
+    addLog,
+    updateLog,
+    deleteLog,
+    addLogTemplate,
+    updateLogTemplate,
+    deleteLogTemplate,
+    addFocus,
+    updateFocus,
+    deleteFocus,
+  } = useDainandiniStore();
 
   const [selection, setSelection] = useState<DainandiniSelection>({ type: 'today' });
   const [modal, setModal] = useState<'add-focus' | 'select-template' | null>(null);
@@ -69,13 +50,6 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     );
   }, []);
 
-  const handleReorderFociProp = useCallback(
-    (reorderedFoci: Focus[]) => {
-      onReorderFoci(reorderedFoci);
-    },
-    [onReorderFoci]
-  );
-
   const handleAddQuickLog = (title: string) => {
     const newLog: Partial<Omit<Log, 'id' | 'createdAt'>> = {
       title,
@@ -84,17 +58,16 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       logDate: new Date(),
       description: '',
     };
-    onAddLog(newLog);
+    addLog(newLog as Omit<Log, 'id' | 'createdAt'>);
   };
 
   const groupedLogs = useMemo((): GroupedLogs => {
-    const sortedLogs = [...allLogs].sort((a, b) => b.logDate.getTime() - a.logDate.getTime());
+    const sortedLogs = [...logs].sort((a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime());
     const today = new Date();
     const groups = new Map<string, Log[]>();
 
     if (selection.type === 'today') {
-      // Pre-populate groups to maintain the order from the `allFoci` state
-      allFoci.forEach((focus) => {
+      foci.forEach((focus) => {
         groups.set(focus.name, []);
       });
 
@@ -104,7 +77,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       });
 
       todayLogs.forEach((log) => {
-        const focus = allFoci.find((f) => f.id === log.focusId);
+        const focus = foci.find((f) => f.id === log.focusId);
         const groupName = focus ? focus.name : 'Uncategorized';
         if (!groups.has(groupName)) {
           groups.set(groupName, []);
@@ -112,8 +85,6 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         groups.get(groupName)!.push(log);
       });
 
-      // If an "Uncategorized" group was created but is empty, remove it.
-      // This prevents showing an empty "Uncategorized" section if no such logs exist.
       const uncategorizedLogs = groups.get('Uncategorized');
       if (uncategorizedLogs && uncategorizedLogs.length === 0) {
         groups.delete('Uncategorized');
@@ -127,7 +98,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       }
 
       focusLogs.forEach((log) => {
-        const groupName = log.logDate.toLocaleDateString('en-US', {
+        const groupName = new Date(log.logDate).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -139,36 +110,35 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       });
     }
     return groups;
-  }, [allLogs, selection, allFoci, isSameDay]);
+  }, [logs, selection, foci, isSameDay]);
 
   const todayLogsForTimeline = useMemo(() => {
     if (selection.type !== 'today') return [];
 
     const today = new Date();
-    return [...allLogs]
+    return [...logs]
       .filter((log) => {
         const logDateForCheck = log.taskId && log.completed ? log.taskCompletionDate : log.logDate;
         return isSameDay(logDateForCheck, today);
       })
-      .sort((a, b) => b.logDate.getTime() - a.logDate.getTime());
-  }, [allLogs, selection, isSameDay]);
+      .sort((a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime());
+  }, [logs, selection, isSameDay]);
 
   const calendarLogs = useMemo(() => {
     if (selection.type === 'calendar' && selection.date) {
       const selectedDate = new Date(selection.date);
-      return allLogs
-        .filter((log) => isSameDay(log.logDate, selectedDate))
-        .sort((a, b) => b.logDate.getTime() - a.logDate.getTime());
+      return logs
+        .filter((log) => isSameDay(new Date(log.logDate), selectedDate))
+        .sort((a, b) => new Date(b.logDate).getTime() - new Date(a.logDate).getTime());
     }
     return [];
-  }, [allLogs, selection, isSameDay]);
+  }, [logs, selection, isSameDay]);
 
   const handleSaveFocus = async (focusData: Omit<Focus, 'id'>, focusId?: string) => {
     if (focusId) {
-      await onUpdateFocus(focusId, focusData);
+      await updateFocus(focusId, focusData);
     } else {
-      const newFocusId = await onAddFocus(focusData);
-      setSelection({ type: 'focus', id: newFocusId });
+      await addFocus(focusData);
     }
     setModal(null);
     setEditingFocus(null);
@@ -178,13 +148,13 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     if (selection.type === 'focus' && selection.id === focusId) {
       setSelection({ type: 'today' });
     }
-    await onDeleteFocus(focusId);
+    await deleteFocus(focusId);
     setModal(null);
     setEditingFocus(null);
   };
 
   const handleOpenEditFocusModal = (focusId: string) => {
-    const focusToEdit = allFoci.find((f) => f.id === focusId);
+    const focusToEdit = foci.find((f) => f.id === focusId);
     if (focusToEdit) {
       setEditingFocus(focusToEdit);
       setModal('add-focus');
@@ -202,7 +172,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       setContextualFocusId(contextId);
 
       if (contextId) {
-        const currentFocus = allFoci.find((f) => f.id === contextId);
+        const currentFocus = foci.find((f) => f.id === contextId);
         if (currentFocus?.defaultTemplateId) {
           if (currentFocus.defaultTemplateId === 'BLANK') {
             setLogEntryModalState({ isOpen: true, template: null, initialFocusId: contextId });
@@ -215,10 +185,9 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
           }
         }
       }
-      // If no context or no default template, open selection modal
       setModal('select-template');
     },
-    [selection, allFoci, logTemplates]
+    [selection, foci, logTemplates]
   );
 
   const handleTemplateSelected = (template: LogTemplate | null) => {
@@ -228,7 +197,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       template,
       initialFocusId: contextualFocusId || undefined,
     });
-    setContextualFocusId(null); // Reset after use
+    setContextualFocusId(null);
   };
 
   const handleCreateTemplate = () => {
@@ -236,8 +205,8 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
   };
 
   const handleSaveTemplate = (templateData: Omit<LogTemplate, 'id'>) => {
-    const newTemplate = onAddLogTemplate(templateData);
-    setSelection({ type: 'template', id: newTemplate.id });
+    addLogTemplate(templateData);
+    setSelection({ type: 'template', id: 'new' });
   };
 
   const handleTemplateDetailSave = (
@@ -245,14 +214,14 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     templateId?: string
   ) => {
     if (templateId) {
-      onUpdateLogTemplate(templateId, templateData as Partial<LogTemplate>);
+      updateLogTemplate(templateId, templateData as Partial<LogTemplate>);
     } else {
       handleSaveTemplate(templateData as Omit<LogTemplate, 'id'>);
     }
   };
 
   const handleDeleteTemplate = (templateId: string) => {
-    onDeleteLogTemplate(templateId);
+    deleteLogTemplate(templateId);
     setSelection({ type: 'today' });
   };
 
@@ -269,18 +238,18 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       return 'Calendar';
     }
     if (selection.type === 'focus') {
-      return allFoci.find((t) => t.id === selection.id)?.name || '';
+      return foci.find((t) => t.id === selection.id)?.name || '';
     }
     if (selection.type === 'template') {
       if (selection.id === 'new') return 'Create New Template';
       const template = logTemplates.find((t) => t.id === selection.id);
       return template ? `Editing: ${template.name}` : 'Template';
     }
-  }, [selection, allFoci, logTemplates]);
+  }, [selection, foci, logTemplates]);
 
   const selectedLog = useMemo(() => {
-    return allLogs.find((log) => log.id === selectedLogId) || null;
-  }, [allLogs, selectedLogId]);
+    return logs.find((log) => log.id === selectedLogId) || null;
+  }, [logs, selectedLogId]);
 
   const selectedTemplate = useMemo(() => {
     if (selection.type === 'template' && selection.id !== 'new') {
@@ -302,13 +271,12 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
       selection.type === 'calendar' ? calendarLogs : Array.from(groupedLogs.values()).flat();
     const currentIndex = logsInView.findIndex((l) => l.id === logId);
 
-    onDeleteLog(logId);
+    deleteLog(logId);
 
     if (logsInView.length > 1) {
       if (currentIndex > 0) {
         setSelectedLogId(logsInView[currentIndex - 1].id);
       } else {
-        // It was the first item, select the next one
         setSelectedLogId(logsInView[currentIndex + 1].id);
       }
     } else {
@@ -320,9 +288,9 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     if (selection.type === 'template') {
       return (
         <TemplateDetail
-          key={selection.id} // Re-mounts the component when template changes
+          key={selection.id}
           template={selection.id === 'new' ? null : selectedTemplate}
-          foci={allFoci}
+          foci={foci}
           onSave={handleTemplateDetailSave}
           onDelete={handleDeleteTemplate}
         />
@@ -331,8 +299,8 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
     return (
       <LogDetail
         log={selectedLog}
-        foci={allFoci}
-        onUpdateLog={onUpdateLog}
+        foci={foci}
+        onUpdateLog={updateLog}
         onDeleteLog={handleDeleteAndReselect}
       />
     );
@@ -341,7 +309,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
   return (
     <>
       <DainandiniSidebar
-        foci={allFoci}
+        foci={foci}
         templates={logTemplates}
         selection={selection}
         onSelect={(sel) => {
@@ -351,7 +319,6 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
           setSelection(newSelection);
 
           if (newSelection.type !== 'template') {
-            // Keep log selection if we are not moving to templates
           } else {
             setSelectedLogId(null);
           }
@@ -359,22 +326,22 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         onOpenModal={handleOpenAddFocusModal}
         onCreateTemplate={handleCreateTemplate}
         onEditFocus={handleOpenEditFocusModal}
-        onReorderFoci={handleReorderFociProp}
+        onReorderFoci={() => {}}
       />
       <main className="flex-1 flex min-w-0">
         <ResizablePanels initialLeftWidth={50}>
           <div className="h-full w-full bg-white/80">
             {selection.type === 'calendar' ? (
               <CalendarView
-                allFoci={allFoci}
-                logs={allLogs}
+                allFoci={foci}
+                logs={logs}
                 selectedDate={selection.date ? new Date(selection.date) : null}
                 onDateSelect={(date) => {
                   setSelection({ type: 'calendar', date: date.toISOString() });
                   setSelectedLogId(null);
                 }}
                 filteredLogs={calendarLogs}
-                onToggleKaryTask={onToggleKaryTask}
+                onToggleKaryTask={() => {}}
                 selectedLogId={selectedLogId}
                 onSelectLog={handleSelectLog}
                 onAddLogClick={handleOpenTemplateSelection}
@@ -388,11 +355,11 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
                 todayViewMode={todayViewMode}
                 onSetTodayViewMode={setTodayViewMode}
                 viewName={currentViewName || 'Journal'}
-                allFoci={allFoci}
+                allFoci={foci}
                 selection={selection}
                 onAddLogClick={handleOpenTemplateSelection}
                 onAddQuickLog={handleAddQuickLog}
-                onToggleKaryTask={onToggleKaryTask}
+                onToggleKaryTask={() => {}}
                 selectedLogId={selectedLogId}
                 onSelectLog={handleSelectLog}
               />
@@ -413,7 +380,7 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
             initialData={editingFocus}
             onSave={handleSaveFocus}
             onDelete={handleDeleteFocus}
-            allFoci={allFoci}
+            allFoci={foci}
           />
         </Modal>
       )}
@@ -429,8 +396,8 @@ const DainandiniView: React.FC<DainandiniViewProps> = (props) => {
         <LogEntryModal
           isOpen={true}
           onClose={() => setLogEntryModalState({ isOpen: false, template: null })}
-          onAddLog={onAddLog}
-          allFoci={allFoci}
+          onAddLog={addLog}
+          allFoci={foci}
           template={logEntryModalState.template}
           initialFocusId={logEntryModalState.initialFocusId}
         />

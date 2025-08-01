@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Habit } from '../../types';
-import Checkbox from '../../../../components/common/Checkbox';
-import * as Icons from '../../../../components/Icons';
+import { Habit } from '~/modules/abhyasa/types';
+import Checkbox from '~/components/common/Checkbox';
+import * as Icons from '~/components/Icons';
 
 interface LinkHabitFormProps {
   habits: Habit[];

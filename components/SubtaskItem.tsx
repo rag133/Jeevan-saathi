@@ -1,5 +1,5 @@
 import React from 'react';
-import { Subtask } from '../types';
+import { Subtask } from '~/types';
 
 interface SubtaskItemProps {
   subtask: Subtask;

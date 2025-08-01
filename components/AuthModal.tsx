@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn, signUp } from '../services/authService';
+import { signIn, signUp } from '~/services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;

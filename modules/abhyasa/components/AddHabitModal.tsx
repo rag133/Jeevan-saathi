@@ -1,8 +1,8 @@
 import React from 'react';
-import Modal from '../../../components/common/Modal';
+import Modal from '~/components/common/Modal';
 import { AddHabitForm } from './forms/AddHabitForm';
-import { Habit } from '../types';
-import { Focus } from '../../dainandini/types';
+import { Habit } from '~/modules/abhyasa/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddHabitModalProps {
   isOpen: boolean;

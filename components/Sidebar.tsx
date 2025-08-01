@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { List, ListFolder, Tag, TagFolder, Selection } from '../types';
+import { List, ListFolder, Tag, TagFolder, Selection } from '~/types';
 import * as Icons from './Icons';
 
 interface SidebarProps {

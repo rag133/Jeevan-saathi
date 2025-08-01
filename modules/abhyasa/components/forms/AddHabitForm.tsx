@@ -6,11 +6,11 @@ import {
   HabitFrequencyType,
   HabitChecklistItem,
   HabitTargetComparison,
-} from '../../types';
-import * as Icons from '../../../../components/Icons';
+} from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 import ColorPicker from './ColorPicker';
 import IconPicker from './IconPicker';
-import { Focus } from '../../../dainandini/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddHabitFormProps {
   onSave: (habitData: Omit<Habit, 'id' | 'createdAt' | 'status'>, id?: string) => void;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Log, Focus, ChecklistItem, LogType, logTypeDetails } from '../types';
-import * as Icons from '../../../components/Icons';
-import Checkbox from '../../../components/common/Checkbox';
-import DateTimePicker from '../../../components/DateTimePicker';
+import { Log, Focus, ChecklistItem, LogType, logTypeDetails } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
+import Checkbox from '~/components/common/Checkbox';
+import DateTimePicker from '~/components/DateTimePicker';
 
 const StarRatingInput: React.FC<{ rating: number; onSetRating: (rating: number) => void }> = ({
   rating,

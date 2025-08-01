@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import * as Icons from '../../../../components/Icons';
-import { Goal } from '../../types';
+import * as Icons from '~/components/Icons';
+import { Goal } from '~/modules/abhyasa/types';
 import IconPicker from './IconPicker';
-import { Focus } from '../../../dainandini/types';
+import { Focus } from '~/modules/dainandini/types';
 
 interface AddGoalFormProps {
   onSave: (data: Omit<Goal, 'id' | 'startDate' | 'status'>, id?: string) => void;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Milestone } from '../../types';
-import Checkbox from '../../../../components/common/Checkbox';
+import { Milestone } from '~/modules/abhyasa/types';
+import Checkbox from '~/components/common/Checkbox';
 
 interface LinkMilestoneFormProps {
   milestones: Milestone[];

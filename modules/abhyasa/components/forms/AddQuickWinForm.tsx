@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QuickWin } from '../../types';
+import { QuickWin } from '~/modules/abhyasa/types';
 
 interface AddQuickWinFormProps {
   onSave: (data: Omit<QuickWin, 'id' | 'createdAt' | 'status'>) => void;

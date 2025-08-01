@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Goal, GoalStatus } from '../../types';
-import * as Icons from '../../../../components/Icons';
+import { Goal, GoalStatus } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 
 const getStatusColor = (status: GoalStatus) => {
   switch (status) {

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Task } from '../types';
-import Checkbox from '../../../components/common/Checkbox';
-import { ClockIcon, MoreHorizontalIcon } from '../../../components/Icons';
+import { Task } from '~/modules/kary/types';
+import Checkbox from '~/components/common/Checkbox';
+import { ClockIcon, MoreHorizontalIcon } from '~/components/Icons';
 
 interface SubtaskItemProps {
   task: Task;

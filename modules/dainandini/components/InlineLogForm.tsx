@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as Icons from '../../../components/Icons';
+import * as Icons from '~/components/Icons';
 
 interface InlineLogFormProps {
   onAddLog: (title: string) => void;

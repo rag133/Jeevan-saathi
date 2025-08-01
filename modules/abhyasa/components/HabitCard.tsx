@@ -1,6 +1,6 @@
 import React from 'react';
-import { Habit, HabitLog } from '../types';
-import * as Icons from '../../../components/Icons';
+import { Habit, HabitLog } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
 import HabitTracker from './HabitTracker';
 
 interface HabitCardProps {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitType, HabitTargetComparison } from '../types';
-import * as Icons from '../../../components/Icons';
-import Checkbox from '../../../components/common/Checkbox';
+import { Habit, HabitLog, HabitLogStatus, HabitType, HabitTargetComparison } from '~/modules/abhyasa/types';
+import * as Icons from '~/components/Icons';
+import Checkbox from '~/components/common/Checkbox';
 
 interface HabitTrackerProps {
   habit: Habit;

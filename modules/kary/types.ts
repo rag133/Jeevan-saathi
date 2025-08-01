@@ -1,4 +1,4 @@
-import type { Log } from '../dainandini/types';
+import type { Log } from '~/modules/dainandini/types';
 
 export interface ListFolder {
   id: string;

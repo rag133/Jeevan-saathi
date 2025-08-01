@@ -1,6 +1,6 @@
 import React from 'react';
-import { Log, logTypeDetails } from '../../dainandini/types';
-import * as Icons from '../../../components/Icons';
+import { Log, logTypeDetails } from '~/modules/dainandini/types';
+import * as Icons from '~/components/Icons';
 
 interface HabitLogItemProps {
   log: Log;

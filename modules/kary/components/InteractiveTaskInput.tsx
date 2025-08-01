@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { List, Tag } from '../types';
-import * as Icons from '../../../components/Icons';
-import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { List, Tag } from '~/modules/kary/types';
+import * as Icons from '~/components/Icons';
+import LoadingSpinner from '~/components/common/LoadingSpinner';
 import DateTimePicker from './DateTimePicker';
 import { NewTaskData } from '../views/KaryView';
 

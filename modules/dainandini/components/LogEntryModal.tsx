@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Log, Focus, ChecklistItem, LogType, logTypeDetails, LogTemplate } from '../types';
-import Modal from '../../../components/Modal';
-import * as Icons from '../../../components/Icons';
-import DateTimePicker from '../../../components/DateTimePicker';
+import { Log, Focus, ChecklistItem, LogType, logTypeDetails, LogTemplate } from '~/modules/dainandini/types';
+import Modal from '~/components/Modal';
+import * as Icons from '~/components/Icons';
+import DateTimePicker from '~/components/DateTimePicker';
 
 const isSameDay = (d1: Date | null, d2: Date | null): boolean => {
   if (!d1 || !d2) return false;

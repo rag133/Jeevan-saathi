@@ -1,4 +1,4 @@
-import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType, HabitType } from '../types';
+import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType, HabitType } from '~/modules/abhyasa/types';
 
 interface HabitStats {
   currentStreak: number;
