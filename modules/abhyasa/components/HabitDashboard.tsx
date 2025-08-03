@@ -12,6 +12,7 @@ import * as Icons from '~/components/Icons';
 import { Focus } from '~/modules/dainandini/types';
 import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from '~/modules/kary/components/DateTimePicker';
+import { useAbhyasaStore } from '~/modules/abhyasa/abhyasaStore';
 
 const isSameDay = (d1?: Date | null, d2?: Date | null): boolean => {
   if (!d1 || !d2) return false;
@@ -77,16 +78,19 @@ const WeekScroller: React.FC<{
   );
 };
 
-const HabitListItem: React.FC<{
+interface HabitListItemProps {
   habit: Habit;
   log: HabitLog | null;
   onLog: (logData: Omit<HabitLog, 'id'>) => void;
-  onDeleteLog: (habitId: string, date: Date) => void;
-  onSelect: (id: string) => void;
+  onSelect: (habitId: string) => void;
   isSelected: boolean;
   date: Date;
   allFoci: Focus[];
-}> = ({ habit, log, onLog, onDeleteLog, onSelect, isSelected, date, allFoci }) => {
+  onSkip: (habitId: string, date: Date) => void;
+  onReset: (habitId: string, date: Date) => void;
+}
+
+const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSelect, isSelected, date, allFoci, onSkip, onReset }) => {
   const [count, setCount] = useState(log?.value || 0);
   const [durationH, setDurationH] = useState(log?.value ? Math.floor(log.value / 60) : 0);
   const [durationM, setDurationM] = useState(log?.value ? log.value % 60 : 0);
@@ -197,68 +201,55 @@ const HabitListItem: React.FC<{
   };
 
   const renderLoggingControl = () => {
-    if (log?.status === HabitLogStatus.SKIPPED) {
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteLog(habit.id, date);
-          }}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 bg-yellow-100 border-yellow-300 text-yellow-600 hover:bg-yellow-200"
-          title="Skipped (Click to reset)"
-        >
-          <Icons.RepeatIcon className="w-5 h-5" />
-        </button>
-      );
-    }
+    const isLogged = log !== null;
+    const isSkipped = log?.status === HabitLogStatus.SKIPPED;
+    const isCompleted = log?.status === HabitLogStatus.COMPLETED;
 
-    if (isGoalMet) {
-      if (habit.type === HabitType.CHECKLIST) {
-        const total = habit.checklist?.length || 0;
-        const completedCount = checkedItems.size;
-        return (
+    const commonButtons = (
+      <div className="flex gap-2">
+        {isLogged && !isCompleted && ( // Show Skip if logged but not completed
           <button
-            onClick={() => setIsChecklistExpanded((e) => !e)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 bg-green-100 text-green-700`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSkip(habit.id, date);
+            }}
+            className="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
           >
-            <Icons.CheckSquareIcon className="w-4 h-4" />
-            <span>
-              {completedCount}/{total}
-            </span>
-            <Icons.ChevronDownIcon
-              className={`w-4 h-4 transition-transform ${isChecklistExpanded ? 'rotate-180' : ''}`}
-            />
+            Skip
           </button>
-        );
-      }
-      return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteLog(habit.id, date);
-          }}
-          className="w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 bg-green-500 border-green-500 text-white hover:bg-green-600"
-        >
-          <Icons.CheckSquareIcon className="w-5 h-5" />
-        </button>
-      );
-    }
+        )}
+        {isLogged && ( // Always show Reset if logged
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReset(habit.id, date);
+            }}
+            className="px-3 py-1 text-sm font-medium text-red-600 bg-red-100 rounded-md hover:bg-red-200"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    );
+
+    let controlElement: JSX.Element | null = null;
 
     switch (habit.type) {
       case HabitType.BINARY:
-        return (
+        controlElement = (
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleLog(HabitLogStatus.COMPLETED);
             }}
-            className="w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 bg-gray-200/50 border-gray-300 text-gray-400 hover:border-green-500"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-gray-200/50 border-gray-300 text-gray-400 hover:border-green-500'}`}
           >
             <Icons.CheckSquareIcon className="w-5 h-5" />
           </button>
         );
+        break;
       case HabitType.COUNT:
-        return (
+        controlElement = (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => {
@@ -289,12 +280,13 @@ const HabitListItem: React.FC<{
             </button>
           </div>
         );
+        break;
       case HabitType.DURATION:
         const handleDurationBlur = () => {
           const totalMinutes = durationH * 60 + durationM;
           handleLog(HabitLogStatus.PARTIALLY_COMPLETED, totalMinutes);
         };
-        return (
+        controlElement = (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <input
               type="number"
@@ -314,10 +306,11 @@ const HabitListItem: React.FC<{
             <span className="text-gray-500 text-sm">m</span>
           </div>
         );
+        break;
       case HabitType.CHECKLIST:
         const total = habit.checklist?.length || 0;
         const completedCount = checkedItems.size;
-        return (
+        controlElement = (
           <button
             onClick={() => setIsChecklistExpanded((e) => !e)}
             className={`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 ${completedCount === total && total > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}
@@ -331,9 +324,17 @@ const HabitListItem: React.FC<{
             />
           </button>
         );
+        break;
       default:
-        return null;
+        controlElement = null;
     }
+
+    return (
+      <div className="flex flex-col items-end gap-2">
+        {controlElement}
+        {isLogged && (isSkipped || isCompleted || log?.status === HabitLogStatus.PARTIALLY_COMPLETED) && commonButtons}
+      </div>
+    );
   };
 
   const IconComponent = Icons[habit.icon];
@@ -422,6 +423,30 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
 }) => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
+
+  const { updateHabitLog, deleteHabitLog } = useAbhyasaStore();
+
+  const handleSkip = (habitId: string, date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
+    if (existingLog) {
+      updateHabitLog(existingLog.id, { status: HabitLogStatus.SKIPPED });
+    } else {
+      onAddHabitLog({
+        habitId,
+        date: dateString,
+        status: HabitLogStatus.SKIPPED,
+      });
+    }
+  };
+
+  const handleReset = (habitId: string, date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
+    if (existingLog) {
+      deleteHabitLog(existingLog.id);
+    }
+  };
 
   const habitsForSelectedDay = useMemo(() => {
     const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
@@ -527,11 +552,12 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
                 habit={habit}
                 log={logsByHabitId.get(habit.id) || null}
                 onLog={onAddHabitLog}
-                onDeleteLog={onDeleteHabitLog}
                 onSelect={onSelectHabit}
                 isSelected={habit.id === selectedHabitId}
                 date={selectedDate}
                 allFoci={allFoci}
+                onSkip={handleSkip}
+                onReset={handleReset}
               />
             ))}
           </ul>

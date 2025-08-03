@@ -66,6 +66,7 @@ const GoalDetail: React.FC<GoalDetailProps> = (props) => {
     onLinkHabitToMilestone,
     onEditGoal,
     onOpenLogModal,
+    onBack,
   } = props;
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);

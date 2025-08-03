@@ -323,8 +323,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
 
           setSelection(newSelection);
 
-          if (newSelection.type !== 'template') {
-          } else {
+          if (newSelection.type === 'template') {
             setSelectedLogId(null);
           }
           if (isMobile) setIsSidebarOpen(false); // Close sidebar on view selection

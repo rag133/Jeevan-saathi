@@ -33,7 +33,7 @@ interface LogDetailProps {
   onBack?: () => void; // Optional back button for mobile
 }
 
-const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteLog }) => {
+const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteLog, onBack }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);

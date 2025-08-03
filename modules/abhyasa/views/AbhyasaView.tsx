@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import * as Icons from '~/components/Icons';
 import {
   Goal,
   Milestone,
   QuickWin,
   Habit,
   HabitLog,
+  HabitLogStatus,
   AbhyasaSelection,
   QuickWinStatus,
   GoalStatus,
@@ -30,6 +32,7 @@ import { Focus } from '~/modules/dainandini/types';
 import HabitList, { HabitFilter } from '~/modules/abhyasa/components/lists/HabitList';
 import { Log } from '~/modules/dainandini/types';
 import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
+import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
 import { useAbhyasaStore } from '../abhyasaStore';
 import useWindowSize from '~/hooks/useWindowSize';
 
@@ -56,8 +59,10 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
     updateHabit,
     deleteHabit,
     addHabitLog,
+    updateHabitLog,
     deleteHabitLog,
   } = useAbhyasaStore();
+  const { addLog, logs, foci } = useDainandiniStore();
 
   const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('calendar');
   const [modal, setModal] = useState<any>(null);
@@ -228,21 +233,46 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
   };
 
   const handleOpenLogModal = (context: { habit?: Habit; milestone?: Milestone; goal?: Goal }) => {
+    console.log('Opening log modal with context:', context);
     setLogModalState({ isOpen: true, context });
   };
 
   const handleAddLog = (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => {
+    console.log('Adding log with data:', logData);
     const { habit, milestone, goal } = logModalState.context;
     if (!habit && !milestone && !goal) return;
 
-    const contextData = {
-      habitId: habit?.id,
-      milestoneId: milestone?.id,
-      goalId: goal?.id,
-    };
+    const contextData: any = {};
+    if (habit?.id) contextData.habitId = habit.id;
+    if (milestone?.id) contextData.milestoneId = milestone.id;
+    if (goal?.id) contextData.goalId = goal.id;
 
-    // onAddLog({ ...logData, ...contextData });
+    addLog({ ...logData, ...contextData });
     setLogModalState({ isOpen: false, context: {} });
+  };
+
+  const handleDeleteHabitLog = (habitId: string, date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
+    if (existingLog) {
+      deleteHabitLog(existingLog.id);
+    }
+  };
+
+  const handleSkipHabitLog = (habitId: string, date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
+    if (existingLog) {
+      // Update existing log to skipped
+      updateHabitLog(existingLog.id, { status: HabitLogStatus.SKIPPED });
+    } else {
+      // Create new skip log
+      addHabitLog({
+        habitId,
+        date: dateString,
+        status: HabitLogStatus.SKIPPED,
+      });
+    }
   };
 
   const renderMainPanel = () => {
@@ -261,8 +291,8 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
             />
             <GoalDetail
               goal={selectedGoal}
-              allFoci={[]}
-              allLogs={[]}
+              allFoci={foci}
+              allLogs={logs}
               milestones={milestones.filter((m) => m.parentGoalId === selectedGoal?.id)}
               habits={(habits || []).filter(
                 (h) =>
@@ -287,7 +317,6 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
               }
               onEditGoal={(goal) => handleOpenModal('goal', { goal })}
               onOpenLogModal={(goal) => handleOpenLogModal({ goal })}
-              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -309,8 +338,8 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
               parentGoal={goals.find((g) => g.id === selectedMilestone?.parentGoalId)}
               habits={habits.filter((h) => h.milestoneId === selectedMilestoneId)}
               habitLogs={habitLogs}
-              allFoci={[]}
-              allLogs={[]}
+              allFoci={foci}
+              allLogs={logs}
               onUpdateMilestone={updateMilestone}
               onDeleteMilestone={deleteMilestone}
               onAddHabit={(milestoneId) =>
@@ -321,7 +350,6 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
               }
               onOpenLogModal={(milestone) => handleOpenLogModal({ milestone })}
               onEditMilestone={(milestone) => handleOpenModal('milestone', { milestone })}
-              onBack={() => setShowDetail(false)}
             />
           </ResizablePanels>
         );
@@ -343,9 +371,10 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
               onEditHabit={(habitToEdit) => handleOpenModal('habit', { habit: habitToEdit })}
               onUpdateHabit={updateHabit}
               onAddHabitLog={addHabitLog}
-              onDeleteHabitLog={deleteHabitLog}
+              onDeleteHabitLog={handleDeleteHabitLog}
+              onSkipHabitLog={handleSkipHabitLog}
               selectedDate={selectedDate}
-              allLogs={[]}
+              allLogs={logs}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
               onBack={() => setShowDetail(false)}
@@ -360,9 +389,10 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
             <HabitDashboard
               habits={inProgressHabits}
               habitLogs={habitLogs}
-              allFoci={[]}
+              allFoci={foci}
               onAddHabitLog={addHabitLog}
-              onDeleteHabitLog={deleteHabitLog}
+              onDeleteHabitLog={handleDeleteHabitLog}
+              onSkipHabitLog={handleSkipHabitLog}
               onSelectHabit={(id) => { setSelectedHabitId(id); if (isMobile) setShowDetail(true); }}
               selectedHabitId={selectedHabitId}
               selectedDate={selectedDate}
@@ -373,9 +403,10 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
               onEditHabit={(habitToEdit) => handleOpenModal('habit', { habit: habitToEdit })}
               onUpdateHabit={updateHabit}
               onAddHabitLog={addHabitLog}
-              onDeleteHabitLog={deleteHabitLog}
+              onDeleteHabitLog={handleDeleteHabitLog}
+              onSkipHabitLog={handleSkipHabitLog}
               selectedDate={selectedDate}
-              allLogs={[]}
+              allLogs={logs}
               habitLogs={habitLogs}
               onOpenLogModal={(habit) => handleOpenLogModal({ habit })}
               onBack={() => setShowDetail(false)}
@@ -490,7 +521,7 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
           initialHabit={editingHabit}
           goalId={preselectedGoalIdForHabit}
           milestoneId={preselectedMilestoneIdForHabit}
-          allFoci={[]}
+          allFoci={foci}
         />
       )}
       {modal === 'goal' && (
@@ -500,7 +531,7 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
           onSave={handleSaveGoal}
           onDelete={deleteGoal}
           initialGoal={editingGoal}
-          allFoci={[]}
+          allFoci={foci}
         />
       )}
       {modal === 'milestone' && (
@@ -511,7 +542,7 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
           onDelete={deleteMilestone}
           goals={goals}
           initialGoalId={preselectedGoalIdForMilestone}
-          allFoci={[]}
+          allFoci={foci}
           initialMilestone={editingMilestone}
         />
       )}
@@ -549,7 +580,7 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
           isOpen={logModalState.isOpen}
           onClose={() => setLogModalState({ isOpen: false, context: {} })}
           onAddLog={handleAddLog}
-          allFoci={[]}
+          allFoci={foci}
           initialFocusId={
             logModalState.context.habit?.focusAreaId ||
             logModalState.context.milestone?.focusAreaId ||

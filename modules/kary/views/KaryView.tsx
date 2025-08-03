@@ -11,6 +11,7 @@ import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
 import { initialFoci } from '~/modules/dainandini/data';
 import { useKaryStore } from '../karyStore';
 import useWindowSize from '~/hooks/useWindowSize';
+import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
 
 const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
   const {
@@ -38,6 +39,8 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
 
   const { width } = useWindowSize();
   const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
+
+  const { addLog } = useDainandiniStore();
 
   const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
@@ -145,7 +148,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     const newTags: string[] = [];
     if (taskData.tagNames) {
       for (const tagName of taskData.tagNames) {
-        let tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+        const tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
         if (!tag) {
           const newTag = await addTag({ name: tagName, color: 'red-500' });
         }
@@ -276,7 +279,10 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 setShowDetail(true);
               }}
               onAddTask={handleAddTask}
-              onOpenLogModal={setLogModalTask}
+              onOpenLogModal={(task) => {
+                console.log("Opening log modal for task:", task);
+                setLogModalTask(task);
+              }}
             />
           </ResizablePanels>
         )}
@@ -302,7 +308,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         <LogEntryModal
           isOpen={true}
           onClose={() => setLogModalTask(null)}
-          onAddLog={(logData) => {}}
+          onAddLog={addLog}
           allFoci={initialFoci.filter((f) => f.id === 'kary' || f.id === 'general')}
           initialFocusId="kary"
           initialTitle={`Log for: ${logModalTask.title}`}

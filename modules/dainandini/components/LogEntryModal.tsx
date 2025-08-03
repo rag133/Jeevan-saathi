@@ -235,6 +235,7 @@ const LogEntryModal: React.FC<LogEntryModalProps> = ({
         .map((item) => ({ ...item, id: crypto.randomUUID() }));
     }
 
+    console.log("Submitting log data:", logData);
     onAddLog(logData);
     onClose();
   };

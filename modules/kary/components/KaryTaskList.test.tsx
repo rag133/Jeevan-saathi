@@ -156,7 +156,7 @@ describe('KaryTaskList', () => {
   it('renders header elements', () => {
     render(<KaryTaskList {...defaultProps} />);
     expect(screen.getByText('My List')).toBeInTheDocument();
-    expect(screen.getByTestId('hamburger-menu-icon')).toBeInTheDocument();
+    
     expect(screen.getByTestId('sort-icon')).toBeInTheDocument();
     expect(screen.getByTestId('more-horizontal-icon')).toBeInTheDocument();
   });

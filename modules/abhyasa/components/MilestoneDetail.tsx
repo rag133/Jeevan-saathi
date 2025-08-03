@@ -103,6 +103,7 @@ const MilestoneDetail: React.FC<MilestoneDetailProps> = (props) => {
     onLinkHabit,
     onOpenLogModal,
     onEditMilestone,
+    onBack,
   } = props;
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);

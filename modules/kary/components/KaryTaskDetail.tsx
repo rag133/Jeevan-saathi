@@ -644,7 +644,10 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
                 <h3 className="text-md font-semibold text-gray-700">Journal</h3>
               </div>
               <button
-                onClick={() => onOpenLogModal(task)}
+                onClick={() => {
+                  console.log("Add Entry button clicked!");
+                  onOpenLogModal(task);
+                }}
                 className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
                 title="Add an entry for this task to your journal"
               >
