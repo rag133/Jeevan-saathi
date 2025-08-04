@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import * as Icons from './components/Icons';
 import ApiKeyModal from './components/ApiKeyModal';
 import ProfileModal from './components/ProfileModal';
@@ -12,12 +12,15 @@ import {
   signOutUser,
   updateUserProfile,
 } from './services/authService';
-import { uploadProfilePicture } from './services/storageService';
+
 import { useKaryStore } from './modules/kary/karyStore';
 import { useDainandiniStore } from './modules/dainandini/dainandiniStore';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAbhyasaStore } from './modules/abhyasa/abhyasaStore';
 import useWindowSize from './hooks/useWindowSize'; // Import the custom hook
+import LoadingSpinner from './components/LoadingSpinner';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
+import HelpModal from './components/HelpModal';
 
 const navItems = [
   { viewId: 'kary', icon: 'CheckSquareIcon', label: 'Kary' },
@@ -55,11 +58,12 @@ const IconSidebar: React.FC<{
   onSetView: (view: View) => void;
   onProfileClick: () => void;
   onSignOut: () => void;
+  onHelpClick: () => void;
   user: any;
   isMobile: boolean;
   isSidebarOpen: boolean;
   onCloseSidebar: () => void;
-}> = ({ activeView, onSetView, onProfileClick, onSignOut, user, isMobile, isSidebarOpen, onCloseSidebar }) => {
+}> = ({ activeView, onSetView, onProfileClick, onSignOut, onHelpClick, user, isMobile, isSidebarOpen, onCloseSidebar }) => {
   return (
     <aside
       className={`fixed inset-y-0 left-0 z-30 flex-shrink-0 w-20 bg-gray-50/80 border-r border-gray-200 transition-transform duration-300 ease-in-out
@@ -73,11 +77,9 @@ const IconSidebar: React.FC<{
           className="relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
           aria-label="User Profile and Settings"
         >
-          <img
-            src={user?.photoURL || 'https://i.pravatar.cc/40?u=a042581f4e29026704d'}
-            alt="User"
-            className="w-10 h-10 rounded-full"
-          />
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <Icons.UserIcon className="w-6 h-6 text-blue-600" />
+          </div>
           <span className="absolute -top-1 -left-1 text-lg" role="img" aria-label="premium">
             👑
           </span>
@@ -99,7 +101,14 @@ const IconSidebar: React.FC<{
         ))}
       </nav>
 
-      <div className="mt-auto mb-4">
+      <div className="mt-auto mb-4 space-y-2">
+        <button
+          onClick={onHelpClick}
+          className="flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 text-gray-500 hover:bg-blue-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Help"
+        >
+          <Icons.QuestionIcon className="w-6 h-6" />
+        </button>
         <button
           onClick={onSignOut}
           className="flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 text-gray-500 hover:bg-red-100 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -124,6 +133,7 @@ const App: React.FC = () => {
   });
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state for sidebar visibility
 
   const { width } = useWindowSize();
@@ -191,13 +201,7 @@ const App: React.FC = () => {
     setIsApiKeyModalOpen(false);
   };
 
-  const handleUpdateProfilePicture = async (file: File) => {
-    if (user) {
-      const photoURL = await uploadProfilePicture(user.uid, file);
-      await updateUserProfile(user, { photoURL });
-      setUser({ ...user, photoURL });
-    }
-  };
+
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -209,24 +213,38 @@ const App: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <LoadingSpinner size="xl" color="blue" className="mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading Jeevan Saathi</h2>
+          <p className="text-gray-500">Your personal life management companion</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to Jeevan Saathi</h1>
-          <p className="text-gray-600 mb-8">Your personal life management companion</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="mb-8">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Icons.BookOpenIcon className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to Jeevan Saathi</h1>
+            <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+              Your personal life management companion. Organize tasks, track habits, and reflect on your journey.
+            </p>
+          </div>
           <button
             onClick={() => setIsAuthModalOpen(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 font-semibold text-lg shadow-lg"
           >
             Get Started
           </button>
+          <div className="mt-8 text-sm text-gray-500">
+            <p>✨ Free to use • 🔒 Secure • 📱 Mobile-friendly</p>
+          </div>
         </div>
         <AuthModal
           isOpen={isAuthModalOpen}
@@ -240,21 +258,49 @@ const App: React.FC = () => {
   const renderActiveView = () => {
     switch (activeView) {
       case 'dainandini':
-        return <DainandiniView {...dainandiniState} onToggleKaryTask={karyState.updateTask} />;
+        return <DainandiniView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
       case 'kary':
-        return <KaryView {...karyState} />;
+        return <KaryView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
       case 'abhyasa':
-        return <AbhyasaView {...abhyasaState} />;
+        return <AbhyasaView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
       case 'vidya':
         return <VidyaView />;
       default:
-        return <DainandiniView {...dainandiniState} onToggleKaryTask={karyState.updateTask} />;
+        return <DainandiniView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
     }
   };
 
   return (
     <div className="flex h-screen font-sans text-gray-800 bg-transparent">
-      <Toaster />
+      <KeyboardShortcuts
+        onViewChange={setActiveView}
+        onProfileClick={() => setIsProfileModalOpen(true)}
+        onSignOut={handleSignOut}
+      />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       {isMobile && (
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -269,6 +315,7 @@ const App: React.FC = () => {
         onSetView={setActiveView}
         onProfileClick={() => setIsProfileModalOpen(true)}
         onSignOut={handleSignOut}
+        onHelpClick={() => setIsHelpModalOpen(true)}
         user={user}
         isMobile={isMobile}
         isSidebarOpen={isSidebarOpen}
@@ -280,8 +327,17 @@ const App: React.FC = () => {
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
-      <div className={`flex-1 flex transition-all duration-300 ease-in-out ${isMobile ? 'ml-0' : 'ml-20'}`}> {/* Adjust main content margin */}
-        <React.Suspense fallback={<div>Loading...</div>}>{renderActiveView()}</React.Suspense>
+      <div className={`flex-1 flex transition-all duration-300 ease-in-out ${isMobile ? 'ml-0' : 'ml-20'}`}>
+        <Suspense fallback={
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <LoadingSpinner size="lg" color="blue" className="mb-4" />
+              <p className="text-gray-600">Loading view...</p>
+            </div>
+          </div>
+        }>
+          {renderActiveView()}
+        </Suspense>
       </div>
       {isApiKeyModalOpen && (
         <ApiKeyModal
@@ -295,7 +351,12 @@ const App: React.FC = () => {
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
           user={user}
-          onUpdateProfilePicture={handleUpdateProfilePicture}
+        />
+      )}
+      {isHelpModalOpen && (
+        <HelpModal
+          isOpen={isHelpModalOpen}
+          onClose={() => setIsHelpModalOpen(false)}
         />
       )}
     </div>

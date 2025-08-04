@@ -1,9 +1,32 @@
 import React from 'react';
 
-const LoadingSpinner: React.FC = () => {
+interface LoadingSpinnerProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  color?: 'white' | 'blue' | 'gray';
+  className?: string;
+}
+
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
+  size = 'md', 
+  color = 'white',
+  className = ''
+}) => {
+  const sizeClasses = {
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-8 w-8',
+    xl: 'h-12 w-12'
+  };
+
+  const colorClasses = {
+    white: 'text-white',
+    blue: 'text-blue-600',
+    gray: 'text-gray-600'
+  };
+
   return (
     <svg
-      className="animate-spin h-5 w-5 text-white"
+      className={`animate-spin ${sizeClasses[size]} ${colorClasses[color]} ${className}`}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

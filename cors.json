@@ -5,8 +5,17 @@
       "http://localhost:3000",
       "https://jeevan-saathi-39bf5.web.app"
     ],
-    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "responseHeader": ["Content-Type", "Authorization", "X-Goog-Resumable"],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    "responseHeader": [
+      "Content-Type", 
+      "Authorization", 
+      "X-Goog-Resumable",
+      "Content-Length",
+      "Content-Range",
+      "X-Requested-With",
+      "Origin",
+      "Accept"
+    ],
     "maxAgeSeconds": 3600
   }
 ]
