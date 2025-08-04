@@ -69,9 +69,10 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
   onOpenLogModal,
   onBack,
 }) => {
-  const [popup, setPopup] = useState<'status' | null>(null);
+  const [popup, setPopup] = useState<'status' | 'logAction' | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const logActionTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,7 +80,9 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
         popupRef.current &&
         !popupRef.current.contains(event.target as Node) &&
         triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
+        !triggerRef.current.contains(event.target as Node) &&
+        logActionTriggerRef.current &&
+        !logActionTriggerRef.current.contains(event.target as Node)
       ) {
         setPopup(null);
       }
@@ -105,13 +108,26 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     if (!habit) return 0;
     let progress = 0;
 
+    // Group logs by date to get the final state for each day
+    // This ensures we don't double-count if there are multiple logs for the same date
+    const logsByDate = new Map<string, HabitLog>();
+    habitLogs.forEach(log => {
+      // Keep the most recent log for each date
+      logsByDate.set(log.date, log);
+    });
+
+    // Calculate progress based on final state of each day
     if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-      progress = habitLogs.reduce((sum, log) => sum + (log.value || 0), 0);
+      progress = Array.from(logsByDate.values()).reduce((sum, log) => {
+        // Only count if the log has a value
+        return sum + (log.value || 0);
+      }, 0);
     } else if (habit.type === HabitType.BINARY) {
-      progress = habitLogs.filter((log) => log.status === HabitLogStatus.COMPLETED).length;
+      progress = Array.from(logsByDate.values()).filter((log) => 
+        log.status === HabitLogStatus.COMPLETED
+      ).length;
     } else if (habit.type === HabitType.CHECKLIST) {
-      // For checklist, sum up the number of completed items across all logs
-      progress = habitLogs.reduce(
+      progress = Array.from(logsByDate.values()).reduce(
         (sum, log) => sum + (log.completedChecklistItems?.length || 0),
         0
       );
@@ -144,6 +160,26 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
         });
       }
     }
+    setPopup(null);
+  };
+
+  const handleResetLog = () => {
+    if (habit) {
+      // Delete the log for this habit and date
+      onDeleteHabitLog(habit.id, selectedDate);
+    }
+    setPopup(null);
+  };
+
+  const handleNotDoneLog = () => {
+    if (habit) {
+      onAddHabitLog({
+        habitId: habit.id,
+        date: selectedDate.toISOString().split('T')[0],
+        status: HabitLogStatus.MISSED,
+      });
+    }
+    setPopup(null);
   };
 
   const handleAddJournalEntry = () => {
@@ -198,6 +234,116 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     }
 
     return targetStrings.join(' and ');
+  };
+
+  const getLogActionButtonText = () => {
+    if (!selectedDateLog) return 'Yet to mark';
+    
+    switch (selectedDateLog.status) {
+      case HabitLogStatus.COMPLETED:
+        return 'Done';
+      case HabitLogStatus.SKIPPED:
+        return 'Skipped';
+      case HabitLogStatus.MISSED:
+        return 'Not Done';
+      case HabitLogStatus.PARTIALLY_COMPLETED:
+        // Check if it should actually be "Done" for counter/timer habits
+        if (habit && selectedDateLog.value !== undefined) {
+          if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
+            const target = habit.dailyTarget || 1;
+            const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
+            
+            let isTargetMet = false;
+            switch (comparison) {
+              case HabitTargetComparison.AT_LEAST:
+                isTargetMet = selectedDateLog.value >= target;
+                break;
+              case HabitTargetComparison.EXACTLY:
+                isTargetMet = selectedDateLog.value === target;
+                break;
+              case HabitTargetComparison.LESS_THAN:
+                isTargetMet = selectedDateLog.value < target;
+                break;
+              case HabitTargetComparison.ANY_VALUE:
+                isTargetMet = selectedDateLog.value > 0;
+                break;
+            }
+            
+            if (isTargetMet) {
+              return 'Done';
+            }
+          }
+        }
+        
+        // Check if it should actually be "Done" for checklist habits
+        if (habit && habit.type === HabitType.CHECKLIST && selectedDateLog.completedChecklistItems) {
+          const total = habit.checklist?.length || 0;
+          const completedCount = selectedDateLog.completedChecklistItems.length;
+          
+          if (total > 0 && completedCount === total) {
+            return 'Done';
+          }
+        }
+        
+        return 'Partially Done';
+      default:
+        return 'Yet to mark';
+    }
+  };
+
+  const getLogActionButtonColor = () => {
+    if (!selectedDateLog) return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+    
+    // Check if it should actually be green for counter/timer habits
+    if (habit && selectedDateLog.value !== undefined) {
+      if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
+        const target = habit.dailyTarget || 1;
+        const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
+        
+        let isTargetMet = false;
+        switch (comparison) {
+          case HabitTargetComparison.AT_LEAST:
+            isTargetMet = selectedDateLog.value >= target;
+            break;
+          case HabitTargetComparison.EXACTLY:
+            isTargetMet = selectedDateLog.value === target;
+            break;
+          case HabitTargetComparison.LESS_THAN:
+            isTargetMet = selectedDateLog.value < target;
+            break;
+          case HabitTargetComparison.ANY_VALUE:
+            isTargetMet = selectedDateLog.value > 0;
+            break;
+        }
+        
+        if (isTargetMet) {
+          return 'bg-green-100 text-green-700 hover:bg-green-200';
+        }
+      }
+    }
+    
+    // Check if it should actually be green for checklist habits
+    if (habit && habit.type === HabitType.CHECKLIST && selectedDateLog.completedChecklistItems) {
+      const total = habit.checklist?.length || 0;
+      const completedCount = selectedDateLog.completedChecklistItems.length;
+      
+      if (total > 0 && completedCount === total) {
+        return 'bg-green-100 text-green-700 hover:bg-green-200';
+      }
+    }
+    
+    switch (selectedDateLog.status) {
+      case HabitLogStatus.COMPLETED:
+        return 'bg-green-100 text-green-700 hover:bg-green-200';
+      case HabitLogStatus.SKIPPED:
+        return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200';
+      case HabitLogStatus.MISSED:
+        return 'bg-red-100 text-red-700 hover:bg-red-200';
+      case HabitLogStatus.PARTIALLY_COMPLETED:
+        return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+    }
   };
 
   if (!habit) {
@@ -284,40 +430,49 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
             <label className="text-sm font-medium text-gray-500">
               Log for {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
             </label>
-            {selectedDateLog && (
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  onClick={() => onDeleteHabitLog(habit.id, selectedDate)}
-                  className="px-3 py-1.5 text-sm font-semibold text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
-                >
-                  Reset Log
-                </button>
-                {selectedDateLog.status !== HabitLogStatus.SKIPPED && (
-                  <button
-                    onClick={handleSkipLog}
-                    className="px-3 py-1.5 text-sm font-semibold text-yellow-800 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors"
-                  >
-                    Skip
-                  </button>
-                )}
-                {selectedDateLog.status === HabitLogStatus.SKIPPED && (
-                  <span className="px-3 py-1.5 text-sm font-semibold text-yellow-800 bg-yellow-50 rounded-md border border-yellow-200">
-                    Skipped
-                  </span>
-                )}
-              </div>
-            )}
-            {!selectedDateLog && (
-              <div className="mt-2 flex items-center gap-2">
-                <button
-                  onClick={handleSkipLog}
-                  className="px-3 py-1.5 text-sm font-semibold text-yellow-800 bg-yellow-100 rounded-md hover:bg-yellow-200 transition-colors"
-                >
-                  Skip for Today
-                </button>
-                <span className="text-sm text-gray-500">No log entry yet</span>
-              </div>
-            )}
+            <div className="mt-2 relative">
+              <button
+                ref={logActionTriggerRef}
+                onClick={() => setPopup((p) => (p === 'logAction' ? null : 'logAction'))}
+                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-2 ${getLogActionButtonColor()}`}
+              >
+                <span>{getLogActionButtonText()}</span>
+                <Icons.ChevronDownIcon className="w-4 h-4" />
+              </button>
+                             {popup === 'logAction' && (
+                 <div ref={popupRef} className="absolute shadow-lg z-20 top-full mt-2 left-0">
+                   <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto">
+                     <li>
+                       <button
+                         onClick={handleNotDoneLog}
+                         className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-red-700"
+                       >
+                         <Icons.TargetIcon className="w-4 h-4" />
+                         <span>Not Done</span>
+                       </button>
+                     </li>
+                     <li>
+                       <button
+                         onClick={handleSkipLog}
+                         className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-yellow-700"
+                       >
+                         <Icons.ArrowLeftIcon className="w-4 h-4" />
+                         <span>Skip</span>
+                       </button>
+                     </li>
+                     <li>
+                       <button
+                         onClick={handleResetLog}
+                         className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-gray-700"
+                       >
+                         <Icons.RepeatIcon className="w-4 h-4" />
+                         <span>Reset</span>
+                       </button>
+                     </li>
+                   </ul>
+                 </div>
+               )}
+            </div>
           </div>
         </div>
 

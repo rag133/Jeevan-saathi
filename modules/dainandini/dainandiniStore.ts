@@ -37,7 +37,18 @@ export const useDainandiniStore = create<DainandiniState>()(
             logTemplateService.getAll(),
             focusService.getAll(),
           ]);
-          set({ logs, logTemplates, foci, loading: false });
+          // If no Focus Areas exist, initialize them with default data
+          if (foci.length === 0) {
+            const { initialFoci } = await import('./data');
+            for (const focus of initialFoci) {
+              await focusService.add(focus);
+            }
+            // Fetch again after initialization
+            const newFoci = await focusService.getAll();
+            set({ logs, logTemplates, foci: newFoci, loading: false });
+          } else {
+            set({ logs, logTemplates, foci, loading: false });
+          }
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }

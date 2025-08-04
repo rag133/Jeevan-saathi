@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType } from '~/modules/abhyasa/types';
+import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType, HabitType, HabitTargetComparison } from '~/modules/abhyasa/types';
 import * as Icons from '~/components/Icons';
 
 interface HabitCalendarProps {
@@ -41,7 +41,7 @@ const HabitCalendar: React.FC<HabitCalendarProps> = ({ habit, habitLogs, selecte
   const getHabitDayStatus = useCallback(
     (date: Date): 'completed' | 'skipped' | 'missed' | 'not-logged' | 'inactive' | 'future' => {
       const dateString = date.toISOString().split('T')[0];
-      const log = habitLogs.find((l) => l.date === dateString);
+      const log = habitLogs.find((l) => l.habitId === habit.id && l.date === dateString);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -79,19 +79,63 @@ const HabitCalendar: React.FC<HabitCalendarProps> = ({ habit, habitLogs, selecte
         return 'inactive';
       }
 
-      // Handle future dates
-      if (dateNoTime > today) {
+      // Handle future dates using local dates
+      const todayLocal = new Date();
+      todayLocal.setHours(0, 0, 0, 0);
+      const dateLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      
+      if (dateLocal > todayLocal) {
         return 'future';
       }
 
-      // Determine status based on log
+      // Determine status based on log with the same logic as middle panel
       if (log) {
+        // Check if it should actually be "completed" for counter/timer habits
+        if (log.status === HabitLogStatus.PARTIALLY_COMPLETED && log.value !== undefined) {
+          if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
+            const target = habit.dailyTarget || 1;
+            const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
+            
+            let isTargetMet = false;
+            switch (comparison) {
+              case HabitTargetComparison.AT_LEAST:
+                isTargetMet = log.value >= target;
+                break;
+              case HabitTargetComparison.EXACTLY:
+                isTargetMet = log.value === target;
+                break;
+              case HabitTargetComparison.LESS_THAN:
+                isTargetMet = log.value < target;
+                break;
+              case HabitTargetComparison.ANY_VALUE:
+                isTargetMet = log.value > 0;
+                break;
+            }
+            
+            if (isTargetMet) {
+              return 'completed';
+            }
+          }
+        }
+        
+        // Check if it should actually be "completed" for checklist habits
+        if (log.status === HabitLogStatus.PARTIALLY_COMPLETED && habit.type === HabitType.CHECKLIST && log.completedChecklistItems) {
+          const total = habit.checklist?.length || 0;
+          const completedCount = log.completedChecklistItems.length;
+          
+          if (total > 0 && completedCount === total) {
+            return 'completed';
+          }
+        }
+
+        // Use the actual log status
         switch (log.status) {
           case HabitLogStatus.COMPLETED:
             return 'completed';
           case HabitLogStatus.SKIPPED:
             return 'skipped';
           case HabitLogStatus.MISSED:
+            return 'missed';
           case HabitLogStatus.PARTIALLY_COMPLETED:
             return 'missed';
         }
@@ -109,9 +153,11 @@ const HabitCalendar: React.FC<HabitCalendarProps> = ({ habit, habitLogs, selecte
     for (let i = 0; i < startingDayOfWeek; i++) {
       daysArray.push(new Date(0)); // Placeholder for empty cells
     }
-    // Add days of the month
+    // Add days of the month - create at midnight to avoid timezone issues
     for (let i = 1; i <= daysInMonth; i++) {
-      daysArray.push(new Date(currentYear, currentMonth, i));
+      const dayDate = new Date(currentYear, currentMonth, i);
+      dayDate.setHours(0, 0, 0, 0);
+      daysArray.push(dayDate);
     }
     return daysArray;
   }, [currentMonth, currentYear, daysInMonth, startingDayOfWeek]);
@@ -120,14 +166,22 @@ const HabitCalendar: React.FC<HabitCalendarProps> = ({ habit, habitLogs, selecte
     (date: Date) => {
       const status = getHabitDayStatus(date);
       let baseClass = 'w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium';
-      const isSelected =
-        selectedDate.toISOString().split('T')[0] === date.toISOString().split('T')[0];
+      
+      // Create dates at midnight in local timezone to avoid timezone issues
+      const selectedDateLocal = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+      const dateLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const todayLocal = new Date();
+      todayLocal.setHours(0, 0, 0, 0);
+      
+      const isSelected = selectedDateLocal.getTime() === dateLocal.getTime();
+      const isToday = todayLocal.getTime() === dateLocal.getTime();
 
       if (date.getTime() === new Date(0).getTime()) {
         // Placeholder
         return '';
       }
 
+      // Apply status colors (same as middle panel)
       switch (status) {
         case 'completed':
           baseClass += ' bg-green-500 text-white';
@@ -139,18 +193,24 @@ const HabitCalendar: React.FC<HabitCalendarProps> = ({ habit, habitLogs, selecte
           baseClass += ' bg-red-500 text-white';
           break;
         case 'not-logged':
-          baseClass += ' bg-orange-500 text-white';
+          baseClass += ' bg-gray-200 text-gray-600';
           break;
         case 'inactive':
-          baseClass += ' bg-gray-200 text-gray-400';
+          baseClass += ' bg-gray-100 text-gray-400';
           break;
         case 'future':
-          baseClass += ' bg-gray-100 text-gray-500';
+          baseClass += ' bg-gray-50 text-gray-400';
           break;
       }
 
-      if (isSelected) {
-        baseClass += ' ring-2 ring-blue-500 ring-offset-2';
+      // Highlight today with a blue border
+      if (isToday) {
+        baseClass += ' ring-2 ring-blue-500 ring-offset-1';
+      }
+
+      // Highlight selected date with a different style
+      if (isSelected && !isToday) {
+        baseClass += ' ring-2 ring-purple-500 ring-offset-1';
       }
 
       return baseClass;

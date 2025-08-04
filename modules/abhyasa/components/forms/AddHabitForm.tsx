@@ -106,11 +106,19 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({
       setFocusAreaId(initialHabit.focusAreaId || '');
     } else {
       setStartDate(new Date().toISOString().split('T')[0]);
+      // Set default focus area when creating a new habit
       if (allFoci.length > 0 && !focusAreaId) {
         setFocusAreaId(allFoci[0].id);
       }
     }
-  }, [initialHabit, allFoci, focusAreaId]);
+  }, [initialHabit, allFoci]);
+
+  // Handle case where Focus Areas are loaded after component mount
+  useEffect(() => {
+    if (!initialHabit && allFoci.length > 0 && !focusAreaId) {
+      setFocusAreaId(allFoci[0].id);
+    }
+  }, [allFoci, focusAreaId, initialHabit]);
 
   const handleFrequencyTypeChange = (type: HabitFrequencyType) => {
     if (type === HabitFrequencyType.DAILY) setFrequency({ type: HabitFrequencyType.DAILY });
@@ -258,11 +266,15 @@ export const AddHabitForm: React.FC<AddHabitFormProps> = ({
               onChange={(e) => setFocusAreaId(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
-              {allFoci.map((focus) => (
-                <option key={focus.id} value={focus.id}>
-                  {focus.name}
-                </option>
-              ))}
+              {allFoci.length > 0 ? (
+                allFoci.map((focus) => (
+                  <option key={focus.id} value={focus.id}>
+                    {focus.name}
+                  </option>
+                ))
+              ) : (
+                <option value="">Loading Focus Areas...</option>
+              )}
             </select>
           </div>
         </div>

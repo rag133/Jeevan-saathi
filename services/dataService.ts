@@ -428,7 +428,8 @@ export const focusService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const snapshot = await getDocs(getUserCollection('foci'));
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return foci;
   },
 
   subscribe: (callback: (foci: FirestoreDoc<Focus>[]) => void) => {

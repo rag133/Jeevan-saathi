@@ -62,7 +62,7 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
     updateHabitLog,
     deleteHabitLog,
   } = useAbhyasaStore();
-  const { addLog, logs, foci } = useDainandiniStore();
+  const { addLog, logs, foci, fetchDainandiniData } = useDainandiniStore();
 
   const [activeView, setActiveView] = useState<AbhyasaSelection['type']>('calendar');
   const [modal, setModal] = useState<any>(null);
@@ -100,6 +100,18 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
     }
     return habits.filter((h) => h.status === habitFilter);
   }, [habits, habitFilter]);
+
+  // Load Focus Areas data on component mount
+  useEffect(() => {
+    fetchDainandiniData();
+  }, [fetchDainandiniData]);
+
+  // Ensure Focus Areas are loaded when needed
+  useEffect(() => {
+    if (foci.length === 0) {
+      fetchDainandiniData();
+    }
+  }, [foci.length, fetchDainandiniData]);
 
   useEffect(() => {
     if (activeView === 'goals' && !selectedGoalId && goals.length > 0) {
@@ -240,8 +252,8 @@ const AbhyasaView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen
   const handleAddLog = (logData: Partial<Omit<Log, 'id' | 'createdAt'>>) => {
     console.log('Adding log with data:', logData);
     const { habit, milestone, goal } = logModalState.context;
-    if (!habit && !milestone && !goal) return;
-
+    
+    // Always add the log, even if no context is provided
     const contextData: any = {};
     if (habit?.id) contextData.habitId = habit.id;
     if (milestone?.id) contextData.milestoneId = milestone.id;

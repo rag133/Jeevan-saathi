@@ -12,7 +12,6 @@ import * as Icons from '~/components/Icons';
 import { Focus } from '~/modules/dainandini/types';
 import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from '~/modules/kary/components/DateTimePicker';
-import { useAbhyasaStore } from '~/modules/abhyasa/abhyasaStore';
 
 const isSameDay = (d1?: Date | null, d2?: Date | null): boolean => {
   if (!d1 || !d2) return false;
@@ -86,11 +85,9 @@ interface HabitListItemProps {
   isSelected: boolean;
   date: Date;
   allFoci: Focus[];
-  onSkip: (habitId: string, date: Date) => void;
-  onReset: (habitId: string, date: Date) => void;
 }
 
-const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSelect, isSelected, date, allFoci, onSkip, onReset }) => {
+const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSelect, isSelected, date, allFoci }) => {
   const [count, setCount] = useState(log?.value || 0);
   const [durationH, setDurationH] = useState(log?.value ? Math.floor(log.value / 60) : 0);
   const [durationM, setDurationM] = useState(log?.value ? log.value % 60 : 0);
@@ -141,6 +138,30 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
 
     return false;
   }, [habit, log]);
+
+  const getHabitStatusColor = () => {
+    if (!log) return 'bg-white hover:bg-gray-50';
+    
+    switch (log.status) {
+      case HabitLogStatus.COMPLETED:
+        return 'bg-green-50 hover:bg-green-100';
+      case HabitLogStatus.MISSED:
+        return 'bg-red-50 hover:bg-red-100';
+      case HabitLogStatus.SKIPPED:
+        return 'bg-yellow-50 hover:bg-yellow-100';
+      case HabitLogStatus.PARTIALLY_COMPLETED:
+        return 'bg-orange-50 hover:bg-orange-100';
+      default:
+        return 'bg-white hover:bg-gray-50';
+    }
+  };
+
+  const getSelectionStyle = () => {
+    if (isSelected) {
+      return 'border-2 border-blue-500 shadow-md';
+    }
+    return 'border border-gray-200';
+  };
 
   const handleLog = (status: HabitLogStatus, value?: number, completedItems?: string[]) => {
     let finalStatus = status;
@@ -201,37 +222,6 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
   };
 
   const renderLoggingControl = () => {
-    const isLogged = log !== null;
-    const isSkipped = log?.status === HabitLogStatus.SKIPPED;
-    const isCompleted = log?.status === HabitLogStatus.COMPLETED;
-
-    const commonButtons = (
-      <div className="flex gap-2">
-        {isLogged && !isCompleted && ( // Show Skip if logged but not completed
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip(habit.id, date);
-            }}
-            className="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
-          >
-            Skip
-          </button>
-        )}
-        {isLogged && ( // Always show Reset if logged
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReset(habit.id, date);
-            }}
-            className="px-3 py-1 text-sm font-medium text-red-600 bg-red-100 rounded-md hover:bg-red-200"
-          >
-            Reset
-          </button>
-        )}
-      </div>
-    );
-
     let controlElement: JSX.Element | null = null;
 
     switch (habit.type) {
@@ -242,13 +232,20 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               e.stopPropagation();
               handleLog(HabitLogStatus.COMPLETED);
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-gray-200/50 border-gray-300 text-gray-400 hover:border-green-500'}`}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${
+              log?.status === HabitLogStatus.COMPLETED 
+                ? 'bg-green-500 border-green-500 text-white' 
+                : 'bg-gray-200/50 border-gray-300 text-gray-400 hover:border-green-500'
+            }`}
           >
             <Icons.CheckSquareIcon className="w-5 h-5" />
           </button>
         );
         break;
       case HabitType.COUNT:
+        const showDailyTarget =
+          habit.dailyTargetComparison !== HabitTargetComparison.ANY_VALUE &&
+          habit.dailyTarget !== undefined;
         controlElement = (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
@@ -268,6 +265,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               onBlur={() => handleLog(HabitLogStatus.PARTIALLY_COMPLETED, count)}
               className="w-12 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none"
             />
+            {showDailyTarget && <span className="text-gray-500">/ {habit.dailyTarget}</span>}
             <button
               onClick={() => {
                 const newVal = count + 1;
@@ -304,6 +302,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               className="w-10 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none"
             />{' '}
             <span className="text-gray-500 text-sm">m</span>
+            <span className="text-gray-500 text-sm">/ {habit.dailyTarget} m</span>
           </div>
         );
         break;
@@ -312,8 +311,15 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
         const completedCount = checkedItems.size;
         controlElement = (
           <button
-            onClick={() => setIsChecklistExpanded((e) => !e)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 ${completedCount === total && total > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsChecklistExpanded(!isChecklistExpanded);
+            }}
+            className={`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors ${
+              completedCount === total && total > 0 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-gray-100 text-gray-700'
+            }`}
           >
             <Icons.CheckSquareIcon className="w-4 h-4" />
             <span>
@@ -325,16 +331,9 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
           </button>
         );
         break;
-      default:
-        controlElement = null;
     }
 
-    return (
-      <div className="flex flex-col items-end gap-2">
-        {controlElement}
-        {isLogged && (isSkipped || isCompleted || log?.status === HabitLogStatus.PARTIALLY_COMPLETED) && commonButtons}
-      </div>
-    );
+    return controlElement;
   };
 
   const IconComponent = Icons[habit.icon];
@@ -342,10 +341,10 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
 
   return (
     <li
-      className={`rounded-lg transition-colors ${isSelected ? 'bg-blue-100' : 'bg-white hover:bg-gray-50'}`}
+      className={`rounded-lg transition-colors ${getHabitStatusColor()} ${getSelectionStyle()}`}
     >
       <div onClick={() => onSelect(habit.id)} className="flex items-center p-3 cursor-pointer">
-        <div className={`p-3 rounded-lg bg-${habit.color}/20`}>
+        <div className={`p-3 rounded-lg bg-${habit.color}/30`}>
           <IconComponent className={`w-6 h-6 text-${habit.color}`} />
         </div>
         <div className="ml-4 flex-1">
@@ -353,7 +352,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
           <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
             {focus ? (
               <span
-                className={`px-1.5 py-0.5 rounded text-xs font-semibold bg-${focus.color}/20 text-${focus.color}`}
+                className={`px-1.5 py-0.5 rounded text-xs font-semibold bg-${focus.color}/30 text-${focus.color}`}
               >
                 {focus.name}
               </span>
@@ -423,30 +422,6 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
 }) => {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
-
-  const { updateHabitLog, deleteHabitLog } = useAbhyasaStore();
-
-  const handleSkip = (habitId: string, date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
-    if (existingLog) {
-      updateHabitLog(existingLog.id, { status: HabitLogStatus.SKIPPED });
-    } else {
-      onAddHabitLog({
-        habitId,
-        date: dateString,
-        status: HabitLogStatus.SKIPPED,
-      });
-    }
-  };
-
-  const handleReset = (habitId: string, date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    const existingLog = habitLogs.find(log => log.habitId === habitId && log.date === dateString);
-    if (existingLog) {
-      deleteHabitLog(existingLog.id);
-    }
-  };
 
   const habitsForSelectedDay = useMemo(() => {
     const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
@@ -556,8 +531,6 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
                 isSelected={habit.id === selectedHabitId}
                 date={selectedDate}
                 allFoci={allFoci}
-                onSkip={handleSkip}
-                onReset={handleReset}
               />
             ))}
           </ul>

@@ -80,6 +80,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     handleLog(status, count);
   };
 
+  // If already completed, show completion message
   if (isCompleted) {
     return (
       <div className="flex items-center gap-2 text-green-600 font-semibold p-4 bg-green-50 rounded-lg">
@@ -92,6 +93,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     );
   }
 
+  // Show different UI based on habit type for marking as done
   switch (habit.type) {
     case HabitType.BINARY:
       return (
