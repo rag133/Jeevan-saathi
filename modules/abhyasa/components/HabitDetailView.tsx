@@ -2,18 +2,18 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   Habit,
   HabitLog,
-  HabitLogStatus,
   HabitStatus,
   HabitType,
   HabitFrequency,
   HabitFrequencyType,
   HabitTargetComparison,
+  HabitLogStatus,
 } from '~/modules/abhyasa/types';
 import * as Icons from '~/components/Icons';
 import { Log } from '~/modules/dainandini/types';
 
 import HabitLogItem from './HabitLogItem';
-import { calculateHabitStats } from '~/modules/abhyasa/utils/habitStats';
+import { calculateHabitStats, calculateHabitStatus } from '~/modules/abhyasa/utils/habitStats';
 import HabitCalendar from './HabitCalendar';
 
 interface HabitDetailViewProps {
@@ -22,7 +22,6 @@ interface HabitDetailViewProps {
   onUpdateHabit: (id: string, updates: Partial<Habit>) => void;
   onAddHabitLog: (logData: Omit<HabitLog, 'id'>) => void;
   onDeleteHabitLog: (habitId: string, date: Date) => void;
-  onSkipHabitLog?: (habitId: string, date: Date) => void;
   selectedDate: Date;
   allLogs: Log[];
   habitLogs: HabitLog[];
@@ -62,7 +61,6 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
   onUpdateHabit,
   onAddHabitLog,
   onDeleteHabitLog,
-  onSkipHabitLog,
   selectedDate,
   allLogs,
   habitLogs,
@@ -104,7 +102,7 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     return habitLogs.find(log => log.habitId === habit.id && log.date === dateString) || null;
   }, [habit, habitLogs, selectedDate]);
 
-  const totalProgress = useMemo(() => {
+  const goalProgress = useMemo(() => {
     if (!habit) return 0;
     let progress = 0;
 
@@ -123,9 +121,10 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
         return sum + (log.value || 0);
       }, 0);
     } else if (habit.type === HabitType.BINARY) {
-      progress = Array.from(logsByDate.values()).filter((log) => 
-        log.status === HabitLogStatus.COMPLETED
-      ).length;
+      progress = Array.from(logsByDate.values()).filter((log) => {
+        const status = calculateHabitStatus(habit, log);
+        return status.status === HabitLogStatus.DONE;
+      }).length;
     } else if (habit.type === HabitType.CHECKLIST) {
       progress = Array.from(logsByDate.values()).reduce(
         (sum, log) => sum + (log.completedChecklistItems?.length || 0),
@@ -136,7 +135,7 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
   }, [habit, habitLogs]);
 
   const stats = useMemo(() => {
-    if (!habit) return { currentStreak: 0, bestStreak: 0, completionRate: 0, totalCompletions: 0 };
+    if (!habit) return { currentStreak: 0, bestStreak: 0, completionRate: 0, daysCompleted: 0, goalProgress: 0 };
     return calculateHabitStats(habit, habitLogs);
   }, [habit, habitLogs]);
 
@@ -147,37 +146,10 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
     setPopup(null);
   };
 
-  const handleSkipLog = () => {
-    if (habit) {
-      if (onSkipHabitLog) {
-        onSkipHabitLog(habit.id, selectedDate);
-      } else {
-        // Fallback to old behavior
-        onAddHabitLog({
-          habitId: habit.id,
-          date: selectedDate.toISOString().split('T')[0],
-          status: HabitLogStatus.SKIPPED,
-        });
-      }
-    }
-    setPopup(null);
-  };
-
   const handleResetLog = () => {
     if (habit) {
       // Delete the log for this habit and date
       onDeleteHabitLog(habit.id, selectedDate);
-    }
-    setPopup(null);
-  };
-
-  const handleNotDoneLog = () => {
-    if (habit) {
-      onAddHabitLog({
-        habitId: habit.id,
-        date: selectedDate.toISOString().split('T')[0],
-        status: HabitLogStatus.MISSED,
-      });
     }
     setPopup(null);
   };
@@ -237,110 +209,32 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
   };
 
   const getLogActionButtonText = () => {
-    if (!selectedDateLog) return 'Yet to mark';
+    if (!selectedDateLog || !habit) return 'Yet to mark';
     
-    switch (selectedDateLog.status) {
-      case HabitLogStatus.COMPLETED:
+    const status = calculateHabitStatus(habit, selectedDateLog);
+    
+    switch (status.status) {
+      case 'done':
         return 'Done';
-      case HabitLogStatus.SKIPPED:
-        return 'Skipped';
-      case HabitLogStatus.MISSED:
-        return 'Not Done';
-      case HabitLogStatus.PARTIALLY_COMPLETED:
-        // Check if it should actually be "Done" for counter/timer habits
-        if (habit && selectedDateLog.value !== undefined) {
-          if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-            const target = habit.dailyTarget || 1;
-            const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
-            
-            let isTargetMet = false;
-            switch (comparison) {
-              case HabitTargetComparison.AT_LEAST:
-                isTargetMet = selectedDateLog.value >= target;
-                break;
-              case HabitTargetComparison.EXACTLY:
-                isTargetMet = selectedDateLog.value === target;
-                break;
-              case HabitTargetComparison.LESS_THAN:
-                isTargetMet = selectedDateLog.value < target;
-                break;
-              case HabitTargetComparison.ANY_VALUE:
-                isTargetMet = selectedDateLog.value > 0;
-                break;
-            }
-            
-            if (isTargetMet) {
-              return 'Done';
-            }
-          }
-        }
-        
-        // Check if it should actually be "Done" for checklist habits
-        if (habit && habit.type === HabitType.CHECKLIST && selectedDateLog.completedChecklistItems) {
-          const total = habit.checklist?.length || 0;
-          const completedCount = selectedDateLog.completedChecklistItems.length;
-          
-          if (total > 0 && completedCount === total) {
-            return 'Done';
-          }
-        }
-        
+      case 'partial':
         return 'Partially Done';
+      case 'none':
       default:
         return 'Yet to mark';
     }
   };
 
   const getLogActionButtonColor = () => {
-    if (!selectedDateLog) return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+    if (!selectedDateLog || !habit) return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
     
-    // Check if it should actually be green for counter/timer habits
-    if (habit && selectedDateLog.value !== undefined) {
-      if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-        const target = habit.dailyTarget || 1;
-        const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
-        
-        let isTargetMet = false;
-        switch (comparison) {
-          case HabitTargetComparison.AT_LEAST:
-            isTargetMet = selectedDateLog.value >= target;
-            break;
-          case HabitTargetComparison.EXACTLY:
-            isTargetMet = selectedDateLog.value === target;
-            break;
-          case HabitTargetComparison.LESS_THAN:
-            isTargetMet = selectedDateLog.value < target;
-            break;
-          case HabitTargetComparison.ANY_VALUE:
-            isTargetMet = selectedDateLog.value > 0;
-            break;
-        }
-        
-        if (isTargetMet) {
-          return 'bg-green-100 text-green-700 hover:bg-green-200';
-        }
-      }
-    }
+    const status = calculateHabitStatus(habit, selectedDateLog);
     
-    // Check if it should actually be green for checklist habits
-    if (habit && habit.type === HabitType.CHECKLIST && selectedDateLog.completedChecklistItems) {
-      const total = habit.checklist?.length || 0;
-      const completedCount = selectedDateLog.completedChecklistItems.length;
-      
-      if (total > 0 && completedCount === total) {
+    switch (status.status) {
+      case 'done':
         return 'bg-green-100 text-green-700 hover:bg-green-200';
-      }
-    }
-    
-    switch (selectedDateLog.status) {
-      case HabitLogStatus.COMPLETED:
-        return 'bg-green-100 text-green-700 hover:bg-green-200';
-      case HabitLogStatus.SKIPPED:
-        return 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200';
-      case HabitLogStatus.MISSED:
-        return 'bg-red-100 text-red-700 hover:bg-red-200';
-      case HabitLogStatus.PARTIALLY_COMPLETED:
+      case 'partial':
         return 'bg-orange-100 text-orange-700 hover:bg-orange-200';
+      case 'none':
       default:
         return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
     }
@@ -444,24 +338,6 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
                    <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto">
                      <li>
                        <button
-                         onClick={handleNotDoneLog}
-                         className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-red-700"
-                       >
-                         <Icons.TargetIcon className="w-4 h-4" />
-                         <span>Not Done</span>
-                       </button>
-                     </li>
-                     <li>
-                       <button
-                         onClick={handleSkipLog}
-                         className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-yellow-700"
-                       >
-                         <Icons.ArrowLeftIcon className="w-4 h-4" />
-                         <span>Skip</span>
-                       </button>
-                     </li>
-                     <li>
-                       <button
                          onClick={handleResetLog}
                          className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-100 text-gray-700"
                        >
@@ -500,9 +376,9 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
             {habit.totalTarget && (
               <div className="flex items-center gap-2">
                 <Icons.TrendingUpIcon className="w-4 h-4 text-gray-400" />
-                <span className="font-semibold text-gray-700 text-sm">Total Progress:</span>
+                <span className="font-semibold text-gray-700 text-sm">Goal Progress:</span>
                 <span className="text-sm text-gray-600">
-                  {totalProgress} / {habit.totalTarget}{' '}
+                  {goalProgress} / {habit.totalTarget}{' '}
                   {habit.type === HabitType.DURATION ? 'minutes' : 'times'}
                 </span>
               </div>
@@ -561,10 +437,10 @@ const HabitDetailView: React.FC<HabitDetailViewProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <Icons.BarChart2Icon className="w-4 h-4 text-gray-400" />
-              <span className="font-semibold text-gray-700 text-sm">Total Completions:</span>
-              <span className="text-sm text-gray-600">
-                {stats.totalCompletions} {habit.type === HabitType.DURATION ? 'minutes' : 'times'}
-              </span>
+                              <span className="font-semibold text-gray-700 text-sm">Days Completed:</span>
+                <span className="text-sm text-gray-600">
+                  {stats.daysCompleted} days
+                </span>
             </div>
           </div>
         </div>

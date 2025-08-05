@@ -1,11 +1,111 @@
-import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType, HabitType } from '~/modules/abhyasa/types';
+import { Habit, HabitLog, HabitLogStatus, HabitFrequencyType, HabitType, HabitTargetComparison } from '~/modules/abhyasa/types';
 
 interface HabitStats {
   currentStreak: number;
   bestStreak: number;
   completionRate: number;
-  totalCompletions: number;
+  daysCompleted: number;
+  goalProgress: number;
 }
+
+interface CalculatedStatus {
+  status: HabitLogStatus;
+  progress: number; // 0-1 for partial completion
+  isComplete: boolean;
+}
+
+// Centralized status calculation service
+export const calculateHabitStatus = (
+  habit: Habit,
+  log: HabitLog | null
+): CalculatedStatus => {
+  if (!log) {
+    return { status: HabitLogStatus.NONE, progress: 0, isComplete: false };
+  }
+
+  switch (habit.type) {
+    case HabitType.BINARY:
+      // Binary habits are either done or not done
+      return { status: HabitLogStatus.DONE, progress: 1, isComplete: true };
+
+    case HabitType.COUNT:
+      return calculateCountStatus(habit, log);
+
+    case HabitType.DURATION:
+      return calculateDurationStatus(habit, log);
+
+    case HabitType.CHECKLIST:
+      return calculateChecklistStatus(habit, log);
+
+    default:
+      return { status: HabitLogStatus.NONE, progress: 0, isComplete: false };
+  }
+};
+
+const calculateCountStatus = (habit: Habit, log: HabitLog): CalculatedStatus => {
+  const value = log.value || 0;
+  const target = habit.dailyTarget || 1;
+  const comparison = habit.dailyTargetComparison || HabitTargetComparison.AT_LEAST;
+
+  let isComplete = false;
+  let progress = 0;
+
+  switch (comparison) {
+    case HabitTargetComparison.AT_LEAST:
+      isComplete = value >= target;
+      progress = Math.min(1, value / target);
+      break;
+    case HabitTargetComparison.LESS_THAN:
+      isComplete = value < target;
+      progress = value > 0 ? 1 : 0;
+      break;
+    case HabitTargetComparison.EXACTLY:
+      isComplete = value === target;
+      progress = value > 0 ? Math.min(1, value / target) : 0;
+      break;
+    case HabitTargetComparison.ANY_VALUE:
+      isComplete = value > 0;
+      progress = value > 0 ? 1 : 0;
+      break;
+  }
+
+  const status = isComplete ? HabitLogStatus.DONE : 
+                 value > 0 ? HabitLogStatus.PARTIAL : 
+                 HabitLogStatus.NONE;
+
+  return { status, progress, isComplete };
+};
+
+const calculateDurationStatus = (habit: Habit, log: HabitLog): CalculatedStatus => {
+  const value = log.value || 0;
+  const target = habit.dailyTarget || 1;
+
+  const isComplete = value >= target;
+  const progress = Math.min(1, value / target);
+  const status = isComplete ? HabitLogStatus.DONE : 
+                 value > 0 ? HabitLogStatus.PARTIAL : 
+                 HabitLogStatus.NONE;
+
+  return { status, progress, isComplete };
+};
+
+const calculateChecklistStatus = (habit: Habit, log: HabitLog): CalculatedStatus => {
+  const completedItems = log.completedChecklistItems || [];
+  const totalItems = habit.checklist?.length || 0;
+
+  if (totalItems === 0) {
+    return { status: HabitLogStatus.NONE, progress: 0, isComplete: false };
+  }
+
+  const completedCount = completedItems.length;
+  const isComplete = completedCount === totalItems;
+  const progress = totalItems > 0 ? completedCount / totalItems : 0;
+  const status = isComplete ? HabitLogStatus.DONE : 
+                 completedCount > 0 ? HabitLogStatus.PARTIAL : 
+                 HabitLogStatus.NONE;
+
+  return { status, progress, isComplete };
+};
 
 // Helper to get logs for a specific date
 const getLogForDate = (logs: HabitLog[], date: Date): HabitLog | undefined => {
@@ -29,11 +129,71 @@ const isDateActiveForHabit = (date: Date, habit: Habit): boolean => {
       return true;
     case HabitFrequencyType.WEEKLY:
     case HabitFrequencyType.MONTHLY:
-      // For weekly/monthly, any day within the habit's overall active period is considered active
-      // The 'times' per week/month is handled by completion rate/total completions, not daily activity.
       return true;
     case HabitFrequencyType.SPECIFIC_DAYS:
       return habit.frequency.days.includes(date.getDay());
+    default:
+      return false;
+  }
+};
+
+// Helper to check if a habit should be shown on a specific date based on frequency limits
+export const shouldShowHabitOnDate = (habit: Habit, date: Date, allHabitLogs: HabitLog[]): boolean => {
+  const start = new Date(habit.startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = habit.endDate ? new Date(habit.endDate) : null;
+  if (end) end.setHours(23, 59, 59, 999);
+
+  if (date < start || (end && date > end)) {
+    return false;
+  }
+
+  switch (habit.frequency.type) {
+    case HabitFrequencyType.DAILY:
+      return true;
+    case HabitFrequencyType.SPECIFIC_DAYS:
+      return habit.frequency.days.includes(date.getDay());
+    case HabitFrequencyType.WEEKLY: {
+      const weekStart = new Date(date);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const logsInWeek = allHabitLogs.filter(log => {
+        const logDate = new Date(log.date);
+        return log.habitId === habit.id && 
+               logDate >= weekStart && 
+               logDate <= weekEnd;
+      });
+
+      const completedLogsInWeek = logsInWeek.filter(log => {
+        const status = calculateHabitStatus(habit, log);
+        return status.status === HabitLogStatus.DONE;
+      });
+
+      return completedLogsInWeek.length < habit.frequency.times;
+    }
+    case HabitFrequencyType.MONTHLY: {
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const logsInMonth = allHabitLogs.filter(log => {
+        const logDate = new Date(log.date);
+        return log.habitId === habit.id && 
+               logDate >= monthStart && 
+               logDate <= monthEnd;
+      });
+
+      const completedLogsInMonth = logsInMonth.filter(log => {
+        const status = calculateHabitStatus(habit, log);
+        return status.status === HabitLogStatus.DONE;
+      });
+
+      return completedLogsInMonth.length < habit.frequency.times;
+    }
     default:
       return false;
   }
@@ -45,7 +205,7 @@ export const calculateHabitStats = (
   today: Date = new Date()
 ): HabitStats => {
   if (!habit) {
-    return { currentStreak: 0, bestStreak: 0, completionRate: 0, totalCompletions: 0 };
+    return { currentStreak: 0, bestStreak: 0, completionRate: 0, daysCompleted: 0, goalProgress: 0 };
   }
 
   const logs = allHabitLogs.filter((log) => log.habitId === habit.id);
@@ -57,13 +217,36 @@ export const calculateHabitStats = (
   let completedDays = 0;
   let expectedDaysForCompletionRate = 0;
 
-  // Calculate total completions
-  let totalCompletions = 0;
+  // Calculate goal progress (Total Accumulated Value)
+  let goalProgress = 0;
+  
+  // Group logs by date to get the final state for each day
+  const logsByDate = new Map<string, HabitLog>();
+  logs.forEach(log => {
+    logsByDate.set(log.date, log);
+  });
+
   if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-    totalCompletions = logs.reduce((sum, log) => sum + (log.value || 0), 0);
-  } else if (habit.type === HabitType.BINARY || habit.type === HabitType.CHECKLIST) {
-    totalCompletions = logs.filter((log) => log.status === HabitLogStatus.COMPLETED).length;
+    goalProgress = Array.from(logsByDate.values()).reduce((sum, log) => {
+      return sum + (log.value || 0);
+    }, 0);
+  } else if (habit.type === HabitType.BINARY) {
+    goalProgress = Array.from(logsByDate.values()).filter((log) => {
+      const status = calculateHabitStatus(habit, log);
+      return status.status === HabitLogStatus.DONE;
+    }).length;
+  } else if (habit.type === HabitType.CHECKLIST) {
+    goalProgress = Array.from(logsByDate.values()).reduce(
+      (sum, log) => sum + (log.completedChecklistItems?.length || 0),
+      0
+    );
   }
+
+  // Calculate days completed (Total Completed Days)
+  const daysCompleted = Array.from(logsByDate.values()).filter((log) => {
+    const status = calculateHabitStatus(habit, log);
+    return status.status === HabitLogStatus.DONE;
+  }).length;
 
   // Calculate streaks and completion rate
   const startDate = new Date(habit.startDate);
@@ -71,26 +254,22 @@ export const calculateHabitStats = (
   const todayNoTime = new Date(today);
   todayNoTime.setHours(0, 0, 0, 0);
 
-  const currentDate = startDate;
-  currentDate.setHours(0, 0, 0, 0);
+  const currentDate = new Date(startDate);
 
   // Iterate from start date up to (and including) today
   while (currentDate <= todayNoTime) {
     if (isDateActiveForHabit(currentDate, habit)) {
       const log = getLogForDate(logs, currentDate);
+      const status = calculateHabitStatus(habit, log || null);
 
-      if (log && log.status === HabitLogStatus.COMPLETED) {
+      if (status.status === HabitLogStatus.DONE) {
         tempStreak++;
         completedDays++;
         expectedDaysForCompletionRate++;
-      } else if (log && log.status === HabitLogStatus.SKIPPED) {
-        // Skipped days do not break streak, and do not count as completed for completion rate
-        // They also don't count as expected for the denominator of completion rate
-        // No change to tempStreak, no change to completedDays, no change to expectedDaysForCompletionRate
       } else {
-        // Missed or no log for an active day
+        // Any non-DONE status breaks the streak
         bestStreak = Math.max(bestStreak, tempStreak);
-        tempStreak = 0; // Streak broken
+        tempStreak = 0;
         expectedDaysForCompletionRate++;
       }
     }
@@ -104,20 +283,16 @@ export const calculateHabitStats = (
   const checkDate = new Date(todayNoTime);
   let currentStreakCount = 0;
   let foundBreakForCurrentStreak = false;
+  
   while (checkDate >= startDate && !foundBreakForCurrentStreak) {
     if (isDateActiveForHabit(checkDate, habit)) {
       const log = getLogForDate(logs, checkDate);
-      if (
-        log &&
-        (log.status === HabitLogStatus.COMPLETED || log.status === HabitLogStatus.SKIPPED)
-      ) {
-        // If it's completed or skipped, it contributes to the current streak
-        // Only count completed for the actual streak number, skipped just maintains it.
-        if (log.status === HabitLogStatus.COMPLETED) {
-          currentStreakCount++;
-        }
+      const status = calculateHabitStatus(habit, log || null);
+      
+      if (status.status === HabitLogStatus.DONE) {
+        currentStreakCount++;
       } else {
-        // Missed or no log, current streak broken
+        // Any non-DONE status breaks the current streak
         foundBreakForCurrentStreak = true;
       }
     }
@@ -132,6 +307,7 @@ export const calculateHabitStats = (
     currentStreak,
     bestStreak,
     completionRate: parseFloat(completionRate.toFixed(2)),
-    totalCompletions,
+    daysCompleted,
+    goalProgress,
   };
 };

@@ -3,15 +3,14 @@ import {
   Habit,
   HabitLog,
   HabitFrequencyType,
-  HabitLogStatus,
   HabitType,
   HabitChecklistItem,
-  HabitTargetComparison,
 } from '~/modules/abhyasa/types';
 import * as Icons from '~/components/Icons';
 import { Focus } from '~/modules/dainandini/types';
 import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from '~/modules/kary/components/DateTimePicker';
+import { shouldShowHabitOnDate, calculateHabitStatus } from '~/modules/abhyasa/utils/habitStats';
 
 const isSameDay = (d1?: Date | null, d2?: Date | null): boolean => {
   if (!d1 || !d2) return false;
@@ -103,54 +102,21 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
     setCheckedItems(new Set(log?.completedChecklistItems || []));
   }, [log]);
 
-  const isGoalMet = useMemo(() => {
-    if (!log) return false;
-
-    if (log.status === HabitLogStatus.COMPLETED) return true;
-
-    if (
-      (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) &&
-      habit.dailyTarget != null &&
-      log.value != null
-    ) {
-      const target = habit.dailyTarget;
-      const value = log.value;
-      switch (habit.dailyTargetComparison) {
-        case HabitTargetComparison.AT_LEAST:
-          return value >= target;
-        case HabitTargetComparison.EXACTLY:
-          return value === target;
-        case HabitTargetComparison.LESS_THAN:
-          return value < target;
-        case HabitTargetComparison.ANY_VALUE:
-          return value > 0;
-        default:
-          return value >= target;
-      }
-    }
-
-    if (habit.type === HabitType.CHECKLIST) {
-      const total = habit.checklist?.length || 0;
-      if (total === 0) return false;
-      const completedCount = log.completedChecklistItems?.length || 0;
-      return completedCount === total;
-    }
-
-    return false;
+  const calculatedStatus = useMemo(() => {
+    return calculateHabitStatus(habit, log);
   }, [habit, log]);
+
+  const isGoalMet = calculatedStatus.status === 'done';
 
   const getHabitStatusColor = () => {
     if (!log) return 'bg-white hover:bg-gray-50';
     
-    switch (log.status) {
-      case HabitLogStatus.COMPLETED:
+    switch (calculatedStatus.status) {
+      case 'done':
         return 'bg-green-50 hover:bg-green-100';
-      case HabitLogStatus.MISSED:
-        return 'bg-red-50 hover:bg-red-100';
-      case HabitLogStatus.SKIPPED:
-        return 'bg-yellow-50 hover:bg-yellow-100';
-      case HabitLogStatus.PARTIALLY_COMPLETED:
+      case 'partial':
         return 'bg-orange-50 hover:bg-orange-100';
+      case 'none':
       default:
         return 'bg-white hover:bg-gray-50';
     }
@@ -163,51 +129,10 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
     return 'border border-gray-200';
   };
 
-  const handleLog = (status: HabitLogStatus, value?: number, completedItems?: string[]) => {
-    let finalStatus = status;
-
-    if (
-      (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) &&
-      habit.dailyTarget != null &&
-      value != null
-    ) {
-      const target = habit.dailyTarget;
-      switch (habit.dailyTargetComparison) {
-        case HabitTargetComparison.AT_LEAST:
-          finalStatus =
-            value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
-          break;
-        case HabitTargetComparison.EXACTLY:
-          finalStatus =
-            value === target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
-          break;
-        case HabitTargetComparison.LESS_THAN:
-          finalStatus =
-            value < target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
-          break;
-        case HabitTargetComparison.ANY_VALUE:
-          finalStatus = value > 0 ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
-          break;
-        default:
-          finalStatus =
-            value >= target ? HabitLogStatus.COMPLETED : HabitLogStatus.PARTIALLY_COMPLETED;
-          break;
-      }
-    }
-    if (habit.type === HabitType.CHECKLIST) {
-      const total = habit.checklist?.length || 0;
-      if (total > 0 && completedItems?.length === total) {
-        finalStatus = HabitLogStatus.COMPLETED;
-      } else if (total > 0 && (completedItems?.length || 0) > 0) {
-        finalStatus = HabitLogStatus.PARTIALLY_COMPLETED;
-      } else {
-        finalStatus = HabitLogStatus.MISSED;
-      }
-    }
+  const handleLog = (value?: number, completedItems?: string[]) => {
     onLog({
       habitId: habit.id,
       date: date.toISOString().split('T')[0],
-      status: finalStatus,
       value,
       completedChecklistItems: completedItems,
     });
@@ -218,7 +143,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
     if (newCheckedItems.has(itemId)) newCheckedItems.delete(itemId);
     else newCheckedItems.add(itemId);
 
-    handleLog(HabitLogStatus.PARTIALLY_COMPLETED, undefined, Array.from(newCheckedItems));
+    handleLog(undefined, Array.from(newCheckedItems));
   };
 
   const renderLoggingControl = () => {
@@ -230,10 +155,10 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleLog(HabitLogStatus.COMPLETED);
+              handleLog();
             }}
             className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border-2 ${
-              log?.status === HabitLogStatus.COMPLETED 
+              calculatedStatus.status === 'done'
                 ? 'bg-green-500 border-green-500 text-white' 
                 : 'bg-gray-200/50 border-gray-300 text-gray-400 hover:border-green-500'
             }`}
@@ -244,7 +169,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
         break;
       case HabitType.COUNT:
         const showDailyTarget =
-          habit.dailyTargetComparison !== HabitTargetComparison.ANY_VALUE &&
+          habit.dailyTargetComparison !== 'any-value' &&
           habit.dailyTarget !== undefined;
         controlElement = (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -252,7 +177,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               onClick={() => {
                 const newVal = Math.max(0, count - 1);
                 setCount(newVal);
-                handleLog(HabitLogStatus.PARTIALLY_COMPLETED, newVal);
+                handleLog(newVal);
               }}
               className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
             >
@@ -262,7 +187,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               type="number"
               value={count}
               onChange={(e) => setCount(parseInt(e.target.value) || 0)}
-              onBlur={() => handleLog(HabitLogStatus.PARTIALLY_COMPLETED, count)}
+              onBlur={() => handleLog(count)}
               className="w-12 text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 focus:border-blue-500 outline-none"
             />
             {showDailyTarget && <span className="text-gray-500">/ {habit.dailyTarget}</span>}
@@ -270,7 +195,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
               onClick={() => {
                 const newVal = count + 1;
                 setCount(newVal);
-                handleLog(HabitLogStatus.PARTIALLY_COMPLETED, newVal);
+                handleLog(newVal);
               }}
               className="p-2 rounded-full bg-gray-200 hover:bg-gray-300"
             >
@@ -282,7 +207,7 @@ const HabitListItem: React.FC<HabitListItemProps> = ({ habit, log, onLog, onSele
       case HabitType.DURATION:
         const handleDurationBlur = () => {
           const totalMinutes = durationH * 60 + durationM;
-          handleLog(HabitLogStatus.PARTIALLY_COMPLETED, totalMinutes);
+          handleLog(totalMinutes);
         };
         controlElement = (
           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -424,31 +349,10 @@ const HabitDashboard: React.FC<HabitDashboardProps> = ({
   const datePickerRef = useRef<HTMLDivElement>(null);
 
   const habitsForSelectedDay = useMemo(() => {
-    const dayOfWeek = selectedDate.getDay(); // 0=Sun, 1=Mon
-    const selectedDateMs = new Date(selectedDate).setHours(0, 0, 0, 0);
-
     return (habits ?? []).filter((habit) => {
-      const habitStartDateMs = new Date(habit.startDate).setHours(0, 0, 0, 0);
-      const habitEndDateMs = habit.endDate ? new Date(habit.endDate).setHours(0, 0, 0, 0) : Infinity;
-
-      if (selectedDateMs < habitStartDateMs || selectedDateMs > habitEndDateMs) {
-        return false;
-      }
-
-      const { frequency } = habit;
-      switch (frequency.type) {
-        case HabitFrequencyType.DAILY:
-          return true;
-        case HabitFrequencyType.SPECIFIC_DAYS:
-          return frequency.days.includes(dayOfWeek);
-        case HabitFrequencyType.WEEKLY:
-        case HabitFrequencyType.MONTHLY:
-          return true;
-        default:
-          return false;
-      }
+      return shouldShowHabitOnDate(habit, selectedDate, habitLogs);
     });
-  }, [habits, selectedDate]);
+  }, [habits, selectedDate, habitLogs]);
 
   const logsByHabitId = useMemo(() => {
     const map = new Map<string, HabitLog>();

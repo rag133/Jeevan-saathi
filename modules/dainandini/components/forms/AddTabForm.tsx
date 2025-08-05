@@ -67,7 +67,7 @@ const AddFocusForm: React.FC<AddFocusFormProps> = ({ onSave, onDelete, initialDa
       icon,
       color,
       allowedLogTypes,
-      defaultTemplateId: defaultTemplateId || undefined,
+      ...(defaultTemplateId && { defaultTemplateId }),
     };
 
     onSave(focusData, initialData?.id);

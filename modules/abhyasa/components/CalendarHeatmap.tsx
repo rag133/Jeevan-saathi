@@ -1,5 +1,6 @@
 import React from 'react';
-import { Habit, HabitLog, HabitLogStatus, HabitType } from '~/modules/abhyasa/types';
+import { Habit, HabitLog, HabitType } from '~/modules/abhyasa/types';
+import { calculateHabitStatus } from '~/modules/abhyasa/utils/habitStats';
 
 interface CalendarHeatmapProps {
   habit: Habit;
@@ -20,20 +21,19 @@ const CalendarHeatmap: React.FC<CalendarHeatmapProps> = ({ habit, logs }) => {
     if (!log) return 'bg-gray-100';
 
     const baseColor = habit.color.split('-')[0];
+    const status = calculateHabitStatus(habit, log);
 
-    switch (log.status) {
-      case HabitLogStatus.COMPLETED:
+    switch (status.status) {
+      case 'done':
         return `bg-${baseColor}-500`;
-      case HabitLogStatus.PARTIALLY_COMPLETED:
+      case 'partial':
         if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
-          const percentage = Math.min(1, (log.value || 0) / (habit.dailyTarget || 1));
-          if (percentage > 0.66) return `bg-${baseColor}-400`;
-          if (percentage > 0.33) return `bg-${baseColor}-300`;
+          if (status.progress > 0.66) return `bg-${baseColor}-400`;
+          if (status.progress > 0.33) return `bg-${baseColor}-300`;
           return `bg-${baseColor}-200`;
         }
         return `bg-${baseColor}-300`;
-      case HabitLogStatus.SKIPPED:
-        return 'bg-gray-300';
+      case 'none':
       default:
         return 'bg-gray-100';
     }

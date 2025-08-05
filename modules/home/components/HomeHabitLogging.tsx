@@ -4,14 +4,21 @@ import { calculateHabitStatus } from '~/modules/abhyasa/utils/habitStats';
 import * as Icons from '~/components/Icons';
 import Checkbox from '~/components/common/Checkbox';
 
-interface HabitTrackerProps {
+interface HomeHabitLoggingProps {
   habit: Habit;
   log: HabitLog | null;
   date: Date;
   onLog: (logData: Omit<HabitLog, 'id'>) => void;
+  onDeleteLog?: (logId: string) => void;
 }
 
-const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) => {
+const HomeHabitLogging: React.FC<HomeHabitLoggingProps> = ({ 
+  habit, 
+  log, 
+  date, 
+  onLog, 
+  onDeleteLog 
+}) => {
   const [count, setCount] = useState(log?.value || 0);
   const [durationH, setDurationH] = useState(log?.value ? Math.floor(log.value / 60) : 0);
   const [durationM, setDurationM] = useState(log?.value ? log.value % 60 : 0);
@@ -24,7 +31,7 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     setDurationH(log?.value ? Math.floor(log.value / 60) : 0);
     setDurationM(log?.value ? log.value % 60 : 0);
     setCheckedItems(new Set(log?.completedChecklistItems || []));
-  }, [log]);
+  }, [log?.id, log?.value, log?.completedChecklistItems, habit.id, date]);
 
   const calculatedStatus = calculateHabitStatus(habit, log);
   const isCompleted = calculatedStatus.status === 'done';
@@ -36,6 +43,16 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
       value,
       completedChecklistItems: completedItems,
     });
+  };
+
+  const handleToggle = () => {
+    if (isCompleted && log && onDeleteLog) {
+      // If completed, delete the log to mark as NONE
+      onDeleteLog(log.id);
+    } else {
+      // If not completed, add a log to mark as DONE
+      handleLog();
+    }
   };
 
   const handleChecklistToggle = (itemId: string) => {
@@ -59,15 +76,61 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     handleLog(totalMinutes);
   };
 
-  // If already completed, show completion message
+  // For checklist habits, always show the checklist items, even when completed
+  if (habit.type === HabitType.CHECKLIST) {
+    return (
+      <div className="space-y-3">
+        <div className="space-y-2">
+          {habit.checklist?.map((item) => (
+            <div key={item.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50">
+              <Checkbox
+                checked={checkedItems.has(item.id)}
+                onChange={() => handleChecklistToggle(item.id)}
+              />
+              <span
+                className={`flex-1 ${checkedItems.has(item.id) ? 'line-through text-gray-400' : ''}`}
+              >
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Show completion message at the bottom if completed */}
+        {isCompleted && (
+          <div className="flex items-center gap-2 text-green-600 font-semibold p-3 bg-green-50 rounded-lg">
+            <Icons.CheckSquareIcon className="w-5 h-5" />
+            <span className="flex-1">
+              Done for{' '}
+              {new Date(date).toDateString() === new Date().toDateString() ? 'today' : 'the day'}!
+            </span>
+            <button
+              onClick={handleToggle}
+              className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+            >
+              Undo
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // If already completed, show completion message with toggle option
   if (isCompleted) {
     return (
       <div className="flex items-center gap-2 text-green-600 font-semibold p-4 bg-green-50 rounded-lg">
         <Icons.CheckSquareIcon className="w-6 h-6" />
-        <span>
+        <span className="flex-1">
           Done for{' '}
           {new Date(date).toDateString() === new Date().toDateString() ? 'today' : 'the day'}!
         </span>
+        <button
+          onClick={handleToggle}
+          className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+        >
+          Undo
+        </button>
       </div>
     );
   }
@@ -77,10 +140,10 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
     case HabitType.BINARY:
       return (
         <button
-          onClick={() => handleLog()}
+          onClick={handleToggle}
           className={`w-full py-2 text-lg font-bold rounded-lg transition-colors bg-${habit.color}/20 text-${habit.color} hover:bg-${habit.color}/30`}
         >
-          Done
+          Mark Done
         </button>
       );
 
@@ -145,27 +208,10 @@ const HabitTracker: React.FC<HabitTrackerProps> = ({ habit, log, date, onLog }) 
         </div>
       );
 
-    case HabitType.CHECKLIST:
-      return (
-        <div className="space-y-2">
-          {habit.checklist?.map((item) => (
-            <div key={item.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50">
-              <Checkbox
-                checked={checkedItems.has(item.id)}
-                onChange={() => handleChecklistToggle(item.id)}
-              />
-              <span
-                className={`flex-1 ${checkedItems.has(item.id) ? 'line-through text-gray-400' : ''}`}
-              >
-                {item.text}
-              </span>
-            </div>
-          ))}
-        </div>
-      );
+
     default:
       return null;
   }
 };
 
-export default HabitTracker;
+export default HomeHabitLogging; 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import * as Icons from './components/Icons';
 import ApiKeyModal from './components/ApiKeyModal';
 import ProfileModal from './components/ProfileModal';
+const HomeView = React.lazy(() => import('./modules/home/views/HomeView'));
 const DainandiniView = React.lazy(() => import('./modules/dainandini/views/DainandiniView'));
 const KaryView = React.lazy(() => import('./modules/kary/views/KaryView'));
 const VidyaView = React.lazy(() => import('./modules/vidya/views/VidyaView'));
@@ -23,6 +24,7 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 import HelpModal from './components/HelpModal';
 
 const navItems = [
+  { viewId: 'home', icon: 'HomeIcon', label: 'Home' },
   { viewId: 'kary', icon: 'CheckSquareIcon', label: 'Kary' },
   { viewId: 'vidya', icon: 'BookOpenIcon', label: 'Vidyā' },
   { viewId: 'abhyasa', icon: 'TargetIcon', label: 'Abhyasa' },
@@ -123,7 +125,7 @@ const IconSidebar: React.FC<{
 // --- End IconSidebar Component ---
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<View>('kary');
+  const [activeView, setActiveView] = useState<View>('home');
   const [apiKey, setApiKey] = useState<string | null>(() => {
     const envApiKey = "AIzaSyBAVXKA-ko41iIzXkv_59jR615RqYz8Zv0";
     if (envApiKey) {
@@ -257,6 +259,8 @@ const App: React.FC = () => {
 
   const renderActiveView = () => {
     switch (activeView) {
+      case 'home':
+        return <HomeView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
       case 'dainandini':
         return <DainandiniView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
       case 'kary':
@@ -266,7 +270,7 @@ const App: React.FC = () => {
       case 'vidya':
         return <VidyaView />;
       default:
-        return <DainandiniView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
+        return <HomeView isAppSidebarOpen={!isMobile || isSidebarOpen} />;
     }
   };
 

@@ -8,7 +8,7 @@ interface TaskLogItemProps {
 
 const TaskLogItem: React.FC<TaskLogItemProps> = ({ log }) => {
   const logDetails = logTypeDetails[log.logType];
-  const IconComponent = Icons[logDetails.icon];
+  const IconComponent = logDetails ? Icons[logDetails.icon] : Icons.Edit3Icon;
 
   const formatDate = (date: Date): string => {
     const d = new Date(date);

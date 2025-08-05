@@ -66,19 +66,18 @@ export interface Habit {
 }
 
 export enum HabitLogStatus {
-  COMPLETED = 'completed',
-  PARTIALLY_COMPLETED = 'partially_completed',
-  SKIPPED = 'skipped',
-  MISSED = 'missed',
+  DONE = 'done',
+  PARTIAL = 'partial',
+  NONE = 'none', // Default when no log is entered for that day
 }
 
 export interface HabitLog {
   id: string;
   habitId: string;
   date: string; // ISO String for date YYYY-MM-DD
-  status: HabitLogStatus;
   value?: number; // For COUNT or DURATION logs
   completedChecklistItems?: string[]; // IDs of completed checklist items
+  // Status is calculated, not stored
 }
 
 // --- Goal Types ---
