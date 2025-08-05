@@ -29,19 +29,31 @@ export const useHomeStore = create<HomeStore>()(
       fetchHomeData: async () => {
         set({ loading: true, error: null });
         try {
-          // Get data from all stores
+          // Ensure all stores have their data loaded
           const karyStore = useKaryStore.getState();
           const abhyasaStore = useAbhyasaStore.getState();
           const dainandiniStore = useDainandiniStore.getState();
 
+          // Fetch data from all stores if not already loaded
+          await Promise.all([
+            karyStore.tasks.length === 0 ? karyStore.fetchKaryData() : Promise.resolve(),
+            abhyasaStore.habits.length === 0 ? abhyasaStore.fetchAbhyasaData() : Promise.resolve(),
+            dainandiniStore.logs.length === 0 ? dainandiniStore.fetchDainandiniData() : Promise.resolve(),
+          ]);
+
+          // Get fresh data from all stores
+          const freshKaryStore = useKaryStore.getState();
+          const freshAbhyasaStore = useAbhyasaStore.getState();
+          const freshDainandiniStore = useDainandiniStore.getState();
+
           // Convert to calendar items using the utility function
           const calendarItems = convertToCalendarItems(
-            karyStore.tasks,
-            abhyasaStore.habits,
-            abhyasaStore.habitLogs,
-            dainandiniStore.logs,
-            karyStore.lists,
-            dainandiniStore.foci || []
+            freshKaryStore.tasks,
+            freshAbhyasaStore.habits,
+            freshAbhyasaStore.habitLogs,
+            freshDainandiniStore.logs,
+            freshKaryStore.lists,
+            freshDainandiniStore.foci || []
           );
 
           set({ calendarItems, loading: false });
@@ -58,30 +70,42 @@ export const useHomeStore = create<HomeStore>()(
         set({ selectedDate: date });
       },
 
+      setCalendarItems: (items) => {
+        set({ calendarItems: items });
+      },
+
       refreshData: async () => {
-        await get().fetchHomeData();
+        // Only refresh if not already loading to prevent excessive updates
+        const { loading } = get();
+        if (!loading) {
+          await get().fetchHomeData();
+        }
       },
 
       // Set up real-time subscriptions to other stores
       setupRealTimeSync: () => {
         // Subscribe to task changes
         const unsubscribeTasks = taskService.subscribe(() => {
-          get().refreshData();
+          // Debounce the refresh to prevent excessive updates
+          setTimeout(() => get().refreshData(), 100);
         });
 
         // Subscribe to habit changes
         const unsubscribeHabits = habitService.subscribe(() => {
-          get().refreshData();
+          // Debounce the refresh to prevent excessive updates
+          setTimeout(() => get().refreshData(), 100);
         });
 
         // Subscribe to habit log changes
         const unsubscribeHabitLogs = habitLogService.subscribe(() => {
-          get().refreshData();
+          // Debounce the refresh to prevent excessive updates
+          setTimeout(() => get().refreshData(), 100);
         });
 
         // Subscribe to log changes (Dainandini)
         const unsubscribeLogs = logService.subscribe(() => {
-          get().refreshData();
+          // Debounce the refresh to prevent excessive updates
+          setTimeout(() => get().refreshData(), 100);
         });
 
         // Return cleanup function
@@ -156,7 +180,8 @@ export const useHomeStore = create<HomeStore>()(
           });
 
           // Refresh data to ensure consistency
-          await get().fetchHomeData();
+          // Don't refresh immediately to prevent flickering
+          setTimeout(() => get().fetchHomeData(), 200);
         } catch (error) {
           console.error('Failed to update item date:', error);
           // Revert the change if update failed
@@ -212,7 +237,8 @@ export const useHomeStore = create<HomeStore>()(
           });
 
           // Refresh data to ensure consistency
-          await get().fetchHomeData();
+          // Don't refresh immediately to prevent flickering
+          setTimeout(() => get().fetchHomeData(), 200);
         } catch (error) {
           console.error('Failed to undo drag operation:', error);
         }
@@ -250,7 +276,8 @@ export const useHomeStore = create<HomeStore>()(
         // For now, we'll just update the local state
         
         // Refresh data to ensure consistency
-        await get().fetchHomeData();
+        // Don't refresh immediately to prevent flickering
+        setTimeout(() => get().fetchHomeData(), 200);
       },
 
       toggleTimeSlots: () => {

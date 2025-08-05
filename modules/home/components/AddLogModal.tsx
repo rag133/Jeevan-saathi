@@ -122,8 +122,8 @@ const AddLogModal: React.FC<AddLogModalProps> = ({ isOpen, onClose, selectedDate
         focusId: selectedFocusId,
         logType: selectedLogType,
         logDate: logDate,
-        taskId: taskContext?.taskId,
-        habitId: habitContext?.habitId,
+        ...(taskContext?.taskId && { taskId: taskContext.taskId }),
+        ...(habitContext?.habitId && { habitId: habitContext.habitId }),
       };
 
       // Add type-specific data
@@ -150,7 +150,9 @@ const AddLogModal: React.FC<AddLogModalProps> = ({ isOpen, onClose, selectedDate
       setRating(0);
       setChecklistItems([]);
       setNewChecklistItem('');
-      await refreshData();
+      
+      // Don't refresh immediately to prevent flickering
+      setTimeout(() => refreshData(), 300);
       onClose();
     } catch (error) {
       console.error('Failed to add log:', error);

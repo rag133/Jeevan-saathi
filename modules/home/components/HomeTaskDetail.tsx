@@ -171,29 +171,86 @@ const HomeTaskDetail: React.FC<HomeTaskDetailProps> = ({ selectedItem, onClose }
   const availableTags = allTags.filter((t) => !(task.tags || []).includes(t.id));
 
   const handleUpdate = async (updates: Partial<Omit<Task, 'id'>>) => {
-    await karyStore.updateTask(task.id, updates);
-    // Refresh home data to reflect the change immediately
+    // Optimistic update - update the local state immediately
+    const updatedTask = { ...task, ...updates };
     const homeStore = useHomeStore.getState();
-    await homeStore.refreshData();
+    
+    // Update the selected item optimistically
+    if (homeStore.selectedItem && homeStore.selectedItem.id === `task-${task.id}`) {
+      homeStore.selectItem({
+        ...homeStore.selectedItem,
+        originalData: updatedTask,
+        completed: updatedTask.completed,
+        title: updatedTask.title,
+        description: updatedTask.description || '',
+      });
+    }
+    
+    // Update the calendar items optimistically
+    const updatedCalendarItems = homeStore.calendarItems.map(item => 
+      item.id === `task-${task.id}` 
+        ? { ...item, originalData: updatedTask, completed: updatedTask.completed }
+        : item
+    );
+    
+    // Update store state optimistically
+    homeStore.setCalendarItems(updatedCalendarItems);
+    
+    // Perform the actual update
+    await karyStore.updateTask(task.id, updates);
     setActivePopup(null);
   };
 
   const handleTitleSave = async () => {
     if (titleInput.trim() && titleInput.trim() !== task.title) {
-      await karyStore.updateTask(task.id, { title: titleInput.trim() });
-      // Refresh home data to reflect the change immediately
+      // Optimistic update
+      const updatedTask = { ...task, title: titleInput.trim() };
       const homeStore = useHomeStore.getState();
-      await homeStore.refreshData();
+      
+      if (homeStore.selectedItem && homeStore.selectedItem.id === `task-${task.id}`) {
+        homeStore.selectItem({
+          ...homeStore.selectedItem,
+          originalData: updatedTask,
+          title: titleInput.trim(),
+        });
+      }
+      
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id === `task-${task.id}` 
+          ? { ...item, originalData: updatedTask, title: titleInput.trim() }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
+      await karyStore.updateTask(task.id, { title: titleInput.trim() });
     }
     setIsEditingTitle(false);
   };
 
   const handleDescriptionSave = async () => {
     if (descriptionInput !== (task.description || '')) {
-      await karyStore.updateTask(task.id, { description: descriptionInput.trim() });
-      // Refresh home data to reflect the change immediately
+      // Optimistic update
+      const updatedTask = { ...task, description: descriptionInput.trim() };
       const homeStore = useHomeStore.getState();
-      await homeStore.refreshData();
+      
+      if (homeStore.selectedItem && homeStore.selectedItem.id === `task-${task.id}`) {
+        homeStore.selectItem({
+          ...homeStore.selectedItem,
+          originalData: updatedTask,
+          description: descriptionInput.trim(),
+        });
+      }
+      
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id === `task-${task.id}` 
+          ? { ...item, originalData: updatedTask, description: descriptionInput.trim() }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
+      await karyStore.updateTask(task.id, { description: descriptionInput.trim() });
     }
     setIsEditingDescription(false);
   };
@@ -217,10 +274,29 @@ const HomeTaskDetail: React.FC<HomeTaskDetailProps> = ({ selectedItem, onClose }
         parentId: task.id,
         createdAt: new Date(),
       };
-      await karyStore.addTask(taskData);
-      // Refresh home data to reflect the change immediately
+      
+      // Add the task
+      const newTask = await karyStore.addTask(taskData);
+      
+      // Optimistically update the parent task to show it has subtasks
+      const updatedTask = { ...task };
       const homeStore = useHomeStore.getState();
-      await homeStore.refreshData();
+      
+      if (homeStore.selectedItem && homeStore.selectedItem.id === `task-${task.id}`) {
+        homeStore.selectItem({
+          ...homeStore.selectedItem,
+          originalData: updatedTask,
+        });
+      }
+      
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id === `task-${task.id}` 
+          ? { ...item, originalData: updatedTask }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
       setNewSubtaskTitle('');
     }
   };
@@ -232,9 +308,6 @@ const HomeTaskDetail: React.FC<HomeTaskDetailProps> = ({ selectedItem, onClose }
       )
     ) {
       await karyStore.deleteTask(task.id);
-      // Refresh home data to reflect the change immediately
-      const homeStore = useHomeStore.getState();
-      await homeStore.refreshData();
       onClose();
     }
     setActivePopup(null);
@@ -257,10 +330,28 @@ const HomeTaskDetail: React.FC<HomeTaskDetailProps> = ({ selectedItem, onClose }
     if (newLine !== line) {
       lines[lineIndex] = newLine;
       const newDescription = lines.join('\n');
-      await karyStore.updateTask(task.id, { description: newDescription });
-      // Refresh home data to reflect the change immediately
+      
+      // Optimistic update
+      const updatedTask = { ...task, description: newDescription };
       const homeStore = useHomeStore.getState();
-      await homeStore.refreshData();
+      
+      if (homeStore.selectedItem && homeStore.selectedItem.id === `task-${task.id}`) {
+        homeStore.selectItem({
+          ...homeStore.selectedItem,
+          originalData: updatedTask,
+          description: newDescription,
+        });
+      }
+      
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id === `task-${task.id}` 
+          ? { ...item, originalData: updatedTask, description: newDescription }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
+      await karyStore.updateTask(task.id, { description: newDescription });
     }
   };
 

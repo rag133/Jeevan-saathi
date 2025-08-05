@@ -14,21 +14,35 @@ export const calculateHabitCompletionForDate = (
   date: Date
 ): boolean => {
   const dateString = date.toISOString().split('T')[0];
-  const log = habitLogs.find(log => 
+  
+  // Find all logs for this habit and date, then get the most recent one
+  const logsForDate = habitLogs.filter(log => 
     log.habitId === habit.id && 
     log.date === dateString
   );
   
-  if (!log) return false;
+  // Get the most recent log (last one in the array)
+  const log = logsForDate.length > 0 ? logsForDate[logsForDate.length - 1] : null;
+  
+  if (!log) {
+    return false;
+  }
   
   if (habit.type === HabitType.BINARY) {
     // For binary habits, any log entry means completed
     return true;
   } else if (habit.type === HabitType.CHECKLIST) {
     // For checklist habits, check if all items are completed
-    const completedItems = log.completedChecklistItems?.length || 0;
+    const completedItemIds = log.completedChecklistItems || [];
     const totalItems = habit.checklist?.length || 0;
-    return totalItems > 0 && completedItems === totalItems;
+    
+    if (totalItems === 0) return false;
+    
+    // Check if all checklist item IDs are in the completed items array
+    const allItemIds = habit.checklist?.map(item => item.id) || [];
+    const allCompleted = allItemIds.every(id => completedItemIds.includes(id));
+    
+    return allCompleted;
   } else if (habit.type === HabitType.COUNT || habit.type === HabitType.DURATION) {
     // For count/duration habits, check if target is met
     const value = log.value || 0;
@@ -139,6 +153,9 @@ export const convertToCalendarItems = (
             const reminderDate = new Date(currentDate);
             reminderDate.setHours(hours, minutes, 0, 0);
             
+            // Calculate completion status for this specific date
+            const isCompleted = calculateHabitCompletionForDate(habit, habitLogs, currentDate);
+            
             items.push({
               id: `habit-${habit.id}-${currentDate.toISOString().split('T')[0]}-${index}`,
               type: CalendarItemType.HABIT,
@@ -147,7 +164,7 @@ export const convertToCalendarItems = (
               date: reminderDate,
               color: habit.color || 'green-500',
               icon: habit.icon,
-              completed: false, // Will be calculated dynamically
+              completed: isCompleted,
               originalData: habit,
             });
           });
@@ -155,6 +172,9 @@ export const convertToCalendarItems = (
           // If no reminders, show once for the day at 9 AM
           const defaultTime = new Date(currentDate);
           defaultTime.setHours(9, 0, 0, 0);
+          
+          // Calculate completion status for this specific date
+          const isCompleted = calculateHabitCompletionForDate(habit, habitLogs, currentDate);
           
           items.push({
             id: `habit-${habit.id}-${currentDate.toISOString().split('T')[0]}`,
@@ -164,7 +184,7 @@ export const convertToCalendarItems = (
             date: defaultTime,
             color: habit.color || 'green-500',
             icon: habit.icon,
-            completed: false, // Will be calculated dynamically
+            completed: isCompleted,
             originalData: habit,
           });
         }
@@ -303,14 +323,15 @@ export const calculateProgressStats = (
   const logs = filteredItems.filter(item => item.type === CalendarItemType.LOG);
   
   const completedTasks = tasks.filter(item => item.completed).length;
+  const completedHabits = habits.filter(item => item.completed).length;
   
   return {
     totalTasks: tasks.length,
     completedTasks,
     taskCompletionRate: tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0,
     totalHabits: habits.length,
-    completedHabits: 0, // We'll calculate this differently
-    habitCompletionRate: 0, // We'll calculate this differently
+    completedHabits,
+    habitCompletionRate: habits.length > 0 ? (completedHabits / habits.length) * 100 : 0,
     journalEntries: logs.length,
     totalItems: filteredItems.length,
   };
@@ -330,7 +351,8 @@ export const sortItemsByPriority = (items: CalendarItem[]): CalendarItem[] => {
     const typePriority = {
       [CalendarItemType.TASK]: 1,
       [CalendarItemType.HABIT]: 2,
-      [CalendarItemType.LOG]: 3,
+      [CalendarItemType.HABIT_LOG]: 3,
+      [CalendarItemType.LOG]: 4,
     };
     
     const aPriority = typePriority[a.type];

@@ -17,6 +17,7 @@ import HabitCalendar from '~/modules/abhyasa/components/HabitCalendar';
 import HabitLogItem from '~/modules/abhyasa/components/HabitLogItem';
 import HomeHabitLogging from './HomeHabitLogging';
 import AddLogModal from './AddLogModal';
+import { useHomeStore } from '../homeStore';
 
 interface HomeHabitDetailProps {
   selectedItem: CalendarItem;
@@ -183,12 +184,58 @@ const HomeHabitDetail: React.FC<HomeHabitDetailProps> = ({ selectedItem, onClose
 
 
 
-  const handleHabitLog = (logData: Omit<HabitLog, 'id'>) => {
-    abhyasaStore.addHabitLog(logData);
+  const handleHabitLog = async (logData: Omit<HabitLog, 'id'>) => {
+    // Optimistic update - update the home store immediately
+    const homeStore = useHomeStore.getState();
+    
+    // Update the selected item optimistically
+    if (homeStore.selectedItem && homeStore.selectedItem.id.includes(`habit-${habit.id}`)) {
+      const updatedItem = {
+        ...homeStore.selectedItem,
+        completed: true, // Mark as completed immediately
+      };
+      homeStore.selectItem(updatedItem);
+    }
+    
+    // Update calendar items optimistically
+    const updatedCalendarItems = homeStore.calendarItems.map(item => 
+      item.id.includes(`habit-${habit.id}`) && 
+      item.date.toISOString().split('T')[0] === logData.date
+        ? { ...item, completed: true }
+        : item
+    );
+    
+    homeStore.setCalendarItems(updatedCalendarItems);
+    
+    // Perform the actual update
+    await abhyasaStore.addHabitLog(logData);
   };
 
-  const handleDeleteHabitLog = (logId: string) => {
-    abhyasaStore.deleteHabitLog(logId);
+  const handleDeleteHabitLog = async (logId: string) => {
+    // Optimistic update - update the home store immediately
+    const homeStore = useHomeStore.getState();
+    
+    // Update the selected item optimistically
+    if (homeStore.selectedItem && homeStore.selectedItem.id.includes(`habit-${habit.id}`)) {
+      const updatedItem = {
+        ...homeStore.selectedItem,
+        completed: false, // Mark as not completed immediately
+      };
+      homeStore.selectItem(updatedItem);
+    }
+    
+    // Update calendar items optimistically
+    const updatedCalendarItems = homeStore.calendarItems.map(item => 
+      item.id.includes(`habit-${habit.id}`) && 
+      item.date.toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0]
+        ? { ...item, completed: false }
+        : item
+    );
+    
+    homeStore.setCalendarItems(updatedCalendarItems);
+    
+    // Perform the actual update
+    await abhyasaStore.deleteHabitLog(logId);
   };
 
   // Force refresh when habit logs change to ensure real-time sync

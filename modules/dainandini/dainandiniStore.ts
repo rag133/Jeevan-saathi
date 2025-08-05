@@ -40,14 +40,29 @@ export const useDainandiniStore = create<DainandiniState>()(
           // If no Focus Areas exist, initialize them with default data
           if (foci.length === 0) {
             const { initialFoci } = await import('./data');
-            for (const focus of initialFoci) {
-              await focusService.add(focus);
+            // Check if any of the initial foci already exist by name
+            const existingFociNames = foci.map(f => f.name);
+            const fociToAdd = initialFoci.filter(focus => !existingFociNames.includes(focus.name));
+            
+            if (fociToAdd.length > 0) {
+              // Add only missing foci to prevent duplicates
+              await Promise.all(fociToAdd.map(focus => focusService.add(focus)));
+              // Fetch again after initialization
+              const newFoci = await focusService.getAll();
+              // Deduplicate foci by ID to prevent React key conflicts
+              const uniqueNewFoci = newFoci.filter((focus, index, self) => 
+                index === self.findIndex(f => f.id === focus.id)
+              );
+              set({ logs, logTemplates, foci: uniqueNewFoci, loading: false });
+            } else {
+              set({ logs, logTemplates, foci, loading: false });
             }
-            // Fetch again after initialization
-            const newFoci = await focusService.getAll();
-            set({ logs, logTemplates, foci: newFoci, loading: false });
           } else {
-            set({ logs, logTemplates, foci, loading: false });
+            // Deduplicate foci by ID to prevent React key conflicts
+            const uniqueFoci = foci.filter((focus, index, self) => 
+              index === self.findIndex(f => f.id === focus.id)
+            );
+            set({ logs, logTemplates, foci: uniqueFoci, loading: false });
           }
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
@@ -126,16 +141,23 @@ export const useDainandiniStore = create<DainandiniState>()(
         }
       },
       addFocus: async (focus) => {
+        // Check if focus with same name already exists
+        const existingFoci = get().foci;
+        const existingFocus = existingFoci.find(f => f.name === focus.name);
+        if (existingFocus) {
+          console.warn(`Focus with name "${focus.name}" already exists`);
+          return;
+        }
+        
         const optimisticFocus = { ...focus, id: `temp-${Date.now()}` } as Focus;
-        const previousFoci = get().foci;
-        set({ foci: [...previousFoci, optimisticFocus] });
+        set({ foci: [...existingFoci, optimisticFocus] });
         try {
           const newId = await focusService.add(focus);
           set((state) => ({
             foci: state.foci.map((f) => (f.id === optimisticFocus.id ? { ...f, id: newId } : f)),
           }));
         } catch (error) {
-          set({ error: (error as Error).message, foci: previousFoci });
+          set({ error: (error as Error).message, foci: existingFoci });
         }
       },
       updateFocus: async (focusId, updates) => {

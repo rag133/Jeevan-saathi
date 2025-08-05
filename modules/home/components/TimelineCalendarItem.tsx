@@ -4,6 +4,9 @@ import type { CalendarItem } from '../types';
 import { CalendarItemType } from '../types';
 import { calculateHabitCompletionForDate } from '../utils/dataAggregator';
 import { useAbhyasaStore } from '~/modules/abhyasa/abhyasaStore';
+import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
+import { LogType } from '~/modules/dainandini/types';
+
 
 interface TimelineCalendarItemProps {
   item: CalendarItem & { displayDate?: Date };
@@ -11,42 +14,73 @@ interface TimelineCalendarItemProps {
   isSelected: boolean;
 }
 
+// --- Display Components ---
+const StarRatingDisplay: React.FC<{ rating?: number }> = ({ rating = 0 }) => (
+  <div className="flex items-center">
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Icons.StarIcon
+        key={star}
+        className={`w-3 h-3 text-yellow-400 ${rating >= star ? 'fill-current' : 'fill-transparent stroke-current'}`}
+      />
+    ))}
+  </div>
+);
+
+const ChecklistDisplay: React.FC<{
+  items?: Array<{ id: string; text: string; completed: boolean }>;
+}> = ({ items = [] }) => {
+  const completedCount = items.filter(item => item.completed).length;
+  return (
+    <div className="flex items-center gap-2 text-xs text-gray-600">
+      <Icons.CheckSquareIcon className="w-3 h-3" />
+      <span>{completedCount}/{items.length} completed</span>
+    </div>
+  );
+};
+
 const TimelineCalendarItem: React.FC<TimelineCalendarItemProps> = ({
   item,
   onClick,
   isSelected,
 }) => {
   const abhyasaStore = useAbhyasaStore();
+  const dainandiniStore = useDainandiniStore();
   
   // Calculate completion status dynamically for habits
   const isCompleted = React.useMemo(() => {
     if (item.type === CalendarItemType.HABIT) {
-      const habit = item.originalData;
-      return calculateHabitCompletionForDate(habit, abhyasaStore.habitLogs, item.date);
+      // For habits, prioritize the completed property from the CalendarItem
+      // This ensures optimistic updates work correctly
+      if (item.completed !== undefined) {
+        return item.completed;
+      }
+      
+      // Fallback to calculating from habit logs if completed property is not set
+      const habit = item.originalData as any;
+      // Normalize the date to just the date part (remove time)
+      const normalizedDate = new Date(item.date);
+      normalizedDate.setHours(0, 0, 0, 0);
+      
+      return calculateHabitCompletionForDate(habit, abhyasaStore.habitLogs, normalizedDate);
     }
     return item.completed;
-  }, [item, abhyasaStore.habitLogs]);
+  }, [item.type, item.originalData?.id, item.date, item.completed, abhyasaStore.habitLogs]);
+
+  // Get focus area for logs
+  const focus = React.useMemo(() => {
+    if (item.type === CalendarItemType.LOG) {
+      const log = item.originalData as any;
+      return dainandiniStore.foci.find(f => f.id === log.focusId);
+    }
+    return null;
+  }, [item.type, item.originalData, dainandiniStore.foci]);
+
   const getItemIcon = (iconName: string) => {
     const IconComponent = Icons[iconName as keyof typeof Icons] || Icons.CircleIcon;
     return <IconComponent className="w-4 h-4" />;
   };
 
 
-
-  const getTypeLabel = (type: CalendarItemType) => {
-    switch (type) {
-      case CalendarItemType.TASK:
-        return 'Task';
-      case CalendarItemType.HABIT:
-        return 'Habit';
-      case CalendarItemType.HABIT_LOG:
-        return 'Habit';
-      case CalendarItemType.LOG:
-        return 'Journal';
-      default:
-        return 'Item';
-    }
-  };
 
   const getTypeIcon = (type: CalendarItemType) => {
     switch (type) {
@@ -92,6 +126,55 @@ const TimelineCalendarItem: React.FC<TimelineCalendarItemProps> = ({
     });
   };
 
+  // Render log-specific content
+  const renderLogContent = () => {
+    if (item.type !== CalendarItemType.LOG) return null;
+    
+    const log = item.originalData as any;
+    
+    return (
+      <div className="space-y-2 mt-2">
+        {/* Focus Area */}
+        {focus && (
+          <div className="flex items-center space-x-2">
+            <Icons.TargetIcon className="w-3 h-3 text-purple-500" />
+            <span className={`text-xs px-2 py-1 rounded ${
+              focus.color === 'blue-500' ? 'text-blue-500 bg-blue-500/10' :
+              focus.color === 'green-500' ? 'text-green-500 bg-green-500/10' :
+              focus.color === 'purple-500' ? 'text-purple-500 bg-purple-500/10' :
+              focus.color === 'red-500' ? 'text-red-500 bg-red-500/10' :
+              focus.color === 'yellow-500' ? 'text-yellow-500 bg-yellow-500/10' :
+              focus.color === 'indigo-500' ? 'text-indigo-500 bg-indigo-500/10' :
+              focus.color === 'pink-500' ? 'text-pink-500 bg-pink-500/10' :
+              'text-gray-500 bg-gray-500/10'
+            }`}>
+              {focus.name}
+            </span>
+          </div>
+        )}
+        
+        {/* Description - only for logs */}
+        {log.description && (
+          <p className="text-xs text-gray-600 truncate">
+            {log.description}
+          </p>
+        )}
+        
+        {/* Log Type Specific Content */}
+        {log.logType === LogType.RATING && log.rating && (
+          <div className="flex items-center gap-2">
+            <StarRatingDisplay rating={log.rating} />
+            <span className="text-xs text-gray-500">{log.rating}/5</span>
+          </div>
+        )}
+        
+        {log.logType === LogType.CHECKLIST && log.checklist && (
+          <ChecklistDisplay items={log.checklist} />
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       onClick={() => onClick(item)}
@@ -122,11 +205,11 @@ const TimelineCalendarItem: React.FC<TimelineCalendarItemProps> = ({
                 </span>
               )}
               {/* Priority for tasks */}
-              {item.type === CalendarItemType.TASK && item.originalData?.priority && (
+              {item.type === CalendarItemType.TASK && (item.originalData as any)?.priority && (
                 <Icons.FlagIcon className={`w-3 h-3 ${
-                  item.originalData.priority === 1 ? 'text-red-600' :
-                  item.originalData.priority === 2 ? 'text-orange-500' :
-                  item.originalData.priority === 3 ? 'text-blue-500' :
+                  (item.originalData as any).priority === 1 ? 'text-red-600' :
+                  (item.originalData as any).priority === 2 ? 'text-orange-500' :
+                  (item.originalData as any).priority === 3 ? 'text-blue-500' :
                   'text-gray-500'
                 }`} />
               )}
@@ -160,10 +243,23 @@ const TimelineCalendarItem: React.FC<TimelineCalendarItemProps> = ({
               </span>
             </div>
           )}
+
+          {/* Log-specific content */}
+          {renderLogContent()}
         </div>
       </div>
     </div>
   );
 };
 
-export default TimelineCalendarItem; 
+const MemoizedTimelineCalendarItem = React.memo(TimelineCalendarItem, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.item.id === nextProps.item.id &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.item.completed === nextProps.item.completed &&
+    prevProps.item.date.getTime() === nextProps.item.date.getTime()
+  );
+});
+
+export default MemoizedTimelineCalendarItem; 

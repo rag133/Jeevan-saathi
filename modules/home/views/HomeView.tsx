@@ -9,6 +9,7 @@ import SmartNotifications from '../components/SmartNotifications';
 import Logo from '~/components/Logo';
 import AddTaskModal from '../components/AddTaskModal';
 import AddLogModal from '../components/AddLogModal';
+import AddHabitLogModal from '../components/AddHabitLogModal';
 
 const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
   const {
@@ -36,6 +37,7 @@ const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
   // State for quick action modals
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showAddLogModal, setShowAddLogModal] = useState(false);
+  const [showAddHabitLogModal, setShowAddHabitLogModal] = useState(false);
   const [logModalTaskContext, setLogModalTaskContext] = useState<{ taskId: string; taskTitle: string } | undefined>();
 
   useEffect(() => {
@@ -47,6 +49,29 @@ const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     // Cleanup subscriptions when component unmounts
     return cleanup;
   }, [fetchHomeData, setupRealTimeSync]);
+
+  // Initialize other stores when HomeView loads
+  useEffect(() => {
+    const initializeStores = async () => {
+      try {
+        // Import stores dynamically to avoid circular dependencies
+        const { useKaryStore } = await import('~/modules/kary/karyStore');
+        const { useAbhyasaStore } = await import('~/modules/abhyasa/abhyasaStore');
+        const { useDainandiniStore } = await import('~/modules/dainandini/dainandiniStore');
+        
+        // Fetch data for all stores
+        await Promise.all([
+          useKaryStore.getState().fetchKaryData(),
+          useAbhyasaStore.getState().fetchAbhyasaData(),
+          useDainandiniStore.getState().fetchDainandiniData(),
+        ]);
+      } catch (error) {
+        console.error('Failed to initialize stores:', error);
+      }
+    };
+
+    initializeStores();
+  }, []);
 
   // Listen for log modal events from task details
   useEffect(() => {
@@ -120,10 +145,7 @@ const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
           {/* Left Panel - Quick Actions */}
           <QuickActionsPanel
             onAddTask={() => setShowAddTaskModal(true)}
-            onAddHabitLog={() => {
-              // Habit logging is now handled directly in the habit detail view
-              console.log('Habit logging moved to detail view');
-            }}
+            onAddHabitLog={() => setShowAddHabitLogModal(true)}
             onAddJournalEntry={() => {
               setLogModalTaskContext(undefined);
               setShowAddLogModal(true);
@@ -154,7 +176,11 @@ const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         selectedDate={selectedDate}
       />
       
-
+      <AddHabitLogModal
+        isOpen={showAddHabitLogModal}
+        onClose={() => setShowAddHabitLogModal(false)}
+        selectedDate={selectedDate}
+      />
       
       <AddLogModal
         isOpen={showAddLogModal}

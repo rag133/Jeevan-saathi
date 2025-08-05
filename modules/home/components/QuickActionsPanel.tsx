@@ -33,7 +33,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
   // Progress calculations
   const progressStats = useMemo(() => {
     const todayTasks = todayItems.filter(item => item.type === CalendarItemType.TASK);
-    const todayHabits = todayItems.filter(item => item.type === CalendarItemType.HABIT_LOG);
+    const todayHabits = todayItems.filter(item => item.type === CalendarItemType.HABIT);
     const todayLogs = todayItems.filter(item => item.type === CalendarItemType.LOG);
 
     const completedTasks = todayTasks.filter(item => item.completed).length;
@@ -108,7 +108,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({
                   </p>
                   <p className="text-xs text-gray-500">
                     {item.type === CalendarItemType.TASK ? 'Task' :
-                     item.type === CalendarItemType.HABIT_LOG ? 'Habit' : 'Journal'}
+                     item.type === CalendarItemType.HABIT ? 'Habit' : 'Journal'}
                   </p>
                 </div>
                 {item.completed && (

@@ -60,6 +60,7 @@ export interface HomeActions {
   selectItem: (item: CalendarItem | null) => void;
   selectDate: (date: Date) => void;
   refreshData: () => Promise<void>;
+  setCalendarItems: (items: CalendarItem[]) => void;
   // Real-time sync
   setupRealTimeSync: () => () => void; // Returns cleanup function
   // Drag and Drop Actions
