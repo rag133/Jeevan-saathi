@@ -73,7 +73,7 @@ const IconSidebar: React.FC<{
         ${isMobile ? '' : 'flex flex-col'}
       `}
     >
-      <div className="py-4 mt-2">
+      <div className="py-4 mt-2 flex justify-center">
         <button
           onClick={onProfileClick}
           className="relative focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
@@ -103,7 +103,7 @@ const IconSidebar: React.FC<{
         ))}
       </nav>
 
-      <div className="mt-auto mb-4 space-y-2">
+      <div className="mt-auto mb-4 space-y-2 flex flex-col items-center">
         <button
           onClick={onHelpClick}
           className="flex items-center justify-center w-12 h-12 rounded-lg transition-colors duration-200 text-gray-500 hover:bg-blue-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -227,27 +227,349 @@ const App: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="mb-8">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Icons.BookOpenIcon className="w-12 h-12 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+        {/* Navigation Bar */}
+        <nav className="bg-white/80 backdrop-blur-sm border-b border-orange-100 px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/Jeevan Saathi Logo.png" 
+                alt="Jeevan Saathi Logo" 
+                className="w-10 h-10 rounded-lg"
+              />
+              <div>
+                <div className="text-2xl font-bold text-amber-700">Jeevan Saathi</div>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to Jeevan Saathi</h1>
-            <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-              Your personal life management companion. Organize tasks, track habits, and reflect on your journey.
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#home" className="text-gray-700 hover:text-amber-600 transition-colors">Home</a>
+              <a href="#features" className="text-gray-700 hover:text-amber-600 transition-colors">Features</a>
+              <a href="#about" className="text-gray-700 hover:text-amber-600 transition-colors">About</a>
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => setIsAuthModalOpen(true)}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-2 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                Get Started
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <section id="home" className="py-20 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-6xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-6">
+              Jeevan Saathi
+            </h1>
+            <h2 className="text-2xl text-gray-700 mb-6">जीवन साथी - Your Life Companion</h2>
+            <p className="text-lg text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+              A comprehensive personal management application designed to help you organize your life across tasks, journaling, goal setting, and learning. Your holistic platform for personal growth and productivity.
             </p>
+            <div className="flex justify-center">
+              <button 
+                onClick={() => setIsAuthModalOpen(true)}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-8 py-4 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
+              >
+                Start Your Journey
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-200 font-semibold text-lg shadow-lg"
-          >
-            Get Started
-          </button>
-          <div className="mt-8 text-sm text-gray-500">
-            <p>✨ Free to use • 🔒 Secure • 📱 Mobile-friendly</p>
+
+          {/* Feature Icons */}
+          <div className="max-w-4xl mx-auto mt-16">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Icons.CheckSquareIcon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm font-medium text-gray-700">Task Management</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Icons.TargetIcon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm font-medium text-gray-700">Habit Tracking</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-yellow-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Icons.Edit3Icon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm font-medium text-gray-700">Personal Journal</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-green-500 to-yellow-500 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Icons.BookOpenIcon className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-sm font-medium text-gray-700">Knowledge Base</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* Four Pillars Section */}
+        <section id="features" className="py-20 px-6 bg-white/50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-amber-600 mb-4">Four Pillars of Life Management</h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Jeevan Saathi is divided into four comprehensive modules, each designed to support different aspects of your personal growth journey.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Kary Card */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-start mb-6">
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                    <Icons.CheckSquareIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Kary</h3>
+                    <p className="text-gray-600">कार्य - Work/Tasks</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  A powerful task manager that helps you organize your to-do lists, set due dates, and track your progress. Create custom lists, add tags, and break down large tasks into smaller subtasks.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">Custom Lists</span>
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">Due Dates</span>
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">Progress Tracking</span>
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">Subtasks</span>
+                </div>
+              </div>
+
+              {/* Abhyasa Card */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-start mb-6">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
+                    <Icons.TargetIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Abhyasa</h3>
+                    <p className="text-gray-600">अभ्यास - Practice/Habits</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  A habit tracker that helps you build and maintain good habits. Set goals, track your progress with a calendar view, and get detailed statistics on your habit completion rate.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">Goal Setting</span>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">Calendar View</span>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">Statistics</span>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">Streak Tracking</span>
+                </div>
+              </div>
+
+              {/* Dainandini Card */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-start mb-6">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center mr-4">
+                    <Icons.Edit3Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Dainandini</h3>
+                    <p className="text-gray-600">दैनंदिनी - Journal</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  A personal journal for your thoughts, reflections, and daily logs. Create different types of entries (text, checklists, ratings) and organize them by focus areas.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">Multiple Entry Types</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">Focus Areas</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">Daily Logs</span>
+                  <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">Reflections</span>
+                </div>
+              </div>
+
+              {/* Vidya Card */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100 relative">
+                <div className="absolute top-4 right-4">
+                  <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">Coming Soon</span>
+                </div>
+                <div className="flex items-start mb-6">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
+                    <Icons.BookOpenIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Vidya</h3>
+                    <p className="text-gray-600">विद्या - Knowledge</p>
+                  </div>
+                </div>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  A knowledge base for learning and growth. Build your personal learning repository with articles, notes, and insights organized for easy discovery and reference.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">Learning Repository</span>
+                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">Article Management</span>
+                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">Note Organization</span>
+                  <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">Easy Discovery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Roadmap Section */}
+        <section className="py-20 px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-amber-600 mb-4">Future Roadmap</h2>
+              <h3 className="text-3xl font-bold text-gray-900 mb-4">AI-Powered Personal Growth</h3>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                Our vision extends beyond basic productivity tools. We're building intelligent features that learn from your patterns and help you grow in meaningful ways.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Kary AI */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-2xl">🤖</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Kary (Tasks)</h3>
+                    <p className="text-gray-600">AI-Enhanced Features</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Smart Task Prioritization:</strong> AI analyzes your habits and completion history to suggest which tasks are most important or at risk.
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-green-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Automatic Task Breakdown:</strong> For complex tasks, AI suggests step-by-step breakdowns. Enter 'Plan a birthday party' and get organized sub-tasks.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Abhyasa AI */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-2xl">🎯</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Abhyasa (Habits)</h3>
+                    <p className="text-gray-600">AI-Enhanced Features</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <span className="text-purple-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Personalized Habit Coaching:</strong> AI acts as your personal coach, providing motivational messages and insights based on your progress patterns.
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-purple-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Habit Prediction & Intervention:</strong> Predict when you're likely to break a streak and proactively send supportive reminders.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Dainandini AI */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-yellow-500 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-2xl">📊</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Dainandini (Journal)</h3>
+                    <p className="text-gray-600">AI-Enhanced Features</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <span className="text-yellow-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Sentiment Analysis & Mood Tracking:</strong> AI analyzes your journal entries to track emotional states and show correlations with other activities.
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-yellow-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Automatic Insights & Goal Suggestions:</strong> Extract recurring themes from your reflections and suggest relevant goals and habits for personal growth.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Vidya AI */}
+              <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+                <div className="flex items-center mb-6">
+                  <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
+                    <span className="text-2xl">📚</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Vidya (Knowledge)</h3>
+                    <p className="text-gray-600">AI-Enhanced Features</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Personalized Learning Recommendations:</strong> Based on your goals and interests, AI recommends articles, courses, and videos tailored to your learning path.
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-500 mr-3 mt-1">•</span>
+                    <div>
+                      <strong>Knowledge Synthesis & Q&A:</strong> AI helps synthesize information, connect ideas, and answer questions based on your saved content.
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="bg-gray-50 border-t border-gray-200 py-8 px-6">
+          <div className="max-w-6xl mx-auto text-center">
+            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500 mb-4">
+              <div className="flex items-center">
+                <span className="text-lg mr-2">✨</span>
+                <span>Free to use</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-2">🔒</span>
+                <span>Secure & Private</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-2">📱</span>
+                <span>Mobile-friendly</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-2">🚀</span>
+                <span>Modern & Fast</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-lg mr-2">🤖</span>
+                <span>AI-Powered</span>
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm">© 2024 Jeevan Saathi. Your personal life management companion.</p>
+          </div>
+        </footer>
+
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}

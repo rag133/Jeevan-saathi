@@ -12,9 +12,9 @@ const Logo: React.FC<LogoProps> = ({
   className = '' 
 }) => {
   const sizeClasses = {
-    sm: 'w-6 h-6 text-xs',
-    md: 'w-8 h-8 text-sm',
-    lg: 'w-12 h-12 text-lg',
+    sm: 'w-6 h-6',
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12',
   };
 
   const textSizes = {
@@ -25,9 +25,13 @@ const Logo: React.FC<LogoProps> = ({
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
-      {/* Logo Icon */}
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm`}>
-        <span className="text-white font-bold">JS</span>
+      {/* Logo Icon - Using actual image */}
+      <div className={`${sizeClasses[size]} flex items-center justify-center`}>
+        <img 
+          src="/Jeevan Saathi Logo.png" 
+          alt="Jeevan Saathi Logo" 
+          className={`${sizeClasses[size]} object-contain`}
+        />
       </div>
       
       {/* Brand Name */}

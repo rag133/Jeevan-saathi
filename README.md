@@ -110,3 +110,39 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 
 Project Link: [https://github.com/your-username/jeevan-saathi](https://github.com/your-username/jeevan-saathi)
+
+
+## Future Road Map:
+📝 Kary (Tasks)
+Smart Task Prioritization: An AI could analyze your past habits and task completion history to suggest which tasks are most important or at risk of being missed, factoring in things like task difficulty and your typical energy levels.
+
+Automatic Task Breakdown: For large or complex tasks, an AI could suggest a step-by-step breakdown. For example, if you enter "Plan a birthday party," the AI could suggest sub-tasks like "create guest list," "send invitations," "order cake," and "buy decorations."
+
+🎯 Abhyasa (Habits)
+Personalized Habit Coaching: An AI could act as a personal coach, providing motivational messages and insights based on your progress. For instance, if you consistently miss a habit on Wednesdays, the AI could suggest a different time or location for that day.
+
+Habit Prediction and Intervention: The AI could predict when you're likely to fall off a habit streak and proactively send a supportive message or a reminder before you miss it.
+
+📔 Dainandini (Journal)
+Sentiment Analysis and Mood Tracking: The AI could analyze the text of your journal entries to track your mood and emotional state over time.  It could then provide visualizations and insights, showing correlations between your mood and other activities, like tasks completed or habits followed.
+
+Automatic Summarization and Key Insight Extraction: For long journal entries, an AI could provide a quick summary or extract key themes and recurring thoughts. This helps you quickly review your reflections and identify patterns.
+
+Journal Analysis for Goal and Habit Suggestions: The AI could analyze your journal entries to identify recurring themes, desires, or frustrations. For example, if you frequently write about feeling stressed at work, the AI could suggest a goal like "Improve Work-Life Balance" and propose related habits such as "Practice 10 minutes of mindfulness daily" or "Take a 15-minute walk during lunch." It could also help you break down a big aspiration, like "Start a side hustle," into milestones like "Research business ideas," "Create a simple business plan," and "Launch a basic website."
+
+📚 Vidya (Knowledge)
+Personalized Learning Recommendations: Based on your goals and interests, the AI could recommend articles, courses, or videos. If you set a goal to "learn to code," the AI could suggest beginner-friendly resources and help you track your progress.
+
+Knowledge Synthesis and Q&A: The AI could act as a smart knowledge base. You could input notes or articles you've read, and the AI could help you synthesize the information, connect ideas, and even answer questions based on the content you've saved.
+
+🏠 Home Dashboard
+Dynamic Daily Plan Generation: Instead of just showing a list of tasks and habits, the AI could create a personalized daily schedule, suggesting optimal times to complete tasks and practice habits based on your past data and known peak productivity times.
+
+Proactive Life Insights: The dashboard could feature an AI-powered insights widget. This widget could highlight interesting patterns, such as "You're 20% more likely to finish all your tasks on days you journal," or "Your energy levels tend to drop after 3 PM on Fridays." This helps you understand yourself better and make more informed decisions.
+
+
+
+
+
+
+
