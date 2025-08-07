@@ -6,9 +6,10 @@ import {
   SortIcon,
   MoreHorizontalIcon,
   ChevronRightIcon,
+  FilterIcon,
+  SearchIcon,
 } from '~/components/Icons';
 import InteractiveTaskInput from './InteractiveTaskInput';
-import { NewTaskData } from '../views/KaryView';
 
 interface KaryTaskListProps {
   viewDetails: (List | (Tag & { name: string })) | undefined;
@@ -19,7 +20,7 @@ interface KaryTaskListProps {
   expandedTasks: Record<string, boolean>;
   onSelectTask: (id: string) => void;
   onToggleComplete: (id: string) => void;
-  onAddTask: (taskData: NewTaskData, list?: List | null) => void;
+  onAddTask: (taskData: any, list?: List | null) => Promise<void>;
   onToggleExpand: (taskId: string) => void;
 }
 
@@ -58,8 +59,14 @@ const KaryTaskList: React.FC<KaryTaskListProps> = ({
 
   if (!viewDetails) {
     return (
-      <div className="w-full h-full bg-white/80 p-4 flex items-center justify-center text-gray-500">
-        Select a list or tag from the sidebar.
+      <div className="w-full h-full bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MenuIcon className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Select a List or Tag</h3>
+          <p className="text-gray-500">Choose from the sidebar to view your tasks</p>
+        </div>
       </div>
     );
   }
@@ -87,38 +94,68 @@ const KaryTaskList: React.FC<KaryTaskListProps> = ({
   };
 
   return (
-    <div className="w-full h-full border-l border-gray-200 flex flex-col bg-white/80">
-      <header className="p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
-        <div className="flex items-center gap-2">
-          
-          <h1 className="text-xl font-semibold text-gray-800">{viewDetails.name}</h1>
+    <div className="w-full h-full bg-white flex flex-col">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <MenuIcon className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{viewDetails.name}</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                <SearchIcon className="w-4 h-4" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                <FilterIcon className="w-4 h-4" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                <SortIcon className="w-4 h-4" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                <MoreHorizontalIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-gray-500">
-          <button className="p-1 hover:text-gray-800">
-            <SortIcon className="w-5 h-5" />
-          </button>
-          <button className="p-1 hover:text-gray-800">
-            <MoreHorizontalIcon className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+      </div>
 
-      <div className="p-4 flex-shrink-0">
+      {/* Add Task Input */}
+      <div className="p-6 border-b border-gray-200">
         <InteractiveTaskInput
-          lists={allLists.filter((l) => l.id !== 'today' && l.id !== 'upcoming')} // Cannot add to smart lists
+          lists={allLists.filter((l) => l.id !== 'today' && l.id !== 'upcoming')}
           tags={allTags}
           onAddTask={onAddTask}
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 pt-0">
-        {taskTree.length > 0 ? (
-          <ul>{taskTree.map((task) => renderTaskAndChildren(task, 0))}</ul>
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            <p>No tasks here. Great job!</p>
-          </div>
-        )}
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          {taskTree.length > 0 ? (
+            <div className="space-y-2">
+              {taskTree.map((task) => renderTaskAndChildren(task, 0))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MenuIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
+              <p className="text-gray-500 mb-4">Get started by adding your first task above</p>
+              <div className="text-xs text-gray-400">
+                <p>• Use the input above to add tasks</p>
+                <p>• Organize with lists and tags</p>
+                <p>• Track your progress</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

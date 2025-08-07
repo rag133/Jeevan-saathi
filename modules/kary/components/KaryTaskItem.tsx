@@ -1,7 +1,7 @@
 import React from 'react';
 import { Task, Tag } from '~/modules/kary/types';
 import Checkbox from '~/components/common/Checkbox';
-import { FlagIcon, ChevronRightIcon, ChevronDownIcon, ClockIcon } from '~/components/Icons';
+import { FlagIcon, ChevronRightIcon, ChevronDownIcon, ClockIcon, ExternalLinkIcon } from '~/components/Icons';
 
 const formatDate = (date?: Date) => {
   if (!date) return '';
@@ -113,21 +113,24 @@ const KaryTaskItem: React.FC<KaryTaskItemProps> = ({
     onToggleExpand(task.id);
   };
 
-  const isContextParent = isParent && task.dueDate === undefined; // a parent shown only for context in smart lists
+  const isContextParent = isParent && task.dueDate === undefined;
 
   return (
-    <li
-      onClick={() => onSelect(task.id)}
-      className={`flex items-center gap-2 pr-3 rounded-lg cursor-pointer transition-colors duration-150 ${
-        isSelected ? 'bg-blue-100' : 'hover:bg-gray-100'
+    <div
+      onClick={handleItemClick}
+      className={`group relative flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+        isSelected 
+          ? 'bg-indigo-50 border border-indigo-200 shadow-sm' 
+          : 'hover:bg-gray-50 border border-transparent'
       }`}
-      style={{ paddingLeft: `${level * 24 + 12}px` }}
+      style={{ marginLeft: `${level * 20}px` }}
     >
-      <div className="flex items-center h-full py-3">
+      {/* Expand/Collapse Button */}
+      <div className="flex items-center justify-center w-6 h-6">
         {isParent ? (
           <button
             onClick={handleExpandClick}
-            className="p-0.5 rounded-full hover:bg-gray-200 -ml-5 mr-1"
+            className="p-1 rounded-md hover:bg-gray-200 transition-colors duration-200"
           >
             {isExpanded ? (
               <ChevronDownIcon className="w-4 h-4 text-gray-500" />
@@ -136,54 +139,103 @@ const KaryTaskItem: React.FC<KaryTaskItemProps> = ({
             )}
           </button>
         ) : (
-          <span className="inline-block w-5 h-5 -ml-5 mr-1"></span>
+          <div className="w-4 h-4" />
         )}
+      </div>
+
+      {/* Checkbox */}
+      <div className="flex items-center justify-center w-6 h-6">
         <Checkbox
           checked={task.completed}
           onChange={() => onToggleComplete(task.id)}
           ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
         />
       </div>
-      <div className="flex-1 min-w-0 py-3">
-        <p
-          className={`text-sm ${task.completed ? 'text-gray-400 line-through' : 'text-gray-800'} ${isContextParent ? 'text-gray-400' : ''}`}
-        >
-          {task.title}
-        </p>
-        {task.source && (
-          <p className="text-xs text-gray-500 truncate mt-1">
-            Source: MarkTechPost{' '}
-            <a
-              href={task.source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+
+      {/* Task Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p
+              className={`text-sm font-medium ${
+                task.completed 
+                  ? 'text-gray-400 line-through' 
+                  : 'text-gray-900'
+              } ${isContextParent ? 'text-gray-500' : ''}`}
             >
-              {task.source.text}
-            </a>
-          </p>
-        )}
+              {task.title}
+            </p>
+            
+            {/* Source Link */}
+            {task.source && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs text-gray-500">Source:</span>
+                <a
+                  href={task.source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {task.source.text}
+                  <ExternalLinkIcon className="w-3 h-3" />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Task Metadata */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Tags */}
+            {taskTags.length > 0 && (
+              <div className="flex items-center gap-1">
+                {taskTags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full bg-${tag.color}/10 text-${tag.color} border border-${tag.color}/20`}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                {taskTags.length > 2 && (
+                  <span className="text-xs text-gray-500">+{taskTags.length - 2}</span>
+                )}
+              </div>
+            )}
+
+            {/* Due Date */}
+            {task.dueDate && (
+              <div
+                className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
+                  getDueDateColor(task.dueDate) === 'text-red-500'
+                    ? 'bg-red-50 text-red-600 border border-red-200'
+                    : getDueDateColor(task.dueDate) === 'text-blue-600'
+                    ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                    : 'bg-gray-50 text-gray-600 border border-gray-200'
+                }`}
+              >
+                <ClockIcon className="w-3 h-3" />
+                {formatDate(task.dueDate)}
+              </div>
+            )}
+
+            {/* Priority Flag */}
+            {task.priority && (
+              <div className="p-1">
+                <FlagIcon className={`w-4 h-4 ${getPriorityColor(task.priority)}`} />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="flex items-center gap-3 flex-shrink-0 py-3">
-        {taskTags.map((tag) => (
-          <span
-            key={tag.id}
-            className={`px-2 py-0.5 text-xs rounded-md bg-${tag.color}/20 text-${tag.color}`}
-          >
-            #{tag.name}
-          </span>
-        ))}
-        {task.dueDate && (
-          <span
-            className={`text-xs font-medium flex items-center gap-1 ${getDueDateColor(task.dueDate)}`}
-          >
-            <ClockIcon className="w-3.5 h-3.5" />
-            {formatDate(task.dueDate)}
-          </span>
-        )}
-        {task.priority && <FlagIcon className={`w-4 h-4 ${getPriorityColor(task.priority)}`} />}
-      </div>
-    </li>
+
+      {/* Selection Indicator */}
+      {isSelected && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
+        </div>
+      )}
+    </div>
   );
 };
 

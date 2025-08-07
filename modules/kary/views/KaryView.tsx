@@ -12,6 +12,8 @@ import { initialFoci } from '~/modules/dainandini/data';
 import { useKaryStore } from '../karyStore';
 import useWindowSize from '~/hooks/useWindowSize';
 import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
+import Logo from '~/components/Logo';
+import * as Icons from '~/components/Icons';
 
 const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
   const {
@@ -20,6 +22,8 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     tags,
     listFolders,
     tagFolders,
+    loading,
+    error,
     addTask,
     updateTask,
     deleteTask,
@@ -35,10 +39,11 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     addTagFolder,
     updateTagFolder,
     deleteTagFolder,
+    fetchKaryData,
   } = useKaryStore();
 
   const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
+  const isMobile = width !== undefined && width < 768;
 
   const { addLog } = useDainandiniStore();
 
@@ -49,7 +54,12 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
   const [modal, setModal] = useState<'add-list' | 'add-tag' | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [logModalTask, setLogModalTask] = useState<Task | null>(null);
-  const [showDetail, setShowDetail] = useState(false); // New state for mobile detail view
+  const [showDetail, setShowDetail] = useState(false);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchKaryData();
+  }, [fetchKaryData]);
 
   const allLists = useMemo(() => {
     const todayCount = tasks.filter(
@@ -87,7 +97,6 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         filteredTasks = tasks.filter((t) => t.listId === selectedItem.id);
       }
     } else {
-      // type === 'tag'
       filteredTasks = tasks.filter((t) => t.tags?.includes(selectedItem.id));
     }
 
@@ -148,11 +157,17 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     const newTags: string[] = [];
     if (taskData.tagNames) {
       for (const tagName of taskData.tagNames) {
-        const tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
+        let tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
         if (!tag) {
-          const newTag = await addTag({ name: tagName, color: 'red-500' });
+          // Create the tag and then find it again
+          await addTag({ name: tagName, color: 'red-500' });
+          // Refresh tags to get the newly created one
+          await fetchKaryData();
+          tag = tags.find((t) => t.name.toLowerCase() === tagName.toLowerCase());
         }
-        newTags.push(tag.id);
+        if (tag) {
+          newTags.push(tag.id);
+        }
       }
     }
 
@@ -188,64 +203,77 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     return tags.find((t) => t.id === selectedItem.id);
   }, [selectedItem, allLists, tags]);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your tasks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchKaryData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <KarySidebar
-        smartLists={allLists.filter((l) => ['inbox', 'today', 'upcoming'].includes(l.id))}
-        customLists={lists}
-        listFolders={listFolders}
-        tags={tags}
-        tagFolders={tagFolders}
-        selectedItem={selectedItem}
-        onSelectItem={(selection) => {
-          setSelectedItem(selection);
-          if (isMobile) setShowDetail(false); // Hide detail on sidebar item click
-        }}
-        onOpenModal={setModal}
-        isMobile={isMobile}
-        isSidebarOpen={isAppSidebarOpen}
-      />
-      <main className="flex-1 flex min-w-0">
-        {isMobile && showDetail && selectedTaskId ? (
-          <KaryTaskDetail
-            selectedTaskId={selectedTaskId}
-            tasks={tasks}
-            allTags={tags}
-            allLists={allLists}
-            allLogs={[]}
-            childrenTasks={childrenOfSelectedTask}
-            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
-            onUpdateTask={updateTask}
-            onDeleteTask={deleteTask}
-            onDuplicateTask={handleDuplicateTask}
-            onSelectTask={(id) => {
-              setSelectedTaskId(id);
-              setShowDetail(true);
-            }}
-            onAddTask={handleAddTask}
-            onOpenLogModal={setLogModalTask}
-            onBack={() => setShowDetail(false)} // Back button for mobile
-          />
-        ) : isMobile && !showDetail ? (
-          <KaryTaskList
-            viewDetails={currentViewDetails}
-            tasks={displayedTasks}
-            allLists={allLists}
-            allTags={tags}
-            selectedTaskId={selectedTaskId}
-            expandedTasks={expandedTasks}
-            onSelectTask={(id) => {
-              setSelectedTaskId(id);
-              setShowDetail(true);
-            }}
-            onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
-            onAddTask={handleAddTask}
-            onToggleExpand={(taskId) =>
-              setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
-            }
-          />
-        ) : (
-          <ResizablePanels initialLeftWidth={45}>
+    <div className="h-screen bg-gray-50 flex w-full">
+      {/* Main Content */}
+      <div className="flex-1 min-h-0 flex">
+        <KarySidebar
+          smartLists={allLists.filter((l) => ['inbox', 'today', 'upcoming'].includes(l.id))}
+          customLists={lists}
+          listFolders={listFolders}
+          tags={tags}
+          tagFolders={tagFolders}
+          selectedItem={selectedItem}
+          onSelectItem={(selection) => {
+            setSelectedItem(selection);
+            if (isMobile) setShowDetail(false);
+          }}
+          onOpenModal={setModal}
+          isMobile={isMobile}
+          isSidebarOpen={isAppSidebarOpen}
+        />
+        
+        <main className="flex-1 flex min-w-0">
+          {isMobile && showDetail && selectedTaskId ? (
+            <KaryTaskDetail
+              selectedTaskId={selectedTaskId}
+              tasks={tasks}
+              allTags={tags}
+              allLists={allLists}
+              allLogs={[]}
+              childrenTasks={childrenOfSelectedTask}
+              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+              onUpdateTask={updateTask}
+              onDeleteTask={deleteTask}
+              onDuplicateTask={handleDuplicateTask}
+              onSelectTask={(id) => {
+                setSelectedTaskId(id);
+                setShowDetail(true);
+              }}
+              onAddTask={handleAddTask}
+              onOpenLogModal={setLogModalTask}
+              onBack={() => setShowDetail(false)}
+            />
+          ) : isMobile && !showDetail ? (
             <KaryTaskList
               viewDetails={currentViewDetails}
               tasks={displayedTasks}
@@ -263,30 +291,52 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
               }
             />
-            <KaryTaskDetail
-              selectedTaskId={selectedTaskId}
-              tasks={tasks}
-              allTags={tags}
-              allLists={allLists}
-              allLogs={[]}
-              childrenTasks={childrenOfSelectedTask}
-              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
-              onUpdateTask={updateTask}
-              onDeleteTask={deleteTask}
-              onDuplicateTask={handleDuplicateTask}
-              onSelectTask={(id) => {
-                setSelectedTaskId(id);
-                setShowDetail(true);
-              }}
-              onAddTask={handleAddTask}
-              onOpenLogModal={(task) => {
-                console.log("Opening log modal for task:", task);
-                setLogModalTask(task);
-              }}
-            />
-          </ResizablePanels>
-        )}
-      </main>
+          ) : (
+            <ResizablePanels initialLeftWidth={45}>
+              <KaryTaskList
+                viewDetails={currentViewDetails}
+                tasks={displayedTasks}
+                allLists={allLists}
+                allTags={tags}
+                selectedTaskId={selectedTaskId}
+                expandedTasks={expandedTasks}
+                onSelectTask={(id) => {
+                  setSelectedTaskId(id);
+                  setShowDetail(true);
+                }}
+                onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+                onAddTask={handleAddTask}
+                onToggleExpand={(taskId) =>
+                  setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
+                }
+              />
+              <KaryTaskDetail
+                selectedTaskId={selectedTaskId}
+                tasks={tasks}
+                allTags={tags}
+                allLists={allLists}
+                allLogs={[]}
+                childrenTasks={childrenOfSelectedTask}
+                onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+                onUpdateTask={updateTask}
+                onDeleteTask={deleteTask}
+                onDuplicateTask={handleDuplicateTask}
+                onSelectTask={(id) => {
+                  setSelectedTaskId(id);
+                  setShowDetail(true);
+                }}
+                onAddTask={handleAddTask}
+                onOpenLogModal={(task) => {
+                  console.log("Opening log modal for task:", task);
+                  setLogModalTask(task);
+                }}
+              />
+            </ResizablePanels>
+          )}
+        </main>
+      </div>
+
+      {/* Modals */}
       {modal && (
         <Modal
           title={modal === 'add-list' ? 'Create New List' : 'Create New Tag'}
@@ -295,12 +345,24 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
           {modal === 'add-list' && (
             <AddListForm
               folders={listFolders}
-              onAddList={addList}
-              onAddListFolder={addListFolder}
+              onAddList={async (listData, newFolderName) => {
+                if (newFolderName) {
+                  await addListFolder({ name: newFolderName });
+                }
+                await addList(listData);
+              }}
             />
           )}
           {modal === 'add-tag' && (
-            <AddTagForm folders={tagFolders} onAddTag={addTag} onAddTagFolder={addTagFolder} />
+            <AddTagForm
+              folders={tagFolders}
+              onAddTag={async (tagData, newFolderName) => {
+                if (newFolderName) {
+                  await addTagFolder({ name: newFolderName });
+                }
+                await addTag(tagData);
+              }}
+            />
           )}
         </Modal>
       )}
@@ -308,13 +370,17 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         <LogEntryModal
           isOpen={true}
           onClose={() => setLogModalTask(null)}
-          onAddLog={addLog}
+          onAddLog={(logData) => {
+            if (logData.title) {
+              addLog(logData as any);
+            }
+          }}
           allFoci={initialFoci.filter((f) => f.id === 'kary' || f.id === 'general')}
           initialFocusId="kary"
           initialTitle={`Log for: ${logModalTask.title}`}
         />
       )}
-    </>
+    </div>
   );
 };
 
