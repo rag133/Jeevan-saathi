@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { rm, mkdir } from 'fs/promises';
+import { rm, mkdir, copyFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
@@ -58,6 +58,13 @@ async function buildProject() {
       '<script type="module" src="/index.mjs"></script>'
     );
     await writeFile(join(BUILD_DIR, 'index.html'), htmlContent);
+
+    // Copy public directory assets
+    const { cp } = await import('fs/promises');
+    if (existsSync('public')) {
+      await cp('public', join(BUILD_DIR, 'public'), { recursive: true });
+      console.log('📁 Public directory copied successfully');
+    }
 
     console.log('✅ Build completed successfully!');
     console.log(`📁 Output directory: ${BUILD_DIR}`);

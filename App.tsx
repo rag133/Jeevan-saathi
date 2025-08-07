@@ -8,6 +8,9 @@ const KaryView = React.lazy(() => import('./modules/kary/views/KaryView'));
 const VidyaView = React.lazy(() => import('./modules/vidya/views/VidyaView'));
 const AbhyasaView = React.lazy(() => import('./modules/abhyasa/views/AbhyasaView'));
 import AuthModal from './components/AuthModal';
+import LoginPage from './components/LoginPage';
+
+
 import {
   onAuthStateChange,
   signOutUser,
@@ -144,7 +147,37 @@ const App: React.FC = () => {
   // --- Auth State ---
   const [user, setUser] = useState<any>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [showLoginPage, setShowLoginPage] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+
+
+
+  const handleOpenAuthModal = () => {
+    console.log('Button clicked! Opening auth modal...');
+    console.log('Current isAuthModalOpen state:', isAuthModalOpen);
+    setIsAuthModalOpen(true);
+    console.log('Set isAuthModalOpen to true');
+  };
+
+  const handleCloseAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const handleShowLoginPage = () => {
+    console.log('Showing login page...');
+    setShowLoginPage(true);
+  };
+
+  const handleBackToLanding = () => {
+    console.log('Going back to landing page...');
+    setShowLoginPage(false);
+  };
+
+  const handleAuthSuccess = () => {
+    console.log('Auth successful!');
+    setIsAuthModalOpen(false);
+    setShowLoginPage(false);
+  };
 
   // --- Zustand Stores ---
   const karyState = useKaryStore();
@@ -226,6 +259,17 @@ const App: React.FC = () => {
   }
 
   if (!user) {
+    // Show login page if requested
+    if (showLoginPage) {
+      return (
+        <LoginPage 
+          onAuthSuccess={handleAuthSuccess}
+          onBackToLanding={handleBackToLanding}
+        />
+      );
+    }
+
+    // Show landing page
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
         {/* Navigation Bar */}
@@ -237,6 +281,11 @@ const App: React.FC = () => {
                 src="/Jeevan Saathi Logo.png" 
                 alt="Jeevan Saathi Logo" 
                 className="w-10 h-10 rounded-lg"
+                onError={(e) => {
+                  // Fallback to text if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.add('ml-0');
+                }}
               />
               <div>
                 <div className="text-2xl font-bold text-amber-700">Jeevan Saathi</div>
@@ -253,7 +302,7 @@ const App: React.FC = () => {
             {/* Auth Buttons */}
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={handleShowLoginPage}
                 className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-2 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 Get Started
@@ -274,7 +323,7 @@ const App: React.FC = () => {
             </p>
             <div className="flex justify-center">
               <button 
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={handleShowLoginPage}
                 className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-8 py-4 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl"
               >
                 Start Your Journey
@@ -570,11 +619,7 @@ const App: React.FC = () => {
           </div>
         </footer>
 
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onAuthSuccess={() => setIsAuthModalOpen(false)}
-        />
+
       </div>
     );
   }
@@ -685,6 +730,11 @@ const App: React.FC = () => {
           onClose={() => setIsHelpModalOpen(false)}
         />
       )}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={handleCloseAuthModal}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };

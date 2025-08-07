@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signIn, signUp } from '~/services/authService';
+import { signIn, signUp } from '../services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -28,17 +28,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuthSuccess })
       onAuthSuccess();
       onClose();
     } catch (error: any) {
+      console.error('Auth error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 relative z-[10000]">
         <h2 className="text-2xl font-bold mb-6 text-center">
           {isSignUp ? 'Create Account' : 'Sign In'}
         </h2>

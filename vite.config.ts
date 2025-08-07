@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
           assetFileNames: '[name].[ext]',
         },
       },
+      // Ensure public directory assets are copied
+      copyPublicDir: true,
     },
     resolve: {
       alias: {
