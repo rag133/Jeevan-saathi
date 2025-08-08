@@ -28,14 +28,15 @@ const SubtaskItem: React.FC<SubtaskItemProps> = ({ task, onToggleComplete, onSel
 
   return (
     <li
-      className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-gray-100 group transition-colors duration-200 cursor-pointer"
+      className="flex items-center gap-1 py-2 px-2 rounded-md hover:bg-gray-100 group transition-colors duration-200 cursor-pointer border border-gray-200 hover:border-gray-300"
       onClick={() => onSelect(task.id)}
     >
-      <Checkbox
-        checked={task.completed}
-        onChange={() => onToggleComplete(task.id)}
-        ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-      />
+      <div className="flex items-center justify-center w-5 h-5">
+        <Checkbox
+          checked={task.completed}
+          onChange={() => onToggleComplete(task.id)}
+        />
+      </div>
       <span
         className={`flex-1 text-sm truncate ${
           task.completed ? 'text-gray-400 line-through' : 'text-gray-700'

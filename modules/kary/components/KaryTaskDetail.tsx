@@ -3,13 +3,19 @@ import { Task, Tag, List } from '~/modules/kary/types';
 import * as Icons from '~/components/Icons';
 import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from './DateTimePicker';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import SubtaskItem from './SubtaskItem';
-import LoadingSpinner from '~/components/common/LoadingSpinner';
 import { Log } from '~/modules/dainandini/types';
 import TaskLogItem from './TaskLogItem';
-import { NewTaskData } from '../views/KaryView';
+import { WysiwygMarkdownEditor } from '~/components/common/WysiwygMarkdownEditor';
+
+// Define NewTaskData type inline since it's not exported from KaryView
+type NewTaskData = {
+  title: string;
+  list?: List;
+  tagNames?: string[];
+  priority?: number;
+  dueDate?: string;
+};
 
 interface KaryTaskDetailProps {
   selectedTaskId: string | null;
@@ -90,13 +96,13 @@ const TagPill: React.FC<{ tag: Tag; onRemove: (tagId: string) => void }> = ({ ta
     <span
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative group inline-flex items-center pl-2.5 pr-2 py-1 text-xs font-medium rounded-full bg-${tag.color}/20 text-${tag.color}`}
+      className={`relative group inline-flex items-center pl-2 pr-1.5 py-0.5 text-xs font-medium rounded-full bg-${tag.color}/20 text-${tag.color}`}
     >
       <span>{tag.name}</span>
       {isHovered && (
         <button
           onClick={() => onRemove(tag.id)}
-          className="absolute -right-1 -top-1 w-4 h-4 bg-gray-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -right-1 -top-1 w-3 h-3 bg-gray-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label={`Remove ${tag.name} tag`}
         >
           &times;
@@ -127,14 +133,11 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     [selectedTaskId, tasks]
   );
   const [activePopup, setActivePopup] = useState<PopupType | null>(null);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [descriptionInput, setDescriptionInput] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
 
   const popupRef = useRef<HTMLDivElement>(null);
-  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
   const triggerRefs = {
     date: useRef<HTMLButtonElement>(null),
@@ -166,18 +169,12 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
 
   useEffect(() => {
     if (task) {
-      setDescriptionInput(task.description || '');
       setTitleInput(task.title || '');
     }
-    setIsEditingDescription(false);
     setIsEditingTitle(false);
     setNewSubtaskTitle('');
     setActivePopup(null);
   }, [task?.id]);
-
-  useEffect(() => {
-    if (isEditingDescription) descriptionTextareaRef.current?.focus();
-  }, [isEditingDescription]);
 
   useEffect(() => {
     if (isEditingTitle && titleTextareaRef.current) {
@@ -222,12 +219,7 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
     setIsEditingTitle(false);
   };
 
-  const handleDescriptionSave = () => {
-    if (task && descriptionInput !== (task.description || '')) {
-      onUpdateTask(task.id, { description: descriptionInput.trim() });
-    }
-    setIsEditingDescription(false);
-  };
+
 
   const handleAddTag = (tagId: string) => handleUpdate({ tags: [...(task.tags || []), tagId] });
   const handleRemoveTag = (tagId: string) =>
@@ -239,8 +231,8 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
       const taskData: NewTaskData = {
         title: newSubtaskTitle.trim(),
         tagNames: [],
-        priority: null,
-        dueDate: null,
+        priority: undefined,
+        dueDate: undefined,
       };
       onAddTask(taskData, null, task.id);
       setNewSubtaskTitle('');
@@ -289,14 +281,43 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
 
     const popupStyle: React.CSSProperties = {
       position: 'absolute',
-      top: `${rect.bottom + 8}px`,
       zIndex: 50,
     };
 
-    if (activePopup === 'priority' || activePopup === 'more') {
-      popupStyle.right = `${window.innerWidth - rect.right}px`;
+    // Smart positioning to prevent overflow
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const popupWidth = activePopup === 'list' ? 224 : 192; // w-56 = 224px, w-48 = 192px
+    const popupHeight = 256; // max-h-64 = 256px
+
+    // Calculate available space
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = viewportWidth - rect.left;
+    const spaceLeft = rect.right;
+
+    // Position vertically
+    if (spaceBelow >= popupHeight || spaceBelow > spaceAbove) {
+      popupStyle.top = `${rect.bottom + 8}px`;
     } else {
-      popupStyle.left = `${rect.left}px`;
+      popupStyle.bottom = `${viewportHeight - rect.top + 8}px`;
+    }
+
+    // Position horizontally
+    if (activePopup === 'priority' || activePopup === 'more') {
+      // Right-aligned popups
+      if (spaceRight >= popupWidth) {
+        popupStyle.left = `${rect.left}px`;
+      } else {
+        popupStyle.right = `${viewportWidth - rect.right}px`;
+      }
+    } else {
+      // Left-aligned popups
+      if (spaceLeft >= popupWidth) {
+        popupStyle.left = `${rect.left}px`;
+      } else {
+        popupStyle.right = `${viewportWidth - rect.right}px`;
+      }
     }
 
     return (
@@ -310,7 +331,7 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
           />
         )}
         {activePopup === 'priority' && (
-          <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto">
+          <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto max-h-64">
             {priorityItems.map((item) => (
               <li key={item.id}>
                 <button
@@ -350,7 +371,7 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
             {allLists
               .filter((l) => l.id !== 'today' && l.id !== 'upcoming')
               .map((list) => {
-                const ListIcon = Icons[list.icon];
+                const ListIcon = Icons[list.icon as keyof typeof Icons] || Icons.CircleIcon;
                 return (
                   <li key={list.id}>
                     <button
@@ -371,7 +392,7 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
           </ul>
         )}
         {activePopup === 'more' && (
-          <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto">
+          <ul className="bg-white rounded-lg shadow-xl border border-gray-200 w-48 overflow-y-auto max-h-64">
             <li>
               <button
                 onClick={() => {
@@ -400,57 +421,73 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
   };
 
   return (
-    <div className="flex-1 bg-white/80 p-6 flex flex-col h-full">
-      <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center gap-4 flex-wrap">
-          {onBack && (
+    <div className="flex-1 bg-white/80 flex flex-col h-full">
+      {/* Compact Header */}
+      <header className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                aria-label="Back to task list"
+              >
+                <Icons.ArrowLeftIcon className="w-4 h-4" />
+              </button>
+            )}
+            <Checkbox
+              checked={task.completed}
+              onChange={() => onToggleComplete(task.id)}
+            />
+            <div className="flex items-center gap-2">
+              <button
+                ref={triggerRefs.date}
+                onClick={() => setActivePopup((p) => (p === 'date' ? null : 'date'))}
+                className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
+              >
+                <Icons.CalendarIcon className="w-4 h-4" />
+                <span>
+                  {task.dueDate ? formatDetailDate(new Date(task.dueDate)) : 'Set date'}
+                </span>
+              </button>
+              {task.dueDate && (
+                <button
+                  onClick={() => onUpdateTask(task.id, { reminder: !task.reminder })}
+                  className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                  aria-label="Toggle reminder"
+                >
+                  <Icons.BellIcon
+                    className={`w-4 h-4 transition-colors ${task.reminder ? 'text-blue-600' : 'text-gray-400'}`}
+                  />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
             <button
-              onClick={onBack}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-              aria-label="Back to task list"
+              ref={triggerRefs.priority}
+              onClick={() => setActivePopup((p) => (p === 'priority' ? null : 'priority'))}
+              className="p-1.5 hover:bg-gray-100 rounded transition-colors"
             >
-              <Icons.ArrowLeftIcon className="w-5 h-5" />
+              <Icons.FlagIcon className={`w-4 h-4 ${priorityColor}`} />
             </button>
-          )}
-          <Checkbox
-            checked={task.completed}
-            onChange={() => onToggleComplete(task.id)}
-            ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-          />
-          <button
-            ref={triggerRefs.date}
-            onClick={() => setActivePopup((p) => (p === 'date' ? null : 'date'))}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1"
-          >
-            <Icons.CalendarIcon className="w-4 h-4" />
-            <span>
-              {task.dueDate ? formatDetailDate(new Date(task.dueDate)) : 'Date and Reminder'}
-            </span>
-          </button>
-          {task.dueDate && (
             <button
-              onClick={() => handleUpdate({ reminder: !task.reminder })}
-              className="p-2 hover:bg-gray-100 rounded-full"
-              aria-label="Toggle reminder"
+              ref={triggerRefs.more}
+              onClick={() => setActivePopup((p) => (p === 'more' ? null : 'more'))}
+              className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors"
+              aria-label="More options"
             >
-              <Icons.BellIcon
-                className={`w-5 h-5 transition-colors ${task.reminder ? 'text-blue-600' : 'text-gray-400'}`}
-              />
+              <Icons.MoreHorizontalIcon className="w-4 h-4" />
             </button>
-          )}
+          </div>
         </div>
-        <button
-          ref={triggerRefs.priority}
-          onClick={() => setActivePopup((p) => (p === 'priority' ? null : 'priority'))}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
-          <Icons.FlagIcon className={`w-5 h-5 ${priorityColor}`} />
-        </button>
       </header>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto pr-2">
-        <div className="flex-shrink-0">
-          <div className="flex items-start gap-2 mb-4">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-3 space-y-4">
+          {/* Title Section */}
+          <div className="flex items-start gap-2">
             <div className="flex-1 min-w-0">
               {isEditingTitle ? (
                 <textarea
@@ -465,7 +502,7 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
                     }
                     if (e.key === 'Escape') {
                       e.preventDefault();
-                      setTitleInput(task?.title || '');
+                      setTitleInput(task.title || '');
                       setIsEditingTitle(false);
                     }
                   }}
@@ -474,201 +511,144 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
                     target.style.height = 'auto';
                     target.style.height = `${target.scrollHeight}px`;
                   }}
-                  className="w-full text-2xl font-bold text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden py-1 px-2"
+                  className="w-full text-xl font-bold text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden py-1 px-2"
                   rows={1}
                 />
               ) : (
                 <h1
                   onClick={() => setIsEditingTitle(true)}
-                  className={`text-2xl font-bold text-gray-800 cursor-text ${task.completed ? 'line-through text-gray-400' : ''}`}
+                  className={`text-xl font-bold text-gray-800 cursor-text leading-tight ${task.completed ? 'line-through text-gray-400' : ''}`}
                 >
                   {task.title}
                 </h1>
               )}
             </div>
-            <button
-              ref={triggerRefs.more}
-              onClick={() => setActivePopup((p) => (p === 'more' ? null : 'more'))}
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-full flex-shrink-0"
-              aria-label="More options"
-            >
-              <Icons.MoreHorizontalIcon className="w-5 h-5" />
-            </button>
           </div>
 
-          <div className="space-y-4 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-gray-500 w-20 flex-shrink-0">
-                <Icons.ListIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">List</span>
-              </div>
-              {currentList && (
-                <button
-                  ref={triggerRefs.list}
-                  onClick={() => setActivePopup((p) => (p === 'list' ? null : 'list'))}
-                  className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md px-3 py-1"
-                >
-                  {React.createElement(Icons[currentList.icon], {
-                    className: `w-4 h-4 ${currentList.color ? `text-${currentList.color}` : ''}`,
-                  })}
-                  <span>{currentList.name}</span>
-                  <Icons.ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                </button>
-              )}
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex items-center gap-2 text-gray-500 w-20 flex-shrink-0 pt-1">
-                <Icons.TagIcon className="w-5 h-5" />
-                <span className="text-sm font-medium">Tags</span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap flex-1">
-                {taskTags.map((tag) => (
-                  <TagPill key={tag.id} tag={tag} onRemove={handleRemoveTag} />
-                ))}
-                <button
-                  ref={triggerRefs.tags}
-                  onClick={() => setActivePopup((p) => (p === 'tags' ? null : 'tags'))}
-                  className="w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
-                  aria-label="Add tag"
-                >
-                  <Icons.PlusIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-2 flex-1 flex flex-col min-h-0">
-          {isEditingDescription ? (
-            <textarea
-              ref={descriptionTextareaRef}
-              value={descriptionInput}
-              onChange={(e) => setDescriptionInput(e.target.value)}
-              onBlur={handleDescriptionSave}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setDescriptionInput(task?.description || '');
-                  setIsEditingDescription(false);
-                }
-              }}
-              className="w-full flex-1 p-3 text-sm text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
-              placeholder="Add more details... (Markdown supported)"
-            />
-          ) : (
-            <div
-              className="prose max-w-none flex-1 -m-3 p-3 rounded-md hover:bg-gray-100/70 transition-colors"
-              onClick={(e) => {
-                const target = e.target as HTMLElement;
-                const isInteractive = target.closest('a, button, input');
-                if (!isInteractive) {
-                  setIsEditingDescription(true);
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') setIsEditingDescription(true);
-              }}
-              aria-label="Task description"
-            >
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  li: (allProps: any) => {
-                    const { children, checked, node, ...props } = allProps;
-                    const isTaskListItem = typeof checked === 'boolean';
-                    if (isTaskListItem && node?.position) {
-                      const lineIndex = node.position.start.line - 1;
-                      return (
-                        <li {...props} className="task-list-item-prose flex items-start">
-                          <span
-                            className="inline-block mt-1 mr-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Checkbox
-                              checked={checked}
-                              onChange={() => handleToggleChecklist(lineIndex, !checked)}
-                            />
-                          </span>
-                          <div className="flex-1 prose-p:my-0 prose-ul:my-0 prose-ol:my-0">
-                            {children}
-                          </div>
-                        </li>
-                      );
-                    }
-                    return <li {...props}>{children}</li>;
-                  },
-                }}
-              >
-                {task.description || '*No description provided. Click to add more details...*'}
-              </ReactMarkdown>
-            </div>
-          )}
-
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Icons.CheckSquareIcon className="w-5 h-5 text-gray-500" />
-                <h3 className="text-md font-semibold text-gray-700">Subtasks</h3>
-              </div>
-            </div>
-            <ul className="space-y-1">
-              {childrenTasks.map((subtask) => (
-                <SubtaskItem
-                  key={subtask.id}
-                  task={subtask}
-                  onToggleComplete={onToggleComplete}
-                  onSelect={onSelectTask}
+          {/* Enhanced Description Area - Made Even Bigger */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="p-3">
+                <WysiwygMarkdownEditor
+                  value={task.description || ''}
+                  onChange={(newDescription) => onUpdateTask(task.id, { description: newDescription })}
+                  placeholder="Add more details... (Markdown supported)"
+                  minHeight="256px"
+                  onToggleChecklist={handleToggleChecklist}
                 />
-              ))}
-            </ul>
-            <form onSubmit={handleSubtaskSubmit} className="mt-2">
-              <div className="relative">
-                <Icons.PlusIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Subtasks Section */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Icons.CheckSquareIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Subtasks</span>
+              <span className="text-xs text-gray-500">
+                ({childrenTasks.filter(t => t.completed).length}/{childrenTasks.length})
+              </span>
+            </div>
+            
+            <div className="space-y-2">
+                             {childrenTasks.map((subtask) => (
+                 <SubtaskItem
+                   key={subtask.id}
+                   task={subtask}
+                   onToggleComplete={onToggleComplete}
+                   onSelect={onSelectTask}
+                 />
+               ))}
+              
+              <form onSubmit={handleSubtaskSubmit} className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-dashed border-gray-300">
+                <Icons.PlusIcon className="w-4 h-4 text-gray-400" />
                 <input
                   type="text"
+                  placeholder="Add a subtask"
+                  className="flex-1 bg-transparent text-sm focus:outline-none"
                   value={newSubtaskTitle}
                   onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                  placeholder="Add a subtask"
-                  className="w-full pl-9 pr-3 py-2 bg-gray-100/70 border-2 border-transparent focus:border-blue-500 focus:bg-white focus:shadow-sm rounded-md outline-none transition duration-200"
                 />
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-gray-200">
+          {/* Journal Section */}
+          <div className="border-t border-gray-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Icons.BookOpenIcon className="w-5 h-5 text-gray-500" />
-                <h3 className="text-md font-semibold text-gray-700">Journal</h3>
+                <Icons.BookOpenIcon className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Journal</span>
               </div>
               <button
-                onClick={() => {
-                  console.log("Add Entry button clicked!");
-                  onOpenLogModal(task);
-                }}
-                className="flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
-                title="Add an entry for this task to your journal"
+                onClick={() => onOpenLogModal(task)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
               >
-                <Icons.PlusIcon className="w-3.5 h-3.5" />
+                <Icons.PlusIcon className="w-3 h-3" />
                 <span>Add Entry</span>
               </button>
             </div>
-            <ul className="space-y-2">
-              {taskLogs.map((log) => (
-                <TaskLogItem key={log.id} log={log} />
-              ))}
-              {taskLogs.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-2">
-                  No journal entries for this task yet.
-                </p>
+            
+            <div className="space-y-2">
+              {taskLogs.length > 0 ? (
+                taskLogs.slice(0, 3).map((log) => (
+                  <TaskLogItem key={log.id} log={log} />
+                ))
+              ) : (
+                <div className="text-center py-6 text-gray-500">
+                  <Icons.BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm">No journal entries for this task yet.</p>
+                </div>
               )}
-            </ul>
+            </div>
           </div>
         </div>
       </div>
       {renderPopup()}
+
+      {/* Fixed Bottom Panel for Tags and List */}
+      <div className="border-t border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className="flex items-center justify-between gap-4">
+          {/* Tags Section */}
+          <div className="flex items-center gap-2 flex-1">
+            <Icons.TagIcon className="w-4 h-4 text-gray-500" />
+            <div className="flex items-center gap-1 flex-wrap flex-1">
+              {taskTags.slice(0, 3).map((tag) => (
+                <TagPill key={tag.id} tag={tag} onRemove={handleRemoveTag} />
+              ))}
+              {taskTags.length > 3 && (
+                <span className="text-xs text-gray-500">+{taskTags.length - 3}</span>
+              )}
+              <button
+                ref={triggerRefs.tags}
+                onClick={() => setActivePopup((p) => (p === 'tags' ? null : 'tags'))}
+                className="w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
+                aria-label="Add tag"
+              >
+                <Icons.PlusIcon className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+          
+          {/* List Section */}
+          {currentList && (
+            <div className="flex items-center gap-2">
+              <Icons.FolderIcon className="w-4 h-4 text-gray-500" />
+              <button
+                ref={triggerRefs.list}
+                onClick={() => setActivePopup((p) => (p === 'list' ? null : 'list'))}
+                className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
+              >
+                {React.createElement(Icons[currentList.icon as keyof typeof Icons] || Icons.CircleIcon, {
+                  className: `w-4 h-4 ${currentList.color ? `text-${currentList.color}` : ''}`,
+                })}
+                <span>{currentList.name}</span>
+                <Icons.ChevronDownIcon className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

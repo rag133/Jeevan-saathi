@@ -20,10 +20,12 @@ export const useHomeStore = create<HomeStore>()(
       dragHistory: [], // Track drag operations for undo
       isDragging: false,
       // Time-based scheduling state
-              timeSlots: [],
-        showTimeSlots: false,
-        // Filter state - start with all types enabled
-        itemTypeFilters: new Set([CalendarItemType.TASK, CalendarItemType.HABIT, CalendarItemType.LOG]),
+      timeSlots: [],
+      showTimeSlots: false,
+      // Filter state - start with all types enabled
+      itemTypeFilters: new Set([CalendarItemType.TASK, CalendarItemType.HABIT, CalendarItemType.LOG]),
+      // Real-time sync control
+      realTimeSyncDisabled: false,
 
       // Actions
       fetchHomeData: async () => {
@@ -76,10 +78,14 @@ export const useHomeStore = create<HomeStore>()(
 
       refreshData: async () => {
         // Only refresh if not already loading to prevent excessive updates
-        const { loading } = get();
-        if (!loading) {
+        const { loading, realTimeSyncDisabled } = get();
+        if (!loading && !realTimeSyncDisabled) {
           await get().fetchHomeData();
         }
+      },
+
+      setRealTimeSyncDisabled: (disabled: boolean) => {
+        set({ realTimeSyncDisabled: disabled });
       },
 
       // Set up real-time subscriptions to other stores

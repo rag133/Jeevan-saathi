@@ -98,7 +98,7 @@ const KaryTaskList: React.FC<KaryTaskListProps> = ({
       {/* Header */}
       <div className="border-b border-gray-200 bg-white">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
                 <MenuIcon className="w-5 h-5 text-indigo-600" />
@@ -125,20 +125,11 @@ const KaryTaskList: React.FC<KaryTaskListProps> = ({
         </div>
       </div>
 
-      {/* Add Task Input */}
-      <div className="p-6 border-b border-gray-200">
-        <InteractiveTaskInput
-          lists={allLists.filter((l) => l.id !== 'today' && l.id !== 'upcoming')}
-          tags={allTags}
-          onAddTask={onAddTask}
-        />
-      </div>
-
       {/* Task List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
+        <div className="p-4">
           {taskTree.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {taskTree.map((task) => renderTaskAndChildren(task, 0))}
             </div>
           ) : (
@@ -147,15 +138,24 @@ const KaryTaskList: React.FC<KaryTaskListProps> = ({
                 <MenuIcon className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
-              <p className="text-gray-500 mb-4">Get started by adding your first task above</p>
+              <p className="text-gray-500 mb-4">Get started by adding your first task below</p>
               <div className="text-xs text-gray-400">
-                <p>• Use the input above to add tasks</p>
+                <p>• Use the input below to add tasks</p>
                 <p>• Organize with lists and tags</p>
                 <p>• Track your progress</p>
               </div>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Bottom Panel - Add Task Input */}
+      <div className="border-t border-gray-200 p-3">
+        <InteractiveTaskInput
+          lists={allLists.filter((l) => l.id !== 'today' && l.id !== 'upcoming')}
+          tags={allTags}
+          onAddTask={onAddTask}
+        />
       </div>
     </div>
   );

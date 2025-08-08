@@ -118,46 +118,45 @@ const KaryTaskItem: React.FC<KaryTaskItemProps> = ({
   return (
     <div
       onClick={handleItemClick}
-      className={`group relative flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+      className={`group relative flex items-center gap-1 p-2 rounded-lg cursor-pointer transition-all duration-200 border ${
         isSelected 
-          ? 'bg-indigo-50 border border-indigo-200 shadow-sm' 
-          : 'hover:bg-gray-50 border border-transparent'
+          ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
+          : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
       }`}
       style={{ marginLeft: `${level * 20}px` }}
     >
       {/* Expand/Collapse Button */}
-      <div className="flex items-center justify-center w-6 h-6">
+      <div className="flex items-center justify-center w-5 h-5">
         {isParent ? (
           <button
             onClick={handleExpandClick}
-            className="p-1 rounded-md hover:bg-gray-200 transition-colors duration-200"
+            className="p-0.5 rounded-md hover:bg-gray-200 transition-colors duration-200"
           >
             {isExpanded ? (
-              <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+              <ChevronDownIcon className="w-3.5 h-3.5 text-gray-500" />
             ) : (
-              <ChevronRightIcon className="w-4 h-4 text-gray-500" />
+              <ChevronRightIcon className="w-3.5 h-3.5 text-gray-500" />
             )}
           </button>
         ) : (
-          <div className="w-4 h-4" />
+          <div className="w-3.5 h-3.5" />
         )}
       </div>
 
       {/* Checkbox */}
-      <div className="flex items-center justify-center w-6 h-6">
+      <div className="flex items-center justify-center w-5 h-5">
         <Checkbox
           checked={task.completed}
           onChange={() => onToggleComplete(task.id)}
-          ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
         />
       </div>
 
       {/* Task Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p
-              className={`text-sm font-medium ${
+              className={`text-sm font-medium truncate ${
                 task.completed 
                   ? 'text-gray-400 line-through' 
                   : 'text-gray-900'
@@ -228,13 +227,6 @@ const KaryTaskItem: React.FC<KaryTaskItemProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Selection Indicator */}
-      {isSelected && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
-        </div>
-      )}
     </div>
   );
 };

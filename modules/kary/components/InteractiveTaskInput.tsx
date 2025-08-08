@@ -299,9 +299,9 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
       <form
         onSubmit={handleSubmit}
         ref={containerRef}
-        className="bg-white border-2 border-transparent focus-within:border-blue-500 rounded-lg shadow-sm transition-colors"
+        className="bg-white border border-gray-300 focus-within:border-blue-500 rounded-lg shadow-sm transition-colors"
       >
-        <div className="p-3">
+        <div className="p-2">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {priorityData && (
               <Pill
@@ -353,7 +353,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-1 pt-2 pb-2 px-3 border-t border-gray-100">
+        <div className="flex items-center justify-between px-2 pb-2 border-t border-gray-100">
           <div className="flex items-center gap-1 text-gray-500">
             <div className="relative" ref={datePickerRef}>
               <button
@@ -362,7 +362,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
                 className="flex items-center gap-1.5 p-1 rounded hover:bg-gray-200 transition-colors"
               >
                 <Icons.CalendarIcon
-                  className={`w-5 h-5 ${selectedDueDate ? 'text-blue-600' : ''}`}
+                  className={`w-4 h-4 ${selectedDueDate ? 'text-blue-600' : ''}`}
                 />
                 {selectedDueDate && (
                   <span className="text-xs text-blue-600 font-medium">
@@ -371,7 +371,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
                 )}
               </button>
               {isDatePickerOpen && (
-                <div className="absolute top-full left-0 mt-2 z-30">
+                <div className="absolute bottom-full left-0 mb-2 z-30">
                   <DateTimePicker
                     currentDate={selectedDueDate}
                     onSelect={(date) => {
@@ -392,7 +392,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
               onClick={() => openPopup('priority', priorityItems)}
               className="p-1 rounded hover:bg-gray-200 transition-colors"
             >
-              <Icons.FlagIcon className={`w-5 h-5 ${priorityData ? priorityData.color : ''}`} />
+              <Icons.FlagIcon className={`w-4 h-4 ${priorityData ? priorityData.color : ''}`} />
             </button>
             <button
               type="button"
@@ -404,7 +404,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
               }
               className="p-1 rounded hover:bg-gray-200 transition-colors"
             >
-              <Icons.TagIcon className="w-5 h-5" />
+              <Icons.TagIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -424,17 +424,17 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
                   <span className="text-xs text-gray-700 font-medium">{selectedList.name}</span>
                 </>
               ) : (
-                <Icons.ListIcon className="w-5 h-5" />
+                <Icons.ListIcon className="w-4 h-4" />
               )}
             </button>
             <button type="button" className="p-1 rounded hover:bg-gray-200 transition-colors">
-              <Icons.MoreHorizontalIcon className="w-5 h-5" />
+              <Icons.MoreHorizontalIcon className="w-4 h-4" />
             </button>
           </div>
           <button
             type="submit"
             disabled={isCreating || (!text.trim() && selectedTags.length === 0)}
-            className="px-4 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+            className="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
           >
             {isCreating ? <LoadingSpinner /> : 'Add'}
           </button>
@@ -442,7 +442,7 @@ const InteractiveTaskInput: React.FC<InteractiveTaskInputProps> = ({ lists, tags
       </form>
 
       {popup && (
-        <ul className="absolute mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-56 overflow-y-auto">
+        <ul className="absolute bottom-full left-0 mb-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-56 overflow-y-auto">
           {popup.items.map((item, index) => (
             <li key={item.id}>
               <button

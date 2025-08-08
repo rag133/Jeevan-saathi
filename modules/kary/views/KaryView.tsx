@@ -45,7 +45,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
   const { width } = useWindowSize();
   const isMobile = width !== undefined && width < 768;
 
-  const { addLog } = useDainandiniStore();
+  const { addLog, logs } = useDainandiniStore();
 
   const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
@@ -259,7 +259,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
               tasks={tasks}
               allTags={tags}
               allLists={allLists}
-              allLogs={[]}
+              allLogs={logs}
               childrenTasks={childrenOfSelectedTask}
               onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
               onUpdateTask={updateTask}
@@ -315,7 +315,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 tasks={tasks}
                 allTags={tags}
                 allLists={allLists}
-                allLogs={[]}
+                allLogs={logs}
                 childrenTasks={childrenOfSelectedTask}
                 onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
                 onUpdateTask={updateTask}
@@ -372,12 +372,19 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
           onClose={() => setLogModalTask(null)}
           onAddLog={(logData) => {
             if (logData.title) {
-              addLog(logData as any);
+              // Add the taskId to the log data so it's associated with the task
+              const logWithTaskId = {
+                ...logData,
+                taskId: logModalTask.id,
+                logDate: logData.logDate || new Date(),
+              };
+              addLog(logWithTaskId as any);
             }
           }}
           allFoci={initialFoci.filter((f) => f.id === 'kary' || f.id === 'general')}
           initialFocusId="kary"
           initialTitle={`Log for: ${logModalTask.title}`}
+          initialDate={new Date()}
         />
       )}
     </div>

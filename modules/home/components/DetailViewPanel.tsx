@@ -1,11 +1,95 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as Icons from '~/components/Icons';
 import type { CalendarItem } from '../types';
 import { CalendarItemType } from '../types';
 
-import HomeTaskDetail from './HomeTaskDetail';
+import { KaryTaskDetail } from '~/modules/kary/components/KaryTaskDetail';
 import HomeHabitDetail from './HomeHabitDetail';
 import HomeLogDetail from './HomeLogDetail';
+import { useKaryStore } from '~/modules/kary/karyStore';
+import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
+import { useHomeStore } from '../homeStore';
+import type { Task } from '~/modules/kary/types';
+
+// Wrapper component to adapt Home module data to Kary component
+const HomeTaskDetailWrapper: React.FC<{ selectedItem: CalendarItem; onClose: () => void }> = ({ selectedItem, onClose }) => {
+  const karyStore = useKaryStore();
+  const dainandiniStore = useDainandiniStore();
+  const homeStore = useHomeStore();
+  
+  const task = selectedItem.originalData as Task;
+  const allTags = karyStore.tags;
+  const allLists = karyStore.lists;
+  const allLogs = dainandiniStore.logs;
+  const childrenTasks = karyStore.tasks.filter(t => t.parentId === task.id);
+  
+  // Temporarily disable real-time sync to prevent refresh issues
+  useEffect(() => {
+    // Disable real-time sync while task detail is open
+    homeStore.setRealTimeSyncDisabled(true);
+    
+    // Re-enable real-time sync when component unmounts
+    return () => {
+      homeStore.setRealTimeSyncDisabled(false);
+      // Manually refresh data when task detail closes to ensure calendar is updated
+      setTimeout(() => homeStore.refreshData(), 200);
+    };
+  }, []); // Remove homeStore dependency to prevent infinite loop
+  
+  return (
+    <KaryTaskDetail
+      selectedTaskId={task.id}
+      tasks={karyStore.tasks}
+      allTags={allTags}
+      allLists={allLists}
+      allLogs={allLogs}
+      childrenTasks={childrenTasks}
+      onToggleComplete={(id: string) => {
+        const taskToUpdate = karyStore.tasks.find(t => t.id === id);
+        if (taskToUpdate) {
+          karyStore.updateTask(id, { completed: !taskToUpdate.completed });
+        }
+      }}
+      onUpdateTask={karyStore.updateTask}
+      onDeleteTask={karyStore.deleteTask}
+      onDuplicateTask={(taskId: string) => {
+        // TODO: Implement duplicate functionality
+        console.log('Duplicate task:', taskId);
+      }}
+      onSelectTask={(taskId: string) => {
+        // TODO: Handle task selection
+        console.log('Select task:', taskId);
+      }}
+      onAddTask={(taskData: any, list: any, parentId?: string) => {
+        const newTask = {
+          title: taskData.title,
+          description: '',
+          completed: false,
+          priority: taskData.priority,
+          dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
+          reminder: false,
+          listId: list?.id || 'today',
+          tags: [],
+          parentId: parentId,
+          createdAt: new Date(),
+        };
+        karyStore.addTask(newTask);
+      }}
+      onOpenLogModal={(task: Task) => {
+        // Trigger the log modal event
+        const event = new CustomEvent('openLogModal', { 
+          detail: { 
+            taskId: task.id, 
+            taskTitle: task.title,
+            selectedDate: new Date() 
+          } 
+        });
+        window.dispatchEvent(event);
+      }}
+      onBack={onClose}
+    />
+  );
+};
 
 interface DetailViewPanelProps {
   selectedItem: CalendarItem | null;
@@ -38,8 +122,7 @@ const DetailViewPanel: React.FC<DetailViewPanelProps> = ({ selectedItem, onClose
   const renderDetailContent = () => {
     switch (selectedItem.type) {
       case CalendarItemType.TASK:
-        const task = selectedItem.originalData as any;
-        return <HomeTaskDetail key={`${selectedItem.id}-${task?.completed}-${task?.priority}-${task?.title}`} selectedItem={selectedItem} onClose={onClose} />;
+        return <HomeTaskDetailWrapper selectedItem={selectedItem} onClose={onClose} />;
 
       case CalendarItemType.HABIT:
       case CalendarItemType.HABIT_LOG:

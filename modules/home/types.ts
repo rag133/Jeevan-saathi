@@ -53,6 +53,8 @@ export interface HomeState {
   showTimeSlots: boolean;
   // Filter state
   itemTypeFilters: Set<CalendarItemType>;
+  // Real-time sync control
+  realTimeSyncDisabled: boolean;
 }
 
 export interface HomeActions {
@@ -63,6 +65,7 @@ export interface HomeActions {
   setCalendarItems: (items: CalendarItem[]) => void;
   // Real-time sync
   setupRealTimeSync: () => () => void; // Returns cleanup function
+  setRealTimeSyncDisabled: (disabled: boolean) => void;
   // Drag and Drop Actions
   startDrag: () => void;
   endDrag: () => void;

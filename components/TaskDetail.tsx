@@ -76,13 +76,13 @@ const TagPill: React.FC<{ tag: Tag; onRemove: (tagId: string) => void }> = ({ ta
     <span
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative group inline-flex items-center pl-2.5 pr-2 py-1 text-xs font-medium rounded-full bg-${tag.color}/20 text-${tag.color}`}
+      className={`relative group inline-flex items-center pl-2 pr-1.5 py-0.5 text-xs font-medium rounded-full bg-${tag.color}/20 text-${tag.color}`}
     >
       <span>{tag.name}</span>
       {isHovered && (
         <button
           onClick={() => onRemove(tag.id)}
-          className="absolute -right-1 -top-1 w-4 h-4 bg-gray-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -right-1 -top-1 w-3 h-3 bg-gray-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label={`Remove ${tag.name} tag`}
         >
           &times;
@@ -266,37 +266,49 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
   };
 
   return (
-    <div className="flex-1 bg-white/80 p-6 flex flex-col h-full">
-      <header className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <Checkbox
-            checked={task.completed}
-            onChange={() => onToggleComplete(task.id)}
-            ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-          />
+    <div className="flex-1 bg-white/80 flex flex-col h-full">
+      {/* Compact Header */}
+      <header className="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={task.completed}
+              onChange={() => onToggleComplete(task.id)}
+              ariaLabel={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+            />
+            <div className="flex items-center gap-2">
+              <button
+                ref={triggerRefs.date}
+                onClick={() => setActivePopup((p) => (p === 'date' ? null : 'date'))}
+                className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
+              >
+                <Icons.CalendarIcon className="w-4 h-4" />
+                <span>
+                  {task.dueDate ? formatDetailDate(new Date(task.dueDate)) : 'Set date'}
+                </span>
+              </button>
+              {task.reminder && (
+                <button className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors">
+                  <Icons.BellIcon className="w-4 h-4 text-blue-600" />
+                </button>
+              )}
+            </div>
+          </div>
           <button
-            ref={triggerRefs.date}
-            onClick={() => setActivePopup((p) => (p === 'date' ? null : 'date'))}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1"
+            ref={triggerRefs.priority}
+            onClick={() => setActivePopup((p) => (p === 'priority' ? null : 'priority'))}
+            className="p-1.5 hover:bg-gray-100 rounded transition-colors"
           >
-            <Icons.CalendarIcon className="w-4 h-4" />
-            <span>
-              {task.dueDate ? formatDetailDate(new Date(task.dueDate)) : 'Date and Reminder'}
-            </span>
+            <Icons.FlagIcon className={`w-4 h-4 ${priorityColor}`} />
           </button>
         </div>
-        <button
-          ref={triggerRefs.priority}
-          onClick={() => setActivePopup((p) => (p === 'priority' ? null : 'priority'))}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
-          <Icons.FlagIcon className={`w-5 h-5 ${priorityColor}`} />
-        </button>
       </header>
 
-      <div className="flex-1 flex flex-col min-h-0 pr-2">
-        <div className="flex-shrink-0">
-          <div className="flex items-start gap-2 mb-4">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-4 py-3 space-y-4">
+          {/* Title Section */}
+          <div className="flex items-start gap-2">
             <div className="flex-1 min-w-0">
               {isEditingTitle ? (
                 <textarea
@@ -320,74 +332,143 @@ const TaskDetail: React.FC<TaskDetailProps> = ({
                     target.style.height = 'auto';
                     target.style.height = `${target.scrollHeight}px`;
                   }}
-                  className="w-full text-2xl font-bold text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden py-1 px-2"
+                  className="w-full text-xl font-bold text-gray-800 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden py-1 px-2"
                   rows={1}
                 />
               ) : (
                 <h1
                   onClick={() => setIsEditingTitle(true)}
-                  className={`text-2xl font-bold text-gray-800 cursor-text ${task.completed ? 'line-through text-gray-400' : ''}`}
+                  className={`text-xl font-bold text-gray-800 cursor-text leading-tight ${task.completed ? 'line-through text-gray-400' : ''}`}
                 >
                   {task.title}
                 </h1>
               )}
             </div>
             <button
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-full flex-shrink-0"
+              className="p-1.5 text-gray-400 hover:text-gray-600 rounded flex-shrink-0 transition-colors"
               aria-label="More options"
             >
-              <Icons.ListIcon className="w-5 h-5" />
+              <Icons.ListIcon className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap mb-6">
-            {taskTags.map((tag) => (
-              <TagPill key={tag.id} tag={tag} onRemove={handleRemoveTag} />
-            ))}
-            <button
-              ref={triggerRefs.tags}
-              onClick={() => setActivePopup((p) => (p === 'tags' ? null : 'tags'))}
-              className="w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
-              aria-label="Add tag"
-            >
-              <Icons.PlusIcon className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-2 flex-1 flex flex-col min-h-0">
-          {isEditingDescription ? (
-            <textarea
-              ref={descriptionTextareaRef}
-              value={descriptionInput}
-              onChange={(e) => setDescriptionInput(e.target.value)}
-              onBlur={handleDescriptionSave}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setDescriptionInput(task?.description || '');
-                  setIsEditingDescription(false);
-                }
-              }}
-              className="w-full flex-1 p-3 text-sm text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
-              placeholder="Add more details... (Markdown supported)"
-            />
-          ) : (
-            <div
-              className="prose max-w-none flex-1 overflow-y-auto p-3 -m-3 rounded-md cursor-text hover:bg-gray-100/70 transition-colors"
-              onClick={() => setIsEditingDescription(true)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') setIsEditingDescription(true);
-              }}
-              aria-label="Task description"
-            >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {task.description || '*No description provided. Click to add more details...*'}
-              </ReactMarkdown>
+          {/* Compact Metadata Section */}
+          <div className="grid grid-cols-1 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Icons.ListIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-gray-600 w-12">List</span>
+              <button className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 transition-colors">
+                <Icons.FolderIcon className="w-3 h-3" />
+                <span className="text-sm">Inbox</span>
+                <Icons.ChevronDownIcon className="w-3 h-3" />
+              </button>
             </div>
-          )}
+            
+            <div className="flex items-center gap-2">
+              <Icons.TagIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-gray-600 w-12">Tags</span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {taskTags.slice(0, 2).map((tag) => (
+                  <TagPill key={tag.id} tag={tag} onRemove={handleRemoveTag} />
+                ))}
+                {taskTags.length > 2 && (
+                  <span className="text-xs text-gray-500">+{taskTags.length - 2}</span>
+                )}
+                <button
+                  ref={triggerRefs.tags}
+                  onClick={() => setActivePopup((p) => (p === 'tags' ? null : 'tags'))}
+                  className="w-5 h-5 border border-gray-300 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:border-gray-500 transition-colors"
+                  aria-label="Add tag"
+                >
+                  <Icons.PlusIcon className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Description Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center gap-2 mb-2">
+              <Icons.EditIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Description</span>
+            </div>
+            
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {isEditingDescription ? (
+                <textarea
+                  ref={descriptionTextareaRef}
+                  value={descriptionInput}
+                  onChange={(e) => setDescriptionInput(e.target.value)}
+                  onBlur={handleDescriptionSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      setDescriptionInput(task?.description || '');
+                      setIsEditingDescription(false);
+                    }
+                  }}
+                  className="w-full h-32 p-3 text-sm text-gray-800 bg-white focus:outline-none resize-none"
+                  placeholder="Add more details... (Markdown supported)"
+                />
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none h-32 overflow-y-auto p-3 cursor-text hover:bg-gray-50 transition-colors"
+                  onClick={() => setIsEditingDescription(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') setIsEditingDescription(true);
+                  }}
+                  aria-label="Task description"
+                >
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {task.description || '*Click to add description...*'}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Subtasks Section (Placeholder for future implementation) */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Icons.CheckSquareIcon className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Subtasks</span>
+              <span className="text-xs text-gray-500">(0/0)</span>
+            </div>
+            
+            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border border-dashed border-gray-300">
+              <Icons.PlusIcon className="w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Add a subtask"
+                className="flex-1 bg-transparent text-sm focus:outline-none"
+                disabled
+              />
+            </div>
+          </div>
+
+          {/* Journal Section (Placeholder for future implementation) */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Icons.BookOpenIcon className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Journal</span>
+              </div>
+              <button
+                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+                disabled
+              >
+                <Icons.PlusIcon className="w-3 h-3" />
+                <span>Add Entry</span>
+              </button>
+            </div>
+            
+            <div className="text-center py-6 text-gray-500">
+              <Icons.BookOpenIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No journal entries for this task yet.</p>
+            </div>
+          </div>
         </div>
       </div>
       {renderPopup()}
