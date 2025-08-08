@@ -13,18 +13,19 @@ export interface TagFolder {
 export interface List {
   id: string;
   name: string;
-  icon: keyof typeof import('../../../components/Icons');
+  icon: keyof typeof import('~/components/Icons');
   count?: number;
   color?: string;
-  folderId?: string;
+  folderId?: string | null;
+  isDefault?: boolean;
 }
 
 export interface Tag {
   id: string;
   name: string;
   color: string; // e.g. 'red-500'
-  icon?: keyof typeof import('../../../components/Icons');
-  folderId?: string;
+  icon?: keyof typeof import('~/components/Icons');
+  folderId?: string | null;
 }
 
 export interface Task {

@@ -5,6 +5,7 @@ import { KaryTaskDetail } from '~/modules/kary/components/KaryTaskDetail';
 import Modal from '~/components/common/Modal';
 import AddListForm from '~/modules/kary/components/forms/AddListForm';
 import AddTagForm from '~/modules/kary/components/forms/AddTagForm';
+import EditListForm from '~/modules/kary/components/forms/EditListForm';
 import ResizablePanels from '~/components/common/ResizablePanels';
 import { Task, List, ListFolder, Tag, TagFolder, Selection } from '~/modules/kary/types';
 import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
@@ -37,9 +38,12 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     updateListFolder,
     deleteListFolder,
     addTagFolder,
+    cleanupDuplicateInboxes,
     updateTagFolder,
     deleteTagFolder,
     fetchKaryData,
+    getDefaultList,
+    setDefaultList,
   } = useKaryStore();
 
   const { width } = useWindowSize();
@@ -47,11 +51,13 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
 
   const { addLog, logs } = useDainandiniStore();
 
-  const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'inbox' });
+  const [selectedItem, setSelectedItem] = useState<Selection>({ type: 'list', id: 'today' });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     tasks.filter((t) => !t.parentId).length > 0 ? tasks.filter((t) => !t.parentId)[0].id : null
   );
-  const [modal, setModal] = useState<'add-list' | 'add-tag' | null>(null);
+  const [modal, setModal] = useState<'add-list' | 'add-tag' | 'edit-list' | null>(null);
+  const [isDefaultList, setIsDefaultList] = useState(false);
+  const [editingList, setEditingList] = useState<List | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [logModalTask, setLogModalTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -61,6 +67,78 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     fetchKaryData();
   }, [fetchKaryData]);
 
+  // Clean up duplicate Inboxes when data is loaded
+  useEffect(() => {
+    if (!loading && lists.length > 0) {
+      const inboxLists = lists.filter(list => list.id === 'inbox');
+      if (inboxLists.length > 1) {
+        cleanupDuplicateInboxes();
+      }
+    }
+  }, [lists, loading, cleanupDuplicateInboxes]);
+
+  // Ensure Inbox list exists in database
+  // Remove duplicate Inbox creation - Inbox should only be created during initialization
+  // useEffect(() => {
+  //   const ensureInboxExists = async () => {
+  //     const hasInbox = lists.some(list => list.id === 'inbox');
+  //     if (!hasInbox && !loading) {
+  //       try {
+  //         await addList({
+  //           name: 'Inbox',
+  //           icon: 'InboxIcon',
+  //           isDefault: true
+  //         });
+  //       } catch (error) {
+  //         console.error('Failed to create Inbox list:', error);
+  //       }
+  //     }
+  //   };
+
+  //   if (!loading) {
+  //     ensureInboxExists();
+  //   }
+  // }, [lists, loading, addList]);
+
+  // Set initial selection to default list if available
+  useEffect(() => {
+    const defaultList = getDefaultList();
+    if (defaultList && selectedItem.type === 'list' && selectedItem.id === 'today') {
+      // If we have a default list, select it instead of 'today'
+      setSelectedItem({ type: 'list', id: defaultList.id });
+    }
+  }, [getDefaultList]);
+
+  const customListsWithInbox = useMemo(() => {
+    // Add task counts to regular lists
+    const listsWithCounts = lists.map(list => ({
+      ...list,
+      count: tasks.filter(t => t.listId === list.id && !t.completed).length
+    }));
+
+    // Ensure only one default list exists
+    const defaultLists = listsWithCounts.filter(list => list.isDefault);
+    if (defaultLists.length > 1) {
+      // If multiple defaults, keep only the first one (usually the most recently created)
+      const firstDefault = defaultLists[0];
+      const normalizedLists = listsWithCounts.map(list => ({
+        ...list,
+        isDefault: list.id === firstDefault.id
+      }));
+      listsWithCounts.splice(0, listsWithCounts.length, ...normalizedLists);
+    }
+
+    // Remove duplicate Inboxes - keep only the first one
+    const inboxLists = listsWithCounts.filter(list => list.id === 'inbox');
+    if (inboxLists.length > 1) {
+      const firstInbox = inboxLists[0];
+      const nonInboxLists = listsWithCounts.filter(list => list.id !== 'inbox');
+      return [firstInbox, ...nonInboxLists];
+    }
+
+    return listsWithCounts;
+  }, [tasks, lists]);
+
   const allLists = useMemo(() => {
     const todayCount = tasks.filter(
       (t) =>
@@ -68,19 +146,37 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         new Date(t.dueDate).toDateString() === new Date().toDateString() &&
         !t.completed
     ).length;
-    const upcomingCount = tasks.filter(
-      (t) => t.dueDate && new Date(t.dueDate) > new Date() && !t.completed
+    
+    // Due tasks: tasks that are due yesterday or before (past due only), considering date only
+    const dueCount = tasks.filter(
+      (t) =>
+        t.dueDate &&
+        new Date(t.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
+        !t.completed
     ).length;
-    const inboxCount = tasks.filter((t) => t.listId === 'inbox' && !t.completed).length;
+    
+    // Upcoming tasks: tasks scheduled from tomorrow onwards (not today)
+    const upcomingCount = tasks.filter(
+      (t) =>
+        t.dueDate &&
+        new Date(t.dueDate).setHours(0, 0, 0, 0) > new Date().setHours(0, 0, 0, 0) &&
+        !t.completed
+    ).length;
 
     const smartLists: List[] = [
-      { id: 'inbox', name: 'Inbox', icon: 'InboxIcon', count: inboxCount },
-      { id: 'today', name: 'Today', icon: 'CalendarIcon', count: todayCount },
-      { id: 'upcoming', name: 'Upcoming', icon: 'CalendarIcon', count: upcomingCount },
+      { id: 'today', name: 'Today', icon: 'TodayIcon', count: todayCount },
+      { id: 'due', name: 'Due', icon: 'ClockIcon', count: dueCount },
+      { id: 'upcoming', name: 'Upcoming', icon: 'TomorrowIcon', count: upcomingCount },
     ];
 
-    return [...smartLists, ...lists];
-  }, [tasks, lists]);
+    return [...smartLists, ...customListsWithInbox];
+  }, [tasks, customListsWithInbox]);
+
+  // Debug: Log lists to see what's being loaded
+  useEffect(() => {
+    console.log('Lists loaded:', lists);
+    console.log('All lists with counts:', allLists);
+  }, [lists, allLists]);
 
   const displayedTasks = useMemo(() => {
     let filteredTasks: Task[] = [];
@@ -89,10 +185,20 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
         filteredTasks = tasks.filter(
           (t) => t.dueDate && new Date(t.dueDate).toDateString() === new Date().toDateString()
         );
+      } else if (selectedItem.id === 'due') {
+        // Due tasks: tasks that are due yesterday or before (past due only), considering date only
+        filteredTasks = tasks.filter(
+          (t) =>
+            t.dueDate &&
+            new Date(t.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
+        );
       } else if (selectedItem.id === 'upcoming') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        filteredTasks = tasks.filter((t) => t.dueDate && new Date(t.dueDate) >= today);
+        // Upcoming tasks: tasks scheduled from tomorrow onwards (not today)
+        filteredTasks = tasks.filter(
+          (t) =>
+            t.dueDate &&
+            new Date(t.dueDate).setHours(0, 0, 0, 0) > new Date().setHours(0, 0, 0, 0)
+        );
       } else {
         filteredTasks = tasks.filter((t) => t.listId === selectedItem.id);
       }
@@ -142,16 +248,17 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
 
   const handleAddTask = async (taskData: any, list?: List | null, parentId?: string) => {
     const getListId = () => {
-      if (parentId) return tasks.find((t) => t.id === parentId)?.listId || 'inbox';
+      if (parentId) return tasks.find((t) => t.id === parentId)?.listId || getDefaultList()?.id;
       if (list) return list.id;
       if (taskData.list) return taskData.list.id;
       if (
         selectedItem.type === 'list' &&
         selectedItem.id !== 'today' &&
+        selectedItem.id !== 'due' &&
         selectedItem.id !== 'upcoming'
       )
         return selectedItem.id;
-      return 'inbox';
+      return getDefaultList()?.id;
     };
 
     const newTags: string[] = [];
@@ -196,6 +303,27 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     await addTask(newTask);
   };
 
+  const handleEditList = (list: List) => {
+    setEditingList(list);
+    setModal('edit-list');
+  };
+
+  const handleDeleteList = async (listId: string) => {
+    // Prevent deletion of the Inbox list
+    if (listId === 'inbox') {
+      alert('The Inbox list cannot be deleted as it is a system list.');
+      return;
+    }
+    
+    if (window.confirm('Are you sure you want to delete this list? This action cannot be undone.')) {
+      await deleteList(listId);
+    }
+  };
+
+  const handleSetDefaultList = async (listId: string) => {
+    await setDefaultList(listId);
+  };
+
   const currentViewDetails = useMemo(() => {
     if (selectedItem.type === 'list') {
       return allLists.find((l) => l.id === selectedItem.id);
@@ -237,8 +365,8 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
       {/* Main Content */}
       <div className="flex-1 min-h-0 flex">
         <KarySidebar
-          smartLists={allLists.filter((l) => ['inbox', 'today', 'upcoming'].includes(l.id))}
-          customLists={lists}
+          smartLists={allLists.filter((l) => ['today', 'due', 'upcoming'].includes(l.id))}
+          customLists={customListsWithInbox}
           listFolders={listFolders}
           tags={tags}
           tagFolders={tagFolders}
@@ -248,6 +376,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
             if (isMobile) setShowDetail(false);
           }}
           onOpenModal={setModal}
+          onDeleteList={handleDeleteList}
           isMobile={isMobile}
           isSidebarOpen={isAppSidebarOpen}
         />
@@ -261,7 +390,15 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
               allLists={allLists}
               allLogs={logs}
               childrenTasks={childrenOfSelectedTask}
-              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+              onToggleComplete={(taskId) => {
+                const task = tasks.find(t => t.id === taskId);
+                const newCompleted = !task?.completed;
+                const updates: Partial<Task> = { completed: newCompleted };
+                if (newCompleted) {
+                  updates.completionDate = new Date();
+                }
+                updateTask(taskId, updates);
+              }}
               onUpdateTask={updateTask}
               onDeleteTask={deleteTask}
               onDuplicateTask={handleDuplicateTask}
@@ -285,11 +422,22 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 setSelectedTaskId(id);
                 setShowDetail(true);
               }}
-              onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+              onToggleComplete={(taskId) => {
+                const task = tasks.find(t => t.id === taskId);
+                const newCompleted = !task?.completed;
+                const updates: Partial<Task> = { completed: newCompleted };
+                if (newCompleted) {
+                  updates.completionDate = new Date();
+                }
+                updateTask(taskId, updates);
+              }}
               onAddTask={handleAddTask}
               onToggleExpand={(taskId) =>
                 setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
               }
+              onEditList={handleEditList}
+              onDeleteList={handleDeleteList}
+              onSetDefaultList={handleSetDefaultList}
             />
           ) : (
             <ResizablePanels initialLeftWidth={45}>
@@ -304,11 +452,22 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                   setSelectedTaskId(id);
                   setShowDetail(true);
                 }}
-                onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+                onToggleComplete={(taskId) => {
+                  const task = tasks.find(t => t.id === taskId);
+                  const newCompleted = !task?.completed;
+                  const updates: Partial<Task> = { completed: newCompleted };
+                  if (newCompleted) {
+                    updates.completionDate = new Date();
+                  }
+                  updateTask(taskId, updates);
+                }}
                 onAddTask={handleAddTask}
                 onToggleExpand={(taskId) =>
                   setExpandedTasks((prev) => ({ ...prev, [taskId]: !prev[taskId] }))
                 }
+                onEditList={handleEditList}
+                onDeleteList={handleDeleteList}
+                onSetDefaultList={handleSetDefaultList}
               />
               <KaryTaskDetail
                 selectedTaskId={selectedTaskId}
@@ -317,7 +476,15 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 allLists={allLists}
                 allLogs={logs}
                 childrenTasks={childrenOfSelectedTask}
-                onToggleComplete={(taskId) => updateTask(taskId, { completed: !tasks.find(t => t.id === taskId)?.completed, completionDate: new Date() })}
+                onToggleComplete={(taskId) => {
+                  const task = tasks.find(t => t.id === taskId);
+                  const newCompleted = !task?.completed;
+                  const updates: Partial<Task> = { completed: newCompleted };
+                  if (newCompleted) {
+                    updates.completionDate = new Date();
+                  }
+                  updateTask(taskId, updates);
+                }}
                 onUpdateTask={updateTask}
                 onDeleteTask={deleteTask}
                 onDuplicateTask={handleDuplicateTask}
@@ -339,17 +506,45 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
       {/* Modals */}
       {modal && (
         <Modal
-          title={modal === 'add-list' ? 'Create New List' : 'Create New Tag'}
-          onClose={() => setModal(null)}
+          title={
+            modal === 'add-list' ? 'Create New List' : 
+            modal === 'edit-list' ? 'Edit List' : 
+            'Create New Tag'
+          }
+          onClose={() => {
+            setModal(null);
+            setEditingList(null);
+          }}
         >
           {modal === 'add-list' && (
             <AddListForm
               folders={listFolders}
+              isDefaultList={isDefaultList}
+              onToggleDefaultList={() => setIsDefaultList(!isDefaultList)}
               onAddList={async (listData, newFolderName) => {
                 if (newFolderName) {
                   await addListFolder({ name: newFolderName });
                 }
                 await addList(listData);
+                setIsDefaultList(false); // Reset after adding
+              }}
+            />
+          )}
+          {modal === 'edit-list' && editingList && (
+            <EditListForm
+              list={editingList}
+              folders={listFolders}
+              onUpdateList={async (listId, updates, newFolderName) => {
+                if (newFolderName) {
+                  await addListFolder({ name: newFolderName });
+                }
+                await updateList(listId, updates);
+                setModal(null);
+                setEditingList(null);
+              }}
+              onCancel={() => {
+                setModal(null);
+                setEditingList(null);
               }}
             />
           )}

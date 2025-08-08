@@ -154,7 +154,7 @@ describe('useKaryStore', () => {
   });
 
   it('should update a task optimistically and then confirm persistence', async () => {
-    const existingTask = { id: '1', title: 'Old Title', listId: 'l1' };
+    const existingTask = { id: '1', title: 'Old Title', listId: 'l1', completed: false, createdAt: new Date() };
     act(() => {
       useKaryStore.setState({ tasks: [existingTask] });
     });
@@ -181,7 +181,7 @@ describe('useKaryStore', () => {
   });
 
   it('should rollback task update on error', async () => {
-    const existingTask = { id: '1', title: 'Old Title', listId: 'l1' };
+    const existingTask = { id: '1', title: 'Old Title', listId: 'l1', completed: false, createdAt: new Date() };
     act(() => {
       useKaryStore.setState({ tasks: [existingTask] });
     });
@@ -202,7 +202,7 @@ describe('useKaryStore', () => {
   });
 
   it('should delete a task optimistically and then confirm persistence', async () => {
-    const existingTask = { id: '1', title: 'Task to Delete', listId: 'l1' };
+    const existingTask = { id: '1', title: 'Task to Delete', listId: 'l1', completed: false, createdAt: new Date() };
     act(() => {
       useKaryStore.setState({ tasks: [existingTask] });
     });
@@ -794,5 +794,476 @@ describe('useKaryStore', () => {
     expect(tagFolders.length).toBe(1); // Should rollback to original
     expect(tagFolders[0]).toEqual(existingTagFolder);
     expect(error).toBe(errorMessage);
+  });
+});
+
+// Test smart list filtering logic
+describe('Smart List Filtering', () => {
+  it('should correctly identify due tasks (past due only, not today)', () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0); // Today at noon
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Test due task filtering logic
+    const isDue = (dueDate: Date) => {
+      return dueDate && 
+             new Date(dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+    };
+    
+    const isUpcoming = (dueDate: Date) => {
+      return dueDate && 
+             new Date(dueDate).setHours(0, 0, 0, 0) > new Date().setHours(0, 0, 0, 0);
+    };
+    
+    // Tasks due today should NOT be in "due" list (only in "today" list)
+    expect(isDue(today)).toBe(false);
+    expect(isUpcoming(today)).toBe(false);
+    
+    // Tasks due yesterday should be in "due" list
+    expect(isDue(yesterday)).toBe(true);
+    expect(isUpcoming(yesterday)).toBe(false);
+    
+    // Tasks due tomorrow should be in "upcoming" list
+    expect(isDue(tomorrow)).toBe(false);
+    expect(isUpcoming(tomorrow)).toBe(true);
+  });
+});
+
+// Test default list functionality
+describe('Default List Functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useKaryStore.setState({
+      tasks: [],
+      lists: [],
+      tags: [],
+      listFolders: [],
+      tagFolders: [],
+      loading: false,
+      error: null,
+      searchQuery: '',
+      filterOption: 'all',
+      sortOption: 'created',
+      sortDirection: 'desc',
+    });
+  });
+
+  it('should return null when no default list is set', () => {
+    const { getDefaultList } = useKaryStore.getState();
+    const defaultList = getDefaultList();
+    expect(defaultList).toBeNull();
+  });
+
+  it('should return the default list when one is set', () => {
+    const defaultList = { 
+      id: 'list-1', 
+      name: 'Default List', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const regularList = { 
+      id: 'list-2', 
+      name: 'Regular List', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [defaultList, regularList] });
+    });
+
+    const { getDefaultList } = useKaryStore.getState();
+    const result = getDefaultList();
+    expect(result).toEqual(defaultList);
+  });
+
+  it('should set a list as default and remove default from others', async () => {
+    const list1 = { 
+      id: 'list-1', 
+      name: 'List 1', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const list2 = { 
+      id: 'list-2', 
+      name: 'List 2', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [list1, list2] });
+    });
+
+    vi.mocked(listService.update).mockResolvedValue(undefined);
+
+    const { setDefaultList } = useKaryStore.getState();
+
+    await act(async () => {
+      await setDefaultList('list-2');
+    });
+
+    const { lists } = useKaryStore.getState();
+    expect(lists[0].isDefault).toBe(false); // list1 should no longer be default
+    expect(lists[1].isDefault).toBe(true);  // list2 should now be default
+
+    // Verify service calls
+    expect(listService.update).toHaveBeenCalledWith('list-1', { isDefault: false });
+    expect(listService.update).toHaveBeenCalledWith('list-2', { isDefault: true });
+  });
+
+  it('should handle errors when setting default list', async () => {
+    const list1 = { 
+      id: 'list-1', 
+      name: 'List 1', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const list2 = { 
+      id: 'list-2', 
+      name: 'List 2', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [list1, list2] });
+    });
+
+    const errorMessage = 'Failed to update list';
+    vi.mocked(listService.update).mockRejectedValue(new Error(errorMessage));
+
+    const { setDefaultList } = useKaryStore.getState();
+
+    await act(async () => {
+      await setDefaultList('list-2');
+    });
+
+    const { lists, error } = useKaryStore.getState();
+    // Should rollback to original state
+    expect(lists[0].isDefault).toBe(true);  // list1 should still be default
+    expect(lists[1].isDefault).toBe(false); // list2 should not be default
+    expect(error).toBe(errorMessage);
+  });
+
+  it('should handle default list when adding a new list', async () => {
+    const existingList = { 
+      id: 'list-1', 
+      name: 'Existing List', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [existingList] });
+    });
+
+    const newList = { 
+      name: 'New Default List', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+
+    vi.mocked(listService.add).mockResolvedValue('new-list-id');
+
+    const { addList } = useKaryStore.getState();
+
+    await act(async () => {
+      await addList(newList);
+    });
+
+    const { lists } = useKaryStore.getState();
+    expect(lists[0].isDefault).toBe(false); // existing list should no longer be default
+    expect(lists[1].isDefault).toBe(true);  // new list should be default
+  });
+
+  it('should handle default list when updating a list', async () => {
+    const list1 = { 
+      id: 'list-1', 
+      name: 'List 1', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const list2 = { 
+      id: 'list-2', 
+      name: 'List 2', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [list1, list2] });
+    });
+
+    vi.mocked(listService.update).mockResolvedValue(undefined);
+
+    const { updateList } = useKaryStore.getState();
+
+    await act(async () => {
+      await updateList('list-2', { isDefault: true });
+    });
+
+    const { lists } = useKaryStore.getState();
+    expect(lists[0].isDefault).toBe(false); // list1 should no longer be default
+    expect(lists[1].isDefault).toBe(true);  // list2 should now be default
+  });
+
+  it('should treat inbox as a regular list, not a smart list', () => {
+    const inboxList = { 
+      id: 'inbox', 
+      name: 'Inbox', 
+      icon: 'InboxIcon' as const, 
+      isDefault: true 
+    };
+    const regularList = { 
+      id: 'list-1', 
+      name: 'Regular List', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [inboxList, regularList] });
+    });
+
+    const { getDefaultList } = useKaryStore.getState();
+    const defaultList = getDefaultList();
+    
+    // Inbox should be treated as a regular list that can be default
+    expect(defaultList).toEqual(inboxList);
+    expect(defaultList?.id).toBe('inbox');
+    expect(defaultList?.isDefault).toBe(true);
+  });
+
+  it('should ensure only one default list exists at a time', () => {
+    // Test with multiple default lists (invalid state)
+    const list1 = { 
+      id: 'list-1', 
+      name: 'List 1', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const list2 = { 
+      id: 'list-2', 
+      name: 'List 2', 
+      icon: 'ListIcon' as const, 
+      isDefault: true 
+    };
+    const list3 = { 
+      id: 'list-3', 
+      name: 'List 3', 
+      icon: 'ListIcon' as const, 
+      isDefault: false 
+    };
+
+    act(() => {
+      useKaryStore.setState({ lists: [list1, list2, list3] });
+    });
+
+    const { getDefaultList } = useKaryStore.getState();
+    const defaultList = getDefaultList();
+    
+    // Should return the first default list found
+    expect(defaultList?.id).toBe('list-1');
+    expect(defaultList?.isDefault).toBe(true);
+  });
+});
+
+// Test search, filter, and sort functionality
+describe('Search, Filter, and Sort Functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useKaryStore.setState({
+      tasks: [],
+      lists: [],
+      tags: [],
+      listFolders: [],
+      tagFolders: [],
+      loading: false,
+      error: null,
+      searchQuery: '',
+      filterOption: 'all',
+      sortOption: 'created',
+      sortDirection: 'desc',
+    });
+  });
+
+  it('should set search query', () => {
+    const { setSearchQuery } = useKaryStore.getState();
+    act(() => {
+      setSearchQuery('test query');
+    });
+    const { searchQuery } = useKaryStore.getState();
+    expect(searchQuery).toBe('test query');
+  });
+
+  it('should set filter option', () => {
+    const { setFilterOption } = useKaryStore.getState();
+    act(() => {
+      setFilterOption('completed');
+    });
+    const { filterOption } = useKaryStore.getState();
+    expect(filterOption).toBe('completed');
+  });
+
+  it('should set sort option', () => {
+    const { setSortOption } = useKaryStore.getState();
+    act(() => {
+      setSortOption('dueDate');
+    });
+    const { sortOption } = useKaryStore.getState();
+    expect(sortOption).toBe('dueDate');
+  });
+
+  it('should set sort direction', () => {
+    const { setSortDirection } = useKaryStore.getState();
+    act(() => {
+      setSortDirection('asc');
+    });
+    const { sortDirection } = useKaryStore.getState();
+    expect(sortDirection).toBe('asc');
+  });
+
+  it('should filter tasks by search query', () => {
+    const tasks = [
+      { id: '1', title: 'Task 1', description: 'Description 1', listId: 'list1', completed: false, createdAt: new Date() },
+      { id: '2', title: 'Another task', description: 'Description 2', listId: 'list1', completed: false, createdAt: new Date() },
+      { id: '3', title: 'Third task', description: 'Another description', listId: 'list1', completed: false, createdAt: new Date() },
+    ] as any[];
+
+    act(() => {
+      useKaryStore.setState({ tasks, searchQuery: 'another' });
+    });
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const filteredTasks = getFilteredAndSortedTasks(tasks);
+
+    expect(filteredTasks).toHaveLength(2);
+    expect(filteredTasks[0].title).toBe('Another task');
+    expect(filteredTasks[1].title).toBe('Third task');
+  });
+
+  it('should filter tasks by completion status', () => {
+    const tasks = [
+      { id: '1', title: 'Task 1', listId: 'list1', completed: false, createdAt: new Date() },
+      { id: '2', title: 'Task 2', listId: 'list1', completed: true, createdAt: new Date() },
+      { id: '3', title: 'Task 3', listId: 'list1', completed: false, createdAt: new Date() },
+    ] as any[];
+
+    act(() => {
+      useKaryStore.setState({ tasks, filterOption: 'completed' });
+    });
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const filteredTasks = getFilteredAndSortedTasks(tasks);
+
+    expect(filteredTasks).toHaveLength(1);
+    expect(filteredTasks[0].title).toBe('Task 2');
+  });
+
+  it('should filter tasks by overdue status', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const tasks = [
+      { id: '1', title: 'Task 1', listId: 'list1', completed: false, dueDate: yesterday, createdAt: new Date() },
+      { id: '2', title: 'Task 2', listId: 'list1', completed: false, dueDate: new Date(), createdAt: new Date() },
+      { id: '3', title: 'Task 3', listId: 'list1', completed: true, dueDate: yesterday, createdAt: new Date() },
+    ] as any[];
+
+    act(() => {
+      useKaryStore.setState({ tasks, filterOption: 'overdue' });
+    });
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const filteredTasks = getFilteredAndSortedTasks(tasks);
+
+    expect(filteredTasks).toHaveLength(1);
+    expect(filteredTasks[0].title).toBe('Task 1');
+  });
+
+  it('should sort tasks by creation date', () => {
+    const date1 = new Date('2023-01-01');
+    const date2 = new Date('2023-01-02');
+    const date3 = new Date('2023-01-03');
+    
+    const tasks = [
+      { id: '1', title: 'Task 1', listId: 'list1', completed: false, createdAt: date2 },
+      { id: '2', title: 'Task 2', listId: 'list1', completed: false, createdAt: date1 },
+      { id: '3', title: 'Task 3', listId: 'list1', completed: false, createdAt: date3 },
+    ] as any[];
+
+    act(() => {
+      useKaryStore.setState({ tasks, sortOption: 'created', sortDirection: 'asc' });
+    });
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const sortedTasks = getFilteredAndSortedTasks(tasks);
+
+    expect(sortedTasks[0].title).toBe('Task 2');
+    expect(sortedTasks[1].title).toBe('Task 1');
+    expect(sortedTasks[2].title).toBe('Task 3');
+  });
+
+  it('should sort tasks by priority', () => {
+    const tasks = [
+      { id: '1', title: 'Task 1', listId: 'list1', completed: false, priority: 2, createdAt: new Date() },
+      { id: '2', title: 'Task 2', listId: 'list1', completed: false, priority: 1, createdAt: new Date() },
+      { id: '3', title: 'Task 3', listId: 'list1', completed: false, priority: 3, createdAt: new Date() },
+    ] as any[];
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const sortedTasks = getFilteredAndSortedTasks(tasks, '', 'all', 'priority', 'desc');
+
+    // Check that tasks are sorted by priority (descending)
+    expect(sortedTasks[0].priority).toBe(3); // Highest priority first
+    expect(sortedTasks[1].priority).toBe(2); // Second highest
+    expect(sortedTasks[2].priority).toBe(1); // Lowest priority last
+  });
+
+  it('should sort tasks by title', () => {
+    const tasks = [
+      { id: '1', title: 'Zebra task', listId: 'list1', completed: false, createdAt: new Date() },
+      { id: '2', title: 'Alpha task', listId: 'list1', completed: false, createdAt: new Date() },
+      { id: '3', title: 'Beta task', listId: 'list1', completed: false, createdAt: new Date() },
+    ] as any[];
+
+    act(() => {
+      useKaryStore.setState({ tasks, sortOption: 'title', sortDirection: 'asc' });
+    });
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const sortedTasks = getFilteredAndSortedTasks(tasks);
+
+    expect(sortedTasks[0].title).toBe('Alpha task');
+    expect(sortedTasks[1].title).toBe('Beta task');
+    expect(sortedTasks[2].title).toBe('Zebra task');
+  });
+
+  it('should combine search, filter, and sort', () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const tasks = [
+      { id: '1', title: 'Important task', listId: 'list1', completed: false, dueDate: yesterday, priority: 3, createdAt: new Date() },
+      { id: '2', title: 'Another important task', listId: 'list1', completed: false, dueDate: yesterday, priority: 2, createdAt: new Date() },
+      { id: '3', title: 'Regular task', listId: 'list1', completed: false, dueDate: new Date(), priority: 1, createdAt: new Date() },
+      { id: '4', title: 'Completed important task', listId: 'list1', completed: true, dueDate: yesterday, priority: 3, createdAt: new Date() },
+    ] as any[];
+
+    const { getFilteredAndSortedTasks } = useKaryStore.getState();
+    const filteredTasks = getFilteredAndSortedTasks(tasks, 'important', 'overdue', 'priority', 'desc');
+
+    expect(filteredTasks).toHaveLength(2);
+    // Check that tasks are filtered by search and overdue, and sorted by priority
+    expect(filteredTasks[0].priority).toBe(3);
+    expect(filteredTasks[1].priority).toBe(2);
+    expect(filteredTasks.every(task => task.title.toLowerCase().includes('important'))).toBe(true);
+    expect(filteredTasks.every(task => task.dueDate && new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0))).toBe(true);
   });
 });

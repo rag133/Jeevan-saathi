@@ -731,54 +731,78 @@ export const initializeUserData = async () => {
   // Initialize default foci for new users
   const { initialFoci } = await import('../modules/dainandini/data');
 
-  const batch = writeBatch(db);
-
   // Add default focus areas
-  initialFoci.forEach(async (focus) => {
+  await Promise.all(initialFoci.map(async (focus) => {
     await focusService.add(focus);
-  });
+  }));
 
   // Add default habits
-  habits.forEach(async (habit) => {
+  await Promise.all(habits.map(async (habit) => {
     await habitService.add(habit);
-  });
+  }));
 
   // Add default goals
-  initialGoals.forEach(async (goal) => {
+  await Promise.all(initialGoals.map(async (goal) => {
     await goalService.add(goal);
-  });
+  }));
 
   // Add default milestones
-  initialMilestones.forEach(async (milestone) => {
+  await Promise.all(initialMilestones.map(async (milestone) => {
     await milestoneService.add(milestone);
-  });
+  }));
 
   // Add default quick wins
-  initialQuickWins.forEach(async (quickWin) => {
+  await Promise.all(initialQuickWins.map(async (quickWin) => {
     await quickWinService.add(quickWin);
-  });
+  }));
 
-  // Add default custom lists
-  customLists.forEach(async (list) => {
-    await listService.add(list);
-  });
+  // Add default custom lists (including Inbox) - check for existing lists first
+  const existingLists = await listService.getAll();
+  const listsToAdd = customLists.filter(list => 
+    !existingLists.some(existing => existing.name === list.name)
+  );
+  
+  if (listsToAdd.length > 0) {
+    await Promise.all(listsToAdd.map(async (list) => {
+      await listService.add(list);
+    }));
+  }
 
-  // Add default list folders
-  listFolders.forEach(async (folder) => {
-    await listFolderService.add(folder);
-  });
+  // Add default list folders - check for existing folders first
+  const existingListFolders = await listFolderService.getAll();
+  const listFoldersToAdd = listFolders.filter(folder => 
+    !existingListFolders.some(existing => existing.name === folder.name)
+  );
+  
+  if (listFoldersToAdd.length > 0) {
+    await Promise.all(listFoldersToAdd.map(async (folder) => {
+      await listFolderService.add(folder);
+    }));
+  }
 
-  // Add default tags
-  tags.forEach(async (tag) => {
-    await tagService.add(tag);
-  });
+  // Add default tags - check for existing tags first
+  const existingTags = await tagService.getAll();
+  const tagsToAdd = tags.filter(tag => 
+    !existingTags.some(existing => existing.name === tag.name)
+  );
+  
+  if (tagsToAdd.length > 0) {
+    await Promise.all(tagsToAdd.map(async (tag) => {
+      await tagService.add(tag);
+    }));
+  }
 
-  // Add default tag folders
-  tagFolders.forEach(async (folder) => {
-    await tagFolderService.add(folder);
-  });
-
-  await batch.commit();
+  // Add default tag folders - check for existing folders first
+  const existingTagFolders = await tagFolderService.getAll();
+  const tagFoldersToAdd = tagFolders.filter(folder => 
+    !existingTagFolders.some(existing => existing.name === folder.name)
+  );
+  
+  if (tagFoldersToAdd.length > 0) {
+    await Promise.all(tagFoldersToAdd.map(async (folder) => {
+      await tagFolderService.add(folder);
+    }));
+  }
 };
 
 // ============= UTILITY FUNCTIONS =============

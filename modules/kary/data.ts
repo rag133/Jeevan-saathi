@@ -4,7 +4,6 @@ import { LogType } from '~/modules/dainandini/types';
 // --- Smart Lists ---
 // The 'count' for smart lists will be calculated dynamically in App.tsx
 export const smartLists: Omit<List, 'count'>[] = [
-  { id: 'inbox', name: 'Inbox', icon: 'InboxIcon' },
   { id: 'today', name: 'Today', icon: 'TodayIcon' },
   { id: 'upcoming', name: 'Upcoming', icon: 'Next7DaysIcon' },
 ];
@@ -12,7 +11,14 @@ export const smartLists: Omit<List, 'count'>[] = [
 // --- List Folders & Custom Lists ---
 export const listFolders: ListFolder[] = [];
 
-export const customLists: List[] = [];
+export const customLists: List[] = [
+  { 
+    id: 'inbox', 
+    name: 'Inbox', 
+    icon: 'InboxIcon', 
+    isDefault: true 
+  }
+];
 
 // --- Tag Folders & Tags ---
 export const tagFolders: TagFolder[] = [];

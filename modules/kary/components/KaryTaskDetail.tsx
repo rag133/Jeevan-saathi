@@ -606,13 +606,30 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
       </div>
       {renderPopup()}
 
-      {/* Fixed Bottom Panel for Tags and List */}
+      {/* Fixed Bottom Panel for List and Tags */}
       <div className="border-t border-gray-200 px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-4">
+          {/* List Section */}
+          {currentList && (
+            <div className="flex items-center gap-2">
+              <button
+                ref={triggerRefs.list}
+                onClick={() => setActivePopup((p) => (p === 'list' ? null : 'list'))}
+                className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
+              >
+                {React.createElement(Icons[currentList.icon as keyof typeof Icons] || Icons.CircleIcon, {
+                  className: `w-4 h-4 ${currentList.color ? `text-${currentList.color}` : ''}`,
+                })}
+                <span>{currentList.name}</span>
+                <Icons.ChevronDownIcon className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          
           {/* Tags Section */}
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1 justify-end">
             <Icons.TagIcon className="w-4 h-4 text-gray-500" />
-            <div className="flex items-center gap-1 flex-wrap flex-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {taskTags.slice(0, 3).map((tag) => (
                 <TagPill key={tag.id} tag={tag} onRemove={handleRemoveTag} />
               ))}
@@ -629,24 +646,6 @@ export const KaryTaskDetail: React.FC<KaryTaskDetailProps> = ({
               </button>
             </div>
           </div>
-          
-          {/* List Section */}
-          {currentList && (
-            <div className="flex items-center gap-2">
-              <Icons.FolderIcon className="w-4 h-4 text-gray-500" />
-              <button
-                ref={triggerRefs.list}
-                onClick={() => setActivePopup((p) => (p === 'list' ? null : 'list'))}
-                className="flex items-center gap-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
-              >
-                {React.createElement(Icons[currentList.icon as keyof typeof Icons] || Icons.CircleIcon, {
-                  className: `w-4 h-4 ${currentList.color ? `text-${currentList.color}` : ''}`,
-                })}
-                <span>{currentList.name}</span>
-                <Icons.ChevronDownIcon className="w-3 h-3" />
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

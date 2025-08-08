@@ -7,9 +7,16 @@ import IconPicker from './IconPicker';
 interface AddListFormProps {
   folders: ListFolder[];
   onAddList: (list: Omit<List, 'id' | 'count'>, newFolderName?: string) => void;
+  isDefaultList?: boolean;
+  onToggleDefaultList?: () => void;
 }
 
-const AddListForm: React.FC<AddListFormProps> = ({ folders, onAddList }) => {
+const AddListForm: React.FC<AddListFormProps> = ({ 
+  folders, 
+  onAddList, 
+  isDefaultList = false, 
+  onToggleDefaultList 
+}) => {
   const [name, setName] = useState('');
   const [color, setColor] = useState('gray-500');
   const [icon, setIcon] = useState<keyof typeof Icons>('ListIcon');
@@ -27,10 +34,11 @@ const AddListForm: React.FC<AddListFormProps> = ({ folders, onAddList }) => {
       icon,
       color,
       folderId: isCreatingNewFolder
-        ? undefined
+        ? null
         : selectedFolder !== 'none'
           ? selectedFolder
-          : undefined,
+          : null,
+      isDefault: isDefaultList,
     };
 
     onAddList(listData, isCreatingNewFolder ? newFolderName : undefined);
@@ -82,6 +90,21 @@ const AddListForm: React.FC<AddListFormProps> = ({ folders, onAddList }) => {
 
       <IconPicker selectedIcon={icon} onSelectIcon={setIcon} />
       <ColorPicker selectedColor={color} onSelectColor={setColor} />
+
+      {onToggleDefaultList && (
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="default-list"
+            checked={isDefaultList}
+            onChange={onToggleDefaultList}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <label htmlFor="default-list" className="ml-2 block text-sm text-gray-700">
+            Set as default list for new tasks
+          </label>
+        </div>
+      )}
 
       <div className="flex justify-end">
         <button

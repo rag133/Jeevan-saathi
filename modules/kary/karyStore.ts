@@ -3,6 +3,10 @@ import { devtools } from 'zustand/middleware';
 import { taskService, listService, tagService, listFolderService, tagFolderService } from '~/services/dataService';
 import type { Task, List, Tag, ListFolder, TagFolder } from './types';
 
+export type SortOption = 'created' | 'dueDate' | 'priority' | 'title';
+export type SortDirection = 'asc' | 'desc';
+export type FilterOption = 'all' | 'completed' | 'uncompleted' | 'overdue' | 'dueToday' | 'dueThisWeek';
+
 type KaryState = {
   tasks: Task[];
   lists: List[];
@@ -11,6 +15,12 @@ type KaryState = {
   tagFolders: TagFolder[];
   loading: boolean;
   error: string | null;
+  // Search, filter, and sort state
+  searchQuery: string;
+  filterOption: FilterOption;
+  sortOption: SortOption;
+  sortDirection: SortDirection;
+  // Methods
   fetchKaryData: () => Promise<void>;
   addTask: (task: Omit<Task, 'id'>) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
@@ -27,6 +37,15 @@ type KaryState = {
   addTagFolder: (folder: Omit<TagFolder, 'id'>) => Promise<void>;
   updateTagFolder: (folderId: string, updates: Partial<TagFolder>) => Promise<void>;
   deleteTagFolder: (folderId: string) => Promise<void>;
+  getDefaultList: () => List | null;
+  setDefaultList: (listId: string) => Promise<void>;
+  cleanupDuplicateInboxes: () => Promise<void>;
+  // Search, filter, and sort methods
+  setSearchQuery: (query: string) => void;
+  setFilterOption: (option: FilterOption) => void;
+  setSortOption: (option: SortOption) => void;
+  setSortDirection: (direction: SortDirection) => void;
+  getFilteredAndSortedTasks: (tasks: Task[], searchQueryOverride?: string, filterOptionOverride?: FilterOption, sortOptionOverride?: SortOption, sortDirectionOverride?: SortDirection) => Task[];
 };
 
 export const useKaryStore = create<KaryState>()(
@@ -39,6 +58,10 @@ export const useKaryStore = create<KaryState>()(
       tagFolders: [],
       loading: false,
       error: null,
+      searchQuery: '',
+      filterOption: 'all',
+      sortOption: 'created',
+      sortDirection: 'desc',
       fetchKaryData: async () => {
         set({ loading: true, error: null });
         try {
@@ -92,7 +115,20 @@ export const useKaryStore = create<KaryState>()(
       addList: async (list) => {
         const optimisticList = { ...list, id: `temp-${Date.now()}` } as List;
         const previousLists = get().lists;
-        set({ lists: [...previousLists, optimisticList] });
+        
+        // Prevent creating duplicate Inboxes
+        if (list.name === 'Inbox' && previousLists.some(l => l.name === 'Inbox')) {
+          set({ error: 'Inbox list already exists' });
+          return;
+        }
+        
+        // If this list is being set as default, remove default from other lists
+        let updatedLists = [...previousLists, optimisticList];
+        if (list.isDefault) {
+          updatedLists = updatedLists.map((l) => ({ ...l, isDefault: l.id === optimisticList.id }));
+        }
+        
+        set({ lists: updatedLists });
         try {
           const newId = await listService.add(list);
           set((state) => ({
@@ -104,9 +140,15 @@ export const useKaryStore = create<KaryState>()(
       },
       updateList: async (listId, updates) => {
         const previousLists = get().lists;
-        const updatedLists = previousLists.map((l) =>
+        let updatedLists = previousLists.map((l) =>
           l.id === listId ? { ...l, ...updates } : l
         );
+        
+        // If this list is being set as default, remove default from other lists
+        if (updates.isDefault) {
+          updatedLists = updatedLists.map((l) => ({ ...l, isDefault: l.id === listId }));
+        }
+        
         set({ lists: updatedLists });
         try {
           await listService.update(listId, updates);
@@ -232,6 +274,133 @@ export const useKaryStore = create<KaryState>()(
         } catch (error) {
           set({ error: (error as Error).message, tagFolders: previousFolders });
         }
+      },
+      getDefaultList: () => {
+        const defaultList = get().lists.find((list) => list.isDefault);
+        return defaultList || null;
+      },
+      setDefaultList: async (listId) => {
+        const previousLists = get().lists;
+        const updatedLists = previousLists.map((list) => ({
+          ...list,
+          isDefault: list.id === listId,
+        }));
+        set({ lists: updatedLists });
+        try {
+          // Update all lists to remove default flag from others
+          const updatePromises = previousLists.map((list) => 
+            listService.update(list.id, { isDefault: list.id === listId })
+          );
+          await Promise.all(updatePromises);
+        } catch (error) {
+          set({ error: (error as Error).message, lists: previousLists });
+        }
+      },
+      cleanupDuplicateInboxes: async () => {
+        const previousLists = get().lists;
+        const inboxLists = previousLists.filter(list => list.id === 'inbox');
+        
+        if (inboxLists.length > 1) {
+          // Keep the first Inbox (usually the oldest one) and delete the rest
+          const [firstInbox, ...duplicateInboxes] = inboxLists;
+          
+          try {
+            // Delete duplicate Inboxes from database
+            await Promise.all(duplicateInboxes.map(inbox => listService.delete(inbox.id)));
+            
+            // Update local state to remove duplicates
+            const cleanedLists = previousLists.filter(list => list.id !== 'inbox' || list.id === firstInbox.id);
+            set({ lists: cleanedLists });
+          } catch (error) {
+            set({ error: (error as Error).message });
+          }
+        }
+      },
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      setFilterOption: (option) => set({ filterOption: option }),
+      setSortOption: (option) => set({ sortOption: option }),
+      setSortDirection: (direction) => set({ sortDirection: direction }),
+      getFilteredAndSortedTasks: (tasks, searchQueryOverride?: string, filterOptionOverride?: FilterOption, sortOptionOverride?: SortOption, sortDirectionOverride?: SortDirection) => {
+        const currentState = get();
+        const query = searchQueryOverride ?? currentState.searchQuery;
+        const filter = filterOptionOverride ?? currentState.filterOption;
+        const sort = sortOptionOverride ?? currentState.sortOption;
+        const direction = sortDirectionOverride ?? currentState.sortDirection;
+        
+        // Apply search filter
+        let filteredTasks = tasks;
+        if (query.trim()) {
+          const searchQuery = query.toLowerCase();
+          filteredTasks = tasks.filter(task => 
+            task.title.toLowerCase().includes(searchQuery) ||
+            task.description?.toLowerCase().includes(searchQuery)
+          );
+        }
+        
+        // Apply filter options
+        switch (filter) {
+          case 'completed':
+            filteredTasks = filteredTasks.filter(task => task.completed);
+            break;
+          case 'uncompleted':
+            filteredTasks = filteredTasks.filter(task => !task.completed);
+            break;
+          case 'overdue':
+            filteredTasks = filteredTasks.filter(task => 
+              task.dueDate && 
+              new Date(task.dueDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
+              !task.completed
+            );
+            break;
+          case 'dueToday':
+            filteredTasks = filteredTasks.filter(task => 
+              task.dueDate && 
+              new Date(task.dueDate).toDateString() === new Date().toDateString()
+            );
+            break;
+          case 'dueThisWeek':
+            const today = new Date();
+            const endOfWeek = new Date(today);
+            endOfWeek.setDate(today.getDate() + 7);
+            filteredTasks = filteredTasks.filter(task => 
+              task.dueDate && 
+              new Date(task.dueDate) >= today &&
+              new Date(task.dueDate) <= endOfWeek
+            );
+            break;
+          default:
+            // 'all' - no additional filtering
+            break;
+        }
+        
+        // Apply sorting
+        const sortedTasks = [...filteredTasks].sort((a, b) => {
+          let comparison = 0;
+          
+          switch (sort) {
+            case 'created':
+              comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              break;
+            case 'dueDate':
+              if (!a.dueDate && !b.dueDate) comparison = 0;
+              else if (!a.dueDate) comparison = 1;
+              else if (!b.dueDate) comparison = -1;
+              else comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+              break;
+            case 'priority':
+              const priorityA = a.priority || 0;
+              const priorityB = b.priority || 0;
+              comparison = priorityB - priorityA; // Higher priority first
+              break;
+            case 'title':
+              comparison = a.title.localeCompare(b.title);
+              break;
+          }
+          
+          return direction === 'asc' ? comparison : -comparison;
+        });
+        
+        return sortedTasks;
       },
     }),
     { name: 'kary-store' }

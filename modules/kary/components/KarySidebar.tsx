@@ -11,6 +11,7 @@ interface KarySidebarProps {
   selectedItem: Selection;
   onSelectItem: (selection: Selection) => void;
   onOpenModal: (modal: 'add-list' | 'add-tag') => void;
+  onDeleteList?: (listId: string) => void;
   isMobile: boolean;
   isSidebarOpen: boolean;
 }
@@ -19,15 +20,32 @@ const ListItem: React.FC<{
   list: List;
   isSelected: boolean;
   onSelect: () => void;
+  onDelete?: (listId: string) => void;
   isChild?: boolean;
-}> = ({ list, isSelected, onSelect, isChild = false }) => {
+  isSmartList?: boolean;
+}> = ({ list, isSelected, onSelect, onDelete, isChild = false, isSmartList = false }) => {
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const IconComponent = Icons[list.icon as keyof typeof Icons] || Icons.ListIcon;
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    setShowContextMenu(true);
+  };
+
+  const handleDelete = () => {
+    setShowContextMenu(false);
+    onDelete?.(list.id);
+  };
+
   return (
-    <li className={`${isChild ? 'pl-6' : ''}`}>
-      <button
+    <li className={`${isChild ? 'pl-6' : ''} relative`}>
+      <div
         onClick={onSelect}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+        onContextMenu={!isSmartList ? handleContextMenu : undefined}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
           isSelected
             ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
             : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -37,14 +55,46 @@ const ListItem: React.FC<{
           <IconComponent className="w-4 h-4" />
         </div>
         <span className="flex-1 truncate text-left">{list.name}</span>
-        {list.count != null && (
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-            isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-          }`}>
-            {list.count}
-          </span>
-        )}
-      </button>
+        <div className="flex items-center gap-1">
+          {list.isDefault && (
+            <Icons.StarIcon className="w-3 h-3 text-blue-600" />
+          )}
+          {list.count != null && (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {list.count}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Context Menu - only for regular lists, not smart lists */}
+      {showContextMenu && !isSmartList && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]"
+          style={{
+            left: contextMenuPosition.x,
+            top: contextMenuPosition.y,
+          }}
+        >
+          <button
+            onClick={handleDelete}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <Icons.Trash2Icon className="w-4 h-4" />
+            Delete List
+          </button>
+        </div>
+      )}
+
+      {/* Backdrop to close context menu */}
+      {showContextMenu && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowContextMenu(false)}
+        />
+      )}
     </li>
   );
 };
@@ -77,6 +127,7 @@ const KarySidebar: React.FC<KarySidebarProps> = ({
   selectedItem,
   onSelectItem,
   onOpenModal,
+  onDeleteList,
   isMobile,
   isSidebarOpen,
 }) => {
@@ -113,7 +164,6 @@ const KarySidebar: React.FC<KarySidebarProps> = ({
       <nav className="flex-1 overflow-y-auto p-3">
         {/* Smart Lists */}
         <div className="mb-6">
-          <SidebarHeader title="Quick Access" onAdd={() => {}} icon="ZapIcon" />
           <ul className="space-y-1">
             {smartLists.map((list) => (
               <ListItem
@@ -121,10 +171,14 @@ const KarySidebar: React.FC<KarySidebarProps> = ({
                 list={list}
                 isSelected={selectedItem.type === 'list' && selectedItem.id === list.id}
                 onSelect={() => onSelectItem({ type: 'list', id: list.id })}
+                isSmartList={true}
               />
             ))}
           </ul>
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 mb-6"></div>
 
         {/* Custom Lists */}
         <div className="mb-6">
@@ -159,6 +213,7 @@ const KarySidebar: React.FC<KarySidebarProps> = ({
                       list={list}
                       isSelected={selectedItem.type === 'list' && selectedItem.id === list.id}
                       onSelect={() => onSelectItem({ type: 'list', id: list.id })}
+                      onDelete={onDeleteList}
                       isChild
                     />
                   ))}
@@ -171,10 +226,14 @@ const KarySidebar: React.FC<KarySidebarProps> = ({
                 list={list}
                 isSelected={selectedItem.type === 'list' && selectedItem.id === list.id}
                 onSelect={() => onSelectItem({ type: 'list', id: list.id })}
+                onDelete={onDeleteList}
               />
             ))}
           </ul>
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 mb-6"></div>
 
         {/* Tags */}
         <div className="mb-6">

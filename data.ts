@@ -3,7 +3,6 @@ import { List, Task, ListFolder, Tag, TagFolder } from './types';
 // --- Smart Lists ---
 // The 'count' for smart lists will be calculated dynamically in App.tsx
 export const smartLists: Omit<List, 'count'>[] = [
-  { id: 'inbox', name: 'Inbox', icon: 'InboxIcon' },
   { id: 'today', name: 'Today', icon: 'TodayIcon' },
   { id: 'upcoming', name: 'Upcoming', icon: 'Next7DaysIcon' },
 ];
