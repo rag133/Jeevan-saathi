@@ -40,80 +40,61 @@ const LogList: React.FC<LogListProps> = ({
   return (
     <div className="w-full h-full bg-white flex flex-col">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                {selection.type === 'today' ? (
-                  <Icons.TodayIcon className="w-5 h-5 text-indigo-600" />
-                ) : selection.type === 'calendar' ? (
-                  <Icons.CalendarIcon className="w-5 h-5 text-indigo-600" />
-                ) : selection.type === 'focus' ? (
-                  (() => {
-                    const focus = allFoci.find(f => f.id === selection.id);
-                    if (focus) {
-                      const IconComponent = Icons[focus.icon as keyof typeof Icons] || Icons.TargetIcon;
-                      return <IconComponent className={`w-5 h-5 text-${focus.color}`} />;
-                    }
-                    return <Icons.TargetIcon className="w-5 h-5 text-indigo-600" />;
-                  })()
-                ) : (
-                  <Icons.BookOpenIcon className="w-5 h-5 text-indigo-600" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{viewName}</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {selection.type === 'today' && (
-                <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100 shadow-inner">
-                  <button
-                    onClick={() => onSetTodayViewMode('focus')}
-                    title="Group by Focus"
-                    className={`p-1.5 rounded-md transition-all ${todayViewMode === 'focus' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                  >
-                    <Icons.SummaryIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => onSetTodayViewMode('timeline')}
-                    title="Timeline View"
-                    className={`p-1.5 rounded-md transition-all ${todayViewMode === 'timeline' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-                  >
-                    <Icons.ListIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
-              
-              {/* Description Toggle Switch */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 font-medium">Show Details</span>
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          {/* Left side - Title and View Mode */}
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-semibold text-gray-900">{viewName}</h2>
+            
+            {selection.type === 'today' && (
+              <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100">
                 <button
-                  onClick={() => setShowDescriptions(!showDescriptions)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                    showDescriptions ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                  role="switch"
-                  aria-checked={showDescriptions}
-                  title={showDescriptions ? 'Hide Descriptions' : 'Show Descriptions'}
+                  onClick={() => onSetTodayViewMode('focus')}
+                  title="Group by Focus"
+                  className={`p-1.5 rounded-md transition-all ${todayViewMode === 'focus' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showDescriptions ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
+                  <Icons.SummaryIcon className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onSetTodayViewMode('timeline')}
+                  title="Timeline View"
+                  className={`p-1.5 rounded-md transition-all ${todayViewMode === 'timeline' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                  <Icons.ListIcon className="w-4 h-4" />
                 </button>
               </div>
-              
+            )}
+          </div>
+
+          {/* Right side - Toggle and Add Button */}
+          <div className="flex items-center gap-3">
+            {/* Description Toggle Switch */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Details</span>
               <button
-                onClick={() => onAddLogClick(selection.type === 'focus' ? selection.id : undefined)}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                onClick={() => setShowDescriptions(!showDescriptions)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+                  showDescriptions ? 'bg-indigo-600' : 'bg-gray-200'
+                }`}
+                role="switch"
+                aria-checked={showDescriptions}
+                title={showDescriptions ? 'Hide Descriptions' : 'Show Descriptions'}
               >
-                <Icons.PlusIcon className="w-5 h-5" />
-                <span>Add Log</span>
+                <span
+                  className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                    showDescriptions ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
               </button>
             </div>
+            
+            <button
+              onClick={() => onAddLogClick(selection.type === 'focus' ? selection.id : undefined)}
+              className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+            >
+              <Icons.PlusIcon className="w-4 h-4" />
+              <span>Add Log</span>
+            </button>
           </div>
         </div>
       </div>

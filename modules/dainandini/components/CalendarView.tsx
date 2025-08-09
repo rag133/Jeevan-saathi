@@ -139,40 +139,61 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     <div className="w-full h-full bg-white flex flex-col">
       {/* Header */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <Icons.CalendarIcon className="w-5 h-5 text-indigo-600" />
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Icons.CalendarIcon className="w-4 h-4 text-indigo-600" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Calendar</h1>
+                <h1 className="text-lg font-semibold text-gray-900">Calendar</h1>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100 shadow-inner">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100">
                 <button
                   onClick={() => onSetCalendarViewMode('focus')}
                   title="Group by Focus"
                   className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'focus' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
-                  <Icons.SummaryIcon className="w-5 h-5" />
+                  <Icons.SummaryIcon className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onSetCalendarViewMode('timeline')}
                   title="Timeline View"
                   className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'timeline' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:bg-gray-200'}`}
                 >
-                  <Icons.ListIcon className="w-5 h-5" />
+                  <Icons.ListIcon className="w-4 h-4" />
                 </button>
               </div>
+              
+              {/* Description Toggle Switch */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Details</span>
+                <button
+                  onClick={() => setShowDescriptions(!showDescriptions)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+                    showDescriptions ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                  role="switch"
+                  aria-checked={showDescriptions}
+                  title={showDescriptions ? 'Hide Descriptions' : 'Show Descriptions'}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                      showDescriptions ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
               <div className="relative" ref={datePickerRef}>
                 <button
                   onClick={() => setIsDatePickerOpen((o) => !o)}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                   aria-label="Open date picker"
                 >
-                  <Icons.CalendarIcon className="w-5 h-5 text-gray-600" />
+                  <Icons.CalendarIcon className="w-4 h-4 text-gray-600" />
                 </button>
                 {isDatePickerOpen && (
                   <div className="absolute top-full right-0 mt-2 z-30">
@@ -191,9 +212,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
               <button
                 onClick={onAddLogClick}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
-                <Icons.PlusIcon className="w-5 h-5" />
+                <Icons.PlusIcon className="w-4 h-4" />
                 <span>Add Log</span>
               </button>
             </div>
@@ -202,44 +223,25 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="p-6 pb-4">
+      <div className="p-4">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900">{getMonthYearText(viewDate)}</h2>
             <div className="flex items-center gap-4">
-              {/* Description Toggle Switch */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 font-medium">Show Details</span>
-                <button
-                  onClick={() => setShowDescriptions(!showDescriptions)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                    showDescriptions ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                  role="switch"
-                  aria-checked={showDescriptions}
-                  title={showDescriptions ? 'Hide Descriptions' : 'Show Descriptions'}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      showDescriptions ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
               
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleGoToToday}
                   title="Go to Today"
-                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   Today
                 </button>
-                <button onClick={handlePrevWeek} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Icons.ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+                <button onClick={handlePrevWeek} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.ChevronLeftIcon className="w-4 h-4 text-gray-600" />
                 </button>
-                <button onClick={handleNextWeek} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Icons.ChevronRightIcon className="w-5 h-5 text-gray-600" />
+                <button onClick={handleNextWeek} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.ChevronRightIcon className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
             </div>
