@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { initializeUserData } from './dataService';
 
 export const signUp = async (
   email: string,
@@ -16,15 +17,27 @@ export const signUp = async (
   displayName?: string
 ): Promise<UserCredential> => {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  await setDoc(
-    doc(db, 'users', userCredential.user.uid),
-    {
-      email,
-      displayName: displayName || email.split('@')[0],
-      createdAt: new Date(),
-    },
-    { merge: true }
-  );
+  
+  try {
+    // Create user document
+    await setDoc(
+      doc(db, 'users', userCredential.user.uid),
+      {
+        email,
+        displayName: displayName || email.split('@')[0],
+        createdAt: new Date(),
+      },
+      { merge: true }
+    );
+
+    // Initialize user data (lists, tags, folders, etc.)
+    await initializeUserData();
+  } catch (error) {
+    console.error('Error initializing user data:', error);
+    // Don't throw here as the user account was created successfully
+    // The data can be initialized later if needed
+  }
+  
   return userCredential;
 };
 

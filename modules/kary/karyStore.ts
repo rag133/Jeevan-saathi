@@ -40,6 +40,7 @@ type KaryState = {
   getDefaultList: () => List | null;
   setDefaultList: (listId: string) => Promise<void>;
   cleanupDuplicateInboxes: () => Promise<void>;
+  cleanupDuplicateLists: () => Promise<void>;
   // Search, filter, and sort methods
   setSearchQuery: (query: string) => void;
   setFilterOption: (option: FilterOption) => void;
@@ -116,9 +117,13 @@ export const useKaryStore = create<KaryState>()(
         const optimisticList = { ...list, id: `temp-${Date.now()}` } as List;
         const previousLists = get().lists;
         
-        // Prevent creating duplicate Inboxes
-        if (list.name === 'Inbox' && previousLists.some(l => l.name === 'Inbox')) {
-          set({ error: 'Inbox list already exists' });
+        // Prevent creating duplicate lists with the same name (case-insensitive)
+        const existingListWithSameName = previousLists.find(l => 
+          l.name.toLowerCase() === list.name.toLowerCase()
+        );
+        
+        if (existingListWithSameName) {
+          set({ error: `A list with the name "${list.name}" already exists` });
           return;
         }
         
@@ -311,6 +316,48 @@ export const useKaryStore = create<KaryState>()(
             // Update local state to remove duplicates
             const cleanedLists = previousLists.filter(list => list.id !== 'inbox' || list.id === firstInbox.id);
             set({ lists: cleanedLists });
+          } catch (error) {
+            set({ error: (error as Error).message });
+          }
+        }
+      },
+      cleanupDuplicateLists: async () => {
+        const previousLists = get().lists;
+        const listsByName = new Map<string, List[]>();
+        
+        // Group lists by name (case-insensitive)
+        previousLists.forEach(list => {
+          const nameKey = list.name.toLowerCase();
+          if (!listsByName.has(nameKey)) {
+            listsByName.set(nameKey, []);
+          }
+          listsByName.get(nameKey)!.push(list);
+        });
+        
+        // Find duplicates and clean them up
+        const listsToDelete: List[] = [];
+        const listsToKeep: List[] = [];
+        
+        for (const [name, lists] of listsByName) {
+          if (lists.length > 1) {
+            // Keep the first list (usually the oldest one) and mark others for deletion
+            const [firstList, ...duplicates] = lists;
+            listsToKeep.push(firstList);
+            listsToDelete.push(...duplicates);
+          } else {
+            listsToKeep.push(lists[0]);
+          }
+        }
+        
+        if (listsToDelete.length > 0) {
+          try {
+            // Delete duplicate lists from database
+            await Promise.all(listsToDelete.map(list => listService.delete(list.id)));
+            
+            // Update local state to remove duplicates
+            set({ lists: listsToKeep });
+            
+            console.log(`Cleaned up ${listsToDelete.length} duplicate lists`);
           } catch (error) {
             set({ error: (error as Error).message });
           }

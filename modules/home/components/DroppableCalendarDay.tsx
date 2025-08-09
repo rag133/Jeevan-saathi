@@ -101,8 +101,8 @@ const DroppableCalendarDay: React.FC<DroppableCalendarDayProps> = ({
               }
             `}
           >
-            <div className="flex items-center space-x-1">
-              <div className={`w-2 h-2 rounded-full ${
+            <div className="flex items-center space-x-1 min-w-0">
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                 item.color === 'blue-500' ? 'bg-blue-500' :
                 item.color === 'green-500' ? 'bg-green-500' :
                 item.color === 'purple-500' ? 'bg-purple-500' :
@@ -111,7 +111,7 @@ const DroppableCalendarDay: React.FC<DroppableCalendarDayProps> = ({
                 item.color === 'indigo-500' ? 'bg-indigo-500' :
                 item.color === 'pink-500' ? 'bg-pink-500' : 'bg-gray-500'
               }`} />
-              <span className="truncate font-medium text-gray-700">
+              <span className="truncate font-medium text-gray-700 flex-1 min-w-0">
                 {item.title}
               </span>
               {item.completed && (

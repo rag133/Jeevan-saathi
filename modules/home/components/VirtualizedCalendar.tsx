@@ -60,9 +60,9 @@ const VirtualizedCalendar: React.FC<VirtualizedCalendarProps> = ({
         onClick={() => onItemSelect(item)}
         className="p-2 border border-gray-200 rounded mb-2 cursor-pointer hover:bg-gray-50"
       >
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full bg-${item.color}`} />
-          <span className="text-sm font-medium truncate">{item.title}</span>
+        <div className="flex items-center space-x-2 min-w-0">
+          <div className={`w-3 h-3 rounded-full bg-${item.color} flex-shrink-0`} />
+          <span className="text-sm font-medium truncate flex-1 min-w-0">{item.title}</span>
           {item.completed && (
             <Icons.CheckIcon className="w-4 h-4 text-green-500 flex-shrink-0" />
           )}
@@ -129,7 +129,7 @@ const VirtualizedCalendar: React.FC<VirtualizedCalendarProps> = ({
               e.stopPropagation();
               onItemSelect(item);
             }}
-            className="text-xs p-1 rounded bg-gray-100 truncate"
+            className="text-xs p-1 rounded bg-gray-100 truncate min-w-0"
           >
             {item.title}
           </div>

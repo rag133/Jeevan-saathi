@@ -728,8 +728,21 @@ export const initializeUserData = async () => {
   const user = getCurrentUser();
   if (!user) throw new Error('User not authenticated');
 
+  // Check if user data already exists to prevent duplicate initialization
+  const existingHabits = await habitService.getAll();
+  const existingGoals = await goalService.getAll();
+  
+  // If user already has data, skip initialization
+  if (existingHabits.length > 0 || existingGoals.length > 0) {
+    console.log('User data already exists, skipping initialization');
+    return;
+  }
+
+  console.log('Initializing user data for new user:', user.uid);
+
   // Initialize default foci for new users
   const { initialFoci } = await import('../modules/dainandini/data');
+  console.log('Adding default focus areas:', initialFoci.length);
 
   // Add default focus areas
   await Promise.all(initialFoci.map(async (focus) => {
@@ -737,35 +750,43 @@ export const initializeUserData = async () => {
   }));
 
   // Add default habits
+  console.log('Adding default habits:', habits.length);
   await Promise.all(habits.map(async (habit) => {
     await habitService.add(habit);
   }));
 
   // Add default goals
+  console.log('Adding default goals:', initialGoals.length);
   await Promise.all(initialGoals.map(async (goal) => {
     await goalService.add(goal);
   }));
 
   // Add default milestones
+  console.log('Adding default milestones:', initialMilestones.length);
   await Promise.all(initialMilestones.map(async (milestone) => {
     await milestoneService.add(milestone);
   }));
 
   // Add default quick wins
+  console.log('Adding default quick wins:', initialQuickWins.length);
   await Promise.all(initialQuickWins.map(async (quickWin) => {
     await quickWinService.add(quickWin);
   }));
 
   // Add default custom lists (including Inbox) - check for existing lists first
+  console.log('Adding default custom lists:', customLists.length);
   const existingLists = await listService.getAll();
   const listsToAdd = customLists.filter(list => 
     !existingLists.some(existing => existing.name === list.name)
   );
   
   if (listsToAdd.length > 0) {
+    console.log('Lists to add:', listsToAdd.map(l => l.name));
     await Promise.all(listsToAdd.map(async (list) => {
       await listService.add(list);
     }));
+  } else {
+    console.log('No new lists to add');
   }
 
   // Add default list folders - check for existing folders first
@@ -775,9 +796,12 @@ export const initializeUserData = async () => {
   );
   
   if (listFoldersToAdd.length > 0) {
+    console.log('Adding list folders:', listFoldersToAdd.map(f => f.name));
     await Promise.all(listFoldersToAdd.map(async (folder) => {
       await listFolderService.add(folder);
     }));
+  } else {
+    console.log('No new list folders to add');
   }
 
   // Add default tags - check for existing tags first
@@ -787,9 +811,12 @@ export const initializeUserData = async () => {
   );
   
   if (tagsToAdd.length > 0) {
+    console.log('Adding tags:', tagsToAdd.map(t => t.name));
     await Promise.all(tagsToAdd.map(async (tag) => {
       await tagService.add(tag);
     }));
+  } else {
+    console.log('No new tags to add');
   }
 
   // Add default tag folders - check for existing folders first
@@ -799,10 +826,15 @@ export const initializeUserData = async () => {
   );
   
   if (tagFoldersToAdd.length > 0) {
+    console.log('Adding tag folders:', tagFoldersToAdd.map(f => f.name));
     await Promise.all(tagFoldersToAdd.map(async (folder) => {
       await tagFolderService.add(folder);
     }));
+  } else {
+    console.log('No new tag folders to add');
   }
+
+  console.log('User data initialization completed successfully');
 };
 
 // ============= UTILITY FUNCTIONS =============

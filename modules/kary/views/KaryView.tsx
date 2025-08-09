@@ -44,6 +44,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     fetchKaryData,
     getDefaultList,
     setDefaultList,
+    cleanupDuplicateLists,
   } = useKaryStore();
 
   const { width } = useWindowSize();
@@ -67,15 +68,49 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     fetchKaryData();
   }, [fetchKaryData]);
 
+  // One-time cleanup of existing duplicates when component mounts
+  useEffect(() => {
+    if (!loading && lists.length > 0) {
+      // Check for any duplicate lists and clean them up once
+      const listsByName = new Map<string, List[]>();
+      lists.forEach(list => {
+        const nameKey = list.name.toLowerCase();
+        if (!listsByName.has(nameKey)) {
+          listsByName.set(nameKey, []);
+        }
+        listsByName.get(nameKey)!.push(list);
+      });
+      
+      const hasDuplicates = Array.from(listsByName.values()).some(lists => lists.length > 1);
+      
+      if (hasDuplicates) {
+        console.log('Found existing duplicate lists, performing one-time cleanup...');
+        cleanupDuplicateLists();
+      }
+    }
+  }, [loading]); // Only run when loading changes, not when lists change
+
   // Clean up duplicate Inboxes when data is loaded
   useEffect(() => {
     if (!loading && lists.length > 0) {
-      const inboxLists = lists.filter(list => list.id === 'inbox');
-      if (inboxLists.length > 1) {
-        cleanupDuplicateInboxes();
+      // Check for any duplicate lists (not just Inboxes)
+      const listsByName = new Map<string, List[]>();
+      lists.forEach(list => {
+        const nameKey = list.name.toLowerCase();
+        if (!listsByName.has(nameKey)) {
+          listsByName.set(nameKey, []);
+        }
+        listsByName.get(nameKey)!.push(list);
+      });
+      
+      const hasDuplicates = Array.from(listsByName.values()).some(lists => lists.length > 1);
+      
+      if (hasDuplicates) {
+        console.log('Found duplicate lists, cleaning up...');
+        cleanupDuplicateLists();
       }
     }
-  }, [lists, loading, cleanupDuplicateInboxes]);
+  }, [lists, loading, cleanupDuplicateLists]);
 
   // Ensure Inbox list exists in database
   // Remove duplicate Inbox creation - Inbox should only be created during initialization

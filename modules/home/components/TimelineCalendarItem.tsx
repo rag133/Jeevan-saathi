@@ -192,12 +192,12 @@ const TimelineCalendarItem: React.FC<TimelineCalendarItemProps> = ({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
               <h4 className="text-sm font-medium text-gray-900 truncate">
                 {item.title}
               </h4>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               {/* Time in top right - only show if not null */}
               {formatTime(item.date, item.type, item.originalData) && (
                 <span className="text-xs text-gray-500">

@@ -23,6 +23,22 @@ const HomeTaskDetailWrapper: React.FC<{ selectedItem: CalendarItem; onClose: () 
   const allLogs = dainandiniStore.logs;
   const childrenTasks = karyStore.tasks.filter(t => t.parentId === task.id);
   
+  // Helper function to update calendar items when task changes
+  const updateCalendarItem = (taskId: string, updates: Partial<Task>) => {
+    const updatedCalendarItems = homeStore.calendarItems.map(item => {
+      if (item.id === `task-${taskId}`) {
+        return {
+          ...item,
+          title: updates.title !== undefined ? updates.title : item.title,
+          completed: updates.completed !== undefined ? updates.completed : item.completed,
+          originalData: { ...item.originalData, ...updates }
+        };
+      }
+      return item;
+    });
+    homeStore.setCalendarItems(updatedCalendarItems);
+  };
+  
   // Temporarily disable real-time sync to prevent refresh issues
   useEffect(() => {
     // Disable real-time sync while task detail is open
@@ -47,10 +63,17 @@ const HomeTaskDetailWrapper: React.FC<{ selectedItem: CalendarItem; onClose: () 
       onToggleComplete={(id: string) => {
         const taskToUpdate = karyStore.tasks.find(t => t.id === id);
         if (taskToUpdate) {
-          karyStore.updateTask(id, { completed: !taskToUpdate.completed });
+          const newCompleted = !taskToUpdate.completed;
+          karyStore.updateTask(id, { completed: newCompleted });
+          // Immediately update calendar item
+          updateCalendarItem(id, { completed: newCompleted });
         }
       }}
-      onUpdateTask={karyStore.updateTask}
+      onUpdateTask={(taskId: string, updates: Partial<Task>) => {
+        karyStore.updateTask(taskId, updates);
+        // Immediately update calendar item
+        updateCalendarItem(taskId, updates);
+      }}
       onDeleteTask={karyStore.deleteTask}
       onDuplicateTask={(taskId: string) => {
         // TODO: Implement duplicate functionality

@@ -156,12 +156,46 @@ const HomeHabitDetail: React.FC<HomeHabitDetailProps> = ({ selectedItem, onClose
   }, [isEditingDescription]);
 
   const handleUpdate = (updates: Partial<Habit>) => {
+    // Optimistic update - update the home store immediately
+    const homeStore = useHomeStore.getState();
+    
+    // Update calendar items optimistically
+    const updatedCalendarItems = homeStore.calendarItems.map(item => 
+      item.id.includes(`habit-${habit.id}`)
+        ? { 
+            ...item, 
+            title: updates.title !== undefined ? updates.title : item.title,
+            originalData: { ...item.originalData, ...updates }
+          }
+        : item
+    );
+    
+    homeStore.setCalendarItems(updatedCalendarItems);
+    
+    // Perform the actual update
     abhyasaStore.updateHabit(habit.id, updates);
     setPopup(null);
   };
 
   const handleTitleSave = () => {
     if (titleInput.trim() && titleInput.trim() !== habit.title) {
+      // Optimistic update - update the home store immediately
+      const homeStore = useHomeStore.getState();
+      
+      // Update calendar items optimistically
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id.includes(`habit-${habit.id}`)
+          ? { 
+              ...item, 
+              title: titleInput.trim(),
+              originalData: { ...item.originalData, title: titleInput.trim() }
+            }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
+      // Perform the actual update
       abhyasaStore.updateHabit(habit.id, { title: titleInput.trim() });
     }
     setIsEditingTitle(false);
@@ -169,6 +203,22 @@ const HomeHabitDetail: React.FC<HomeHabitDetailProps> = ({ selectedItem, onClose
 
   const handleDescriptionSave = () => {
     if (descriptionInput !== (habit.description || '')) {
+      // Optimistic update - update the home store immediately
+      const homeStore = useHomeStore.getState();
+      
+      // Update calendar items optimistically
+      const updatedCalendarItems = homeStore.calendarItems.map(item => 
+        item.id.includes(`habit-${habit.id}`)
+          ? { 
+              ...item, 
+              originalData: { ...item.originalData, description: descriptionInput.trim() }
+            }
+          : item
+      );
+      
+      homeStore.setCalendarItems(updatedCalendarItems);
+      
+      // Perform the actual update
       abhyasaStore.updateHabit(habit.id, { description: descriptionInput.trim() });
     }
     setIsEditingDescription(false);
