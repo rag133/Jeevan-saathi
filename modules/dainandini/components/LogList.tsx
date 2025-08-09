@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Log, Focus, DainandiniSelection, GroupedLogs } from '~/modules/dainandini/types';
+import { Log, Focus, DainandiniSelection, GroupedLogs, LogType } from '~/modules/dainandini/types';
 import LogItem from './LogItem';
 import InlineLogForm from './InlineLogForm';
 import * as Icons from '~/components/Icons';
@@ -14,7 +14,13 @@ interface LogListProps {
   allFoci: Focus[];
   selection: DainandiniSelection;
   onAddLogClick: (focusId?: string) => void;
-  onAddQuickLog: (title: string) => void;
+  onAddQuickLog: (logData: {
+    title: string;
+    focusId: string;
+    logType: LogType;
+    logDate: Date;
+    description?: string;
+  }) => void;
   onToggleKaryTask: (taskId: string) => void;
   selectedLogId: string | null;
   onSelectLog: (id: string) => void;
@@ -217,9 +223,12 @@ const LogList: React.FC<LogListProps> = ({
       </div>
 
       {/* Bottom Panel - Add Log Input */}
-      <div className="border-t border-gray-200 p-3">
-        <InlineLogForm onAddLog={onAddQuickLog} />
-      </div>
+      <InlineLogForm 
+        onAddLog={onAddQuickLog} 
+        foci={allFoci}
+        defaultFocusId={selection.type === 'focus' ? selection.id : undefined}
+        defaultDate={selection.type === 'today' ? new Date() : undefined}
+      />
     </div>
   );
 };

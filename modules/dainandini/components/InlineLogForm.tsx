@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
-import * as Icons from '~/components/Icons';
+import React from 'react';
+import { Focus, LogType } from '../types';
+import QuickLogInput from './QuickLogInput';
 
 interface InlineLogFormProps {
-  onAddLog: (title: string) => void;
+  onAddLog: (logData: {
+    title: string;
+    focusId: string;
+    logType: LogType;
+    logDate: Date;
+    description?: string;
+  }) => void;
+  foci: Focus[];
+  defaultFocusId?: string;
+  defaultDate?: Date;
 }
 
-const InlineLogForm: React.FC<InlineLogFormProps> = ({ onAddLog }) => {
-  const [inputValue, setInputValue] = useState('');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      onAddLog(inputValue.trim());
-      setInputValue('');
-    }
-  };
-
+const InlineLogForm: React.FC<InlineLogFormProps> = ({ 
+  onAddLog, 
+  foci, 
+  defaultFocusId, 
+  defaultDate 
+}) => {
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
-      <div className="relative">
-        <Icons.PlusIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Add a quick log..."
-          className="w-full pl-10 pr-4 py-2 bg-gray-100 border-2 border-transparent rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
-        />
-      </div>
-    </form>
+    <div className="p-3 border-t border-gray-200">
+      <QuickLogInput
+        foci={foci}
+        onAddLog={onAddLog}
+        defaultFocusId={defaultFocusId}
+        defaultDate={defaultDate}
+        placeholder="Add a quick log..."
+      />
+    </div>
   );
 };
 

@@ -55,15 +55,21 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
     );
   }, []);
 
-  const handleAddQuickLog = (title: string) => {
-    const newLog: Partial<Omit<Log, 'id' | 'createdAt'>> = {
-      title,
-      logType: LogType.TEXT,
-      focusId: 'general',
-      logDate: new Date(),
-      description: '',
+  const handleAddQuickLog = (logData: {
+    title: string;
+    focusId: string;
+    logType: LogType;
+    logDate: Date;
+    description?: string;
+  }) => {
+    const newLog: Omit<Log, 'id' | 'createdAt'> = {
+      title: logData.title,
+      logType: logData.logType,
+      focusId: logData.focusId,
+      logDate: logData.logDate,
+      description: logData.description || '',
     };
-    addLog(newLog as Omit<Log, 'id' | 'createdAt'>);
+    addLog(newLog);
   };
 
   const groupedLogs = useMemo((): GroupedLogs => {
@@ -357,6 +363,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
                   selectedLogId={selectedLogId}
                   onSelectLog={(id) => { handleSelectLog(id); setShowDetail(true); }}
                   onAddLogClick={handleOpenTemplateSelection}
+                  onAddQuickLog={handleAddQuickLog}
                   calendarViewMode={calendarViewMode}
                   onSetCalendarViewMode={setCalendarViewMode}
                 />
@@ -394,6 +401,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
                     selectedLogId={selectedLogId}
                     onSelectLog={handleSelectLog}
                     onAddLogClick={handleOpenTemplateSelection}
+                    onAddQuickLog={handleAddQuickLog}
                     calendarViewMode={calendarViewMode}
                     onSetCalendarViewMode={setCalendarViewMode}
                   />
@@ -449,7 +457,25 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
         <LogEntryModal
           isOpen={true}
           onClose={() => setLogEntryModalState({ isOpen: false, template: null })}
-          onAddLog={addLog}
+          onAddLog={(logData) => {
+            // Convert partial log data to complete log data
+            const completeLog: Omit<Log, 'id' | 'createdAt'> = {
+              title: logData.title || '',
+              logType: logData.logType || LogType.TEXT,
+              focusId: logData.focusId || 'general',
+              logDate: logData.logDate || new Date(),
+              description: logData.description || '',
+              checklist: logData.checklist,
+              rating: logData.rating,
+              habitId: logData.habitId,
+              milestoneId: logData.milestoneId,
+              goalId: logData.goalId,
+              taskId: logData.taskId,
+              completed: logData.completed,
+              taskCompletionDate: logData.taskCompletionDate,
+            };
+            addLog(completeLog);
+          }}
           allFoci={foci}
           template={logEntryModalState.template}
           initialFocusId={logEntryModalState.initialFocusId}

@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Focus, Log } from '~/modules/dainandini/types';
+import { Focus, Log, LogType } from '~/modules/dainandini/types';
 import * as Icons from '~/components/Icons';
 import LogItem from './LogItem';
 import DateTimePicker from '~/modules/kary/components/DateTimePicker';
+import InlineLogForm from './InlineLogForm';
 
 const getMonthYearText = (date: Date): string => {
   return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -40,6 +41,13 @@ interface CalendarViewProps {
   selectedLogId: string | null;
   onSelectLog: (id: string) => void;
   onAddLogClick: () => void;
+  onAddQuickLog: (logData: {
+    title: string;
+    focusId: string;
+    logType: LogType;
+    logDate: Date;
+    description?: string;
+  }) => void;
   calendarViewMode: 'focus' | 'timeline';
   onSetCalendarViewMode: (mode: 'focus' | 'timeline') => void;
 }
@@ -54,6 +62,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   selectedLogId,
   onSelectLog,
   onAddLogClick,
+  onAddQuickLog,
   calendarViewMode,
   onSetCalendarViewMode,
 }) => {
@@ -368,6 +377,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             )
           )}
         </div>
+      </div>
+
+      {/* Bottom Panel - Add Log Input */}
+      <div className="border-t border-gray-200 p-3">
+        <InlineLogForm 
+          onAddLog={onAddQuickLog} 
+          foci={allFoci}
+          defaultDate={selectedDate || new Date()}
+        />
       </div>
     </div>
   );
