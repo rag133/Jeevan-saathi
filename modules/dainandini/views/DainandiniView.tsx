@@ -12,12 +12,12 @@ import TemplateSelectionModal from '../components/TemplateSelectionModal';
 import LogEntryModal from '../components/LogEntryModal';
 import { useDainandiniStore } from '../dainandiniStore';
 import useWindowSize from '~/hooks/useWindowSize';
+import * as Icons from '~/components/Icons';
 
 const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen }) => {
   const { width } = useWindowSize();
-  const isMobile = width !== undefined && width < 768; // Define mobile breakpoint
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State for DainandiniSidebar visibility
-  const [showDetail, setShowDetail] = useState(false); // State for mobile detail view
+  const isMobile = width !== undefined && width < 768;
+  const [showDetail, setShowDetail] = useState(false);
   const {
     logs,
     logTemplates,
@@ -59,7 +59,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
     const newLog: Partial<Omit<Log, 'id' | 'createdAt'>> = {
       title,
       logType: LogType.TEXT,
-      focusId: 'general', // Default to 'general' focus area
+      focusId: 'general',
       logDate: new Date(),
       description: '',
     };
@@ -312,78 +312,37 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
   };
 
   return (
-    <>
-      <DainandiniSidebar
-        foci={foci}
-        templates={logTemplates}
-        selection={selection}
-        onSelect={(sel) => {
-          const newSelection =
-            sel.type === 'calendar' && !sel.date ? { ...sel, date: new Date().toISOString() } : sel;
+    <div className="h-screen bg-gray-50 flex w-full">
+      {/* Main Content */}
+      <div className="flex-1 min-h-0 flex">
+        <DainandiniSidebar
+          foci={foci}
+          templates={logTemplates}
+          selection={selection}
+          onSelect={(sel) => {
+            const newSelection =
+              sel.type === 'calendar' && !sel.date ? { ...sel, date: new Date().toISOString() } : sel;
 
-          setSelection(newSelection);
+            setSelection(newSelection);
 
-          if (newSelection.type === 'template') {
-            setSelectedLogId(null);
-          }
-          if (isMobile) setIsSidebarOpen(false); // Close sidebar on view selection
-        }}
-        onOpenModal={handleOpenAddFocusModal}
-        onCreateTemplate={handleCreateTemplate}
-        onEditFocus={handleOpenEditFocusModal}
-        onReorderFoci={() => {}}
-        isMobile={isMobile}
-        isSidebarOpen={isSidebarOpen}
-      />
-      {isSidebarOpen && isMobile && (
-        <div
-          className="fixed inset-0 bg-black opacity-50 z-20"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-      <main className={`flex-1 flex min-w-0 ${isMobile && isAppSidebarOpen ? 'ml-20' : ''}`}> {/* Adjust main content margin */}
-        {isMobile && showDetail ? (
-          renderRightPanel() // Render detail view on mobile
-        ) : isMobile && !showDetail ? (
-          <div className="flex flex-col w-full h-full p-4">
-            {/* Mobile view for lists */}
-            {selection.type === 'calendar' ? (
-              <CalendarView
-                allFoci={foci}
-                logs={logs}
-                selectedDate={selection.date ? new Date(selection.date) : null}
-                onDateSelect={(date) => {
-                  setSelection({ type: 'calendar', date: date.toISOString() });
-                  setSelectedLogId(null);
-                }}
-                filteredLogs={calendarLogs}
-                onToggleKaryTask={() => {}}
-                selectedLogId={selectedLogId}
-                onSelectLog={(id) => { handleSelectLog(id); setShowDetail(true); }}
-                onAddLogClick={handleOpenTemplateSelection}
-                calendarViewMode={calendarViewMode}
-                onSetCalendarViewMode={setCalendarViewMode}
-              />
-            ) : (
-              <LogList
-                groupedLogs={groupedLogs}
-                timelineLogs={todayLogsForTimeline}
-                todayViewMode={todayViewMode}
-                onSetTodayViewMode={setTodayViewMode}
-                viewName={currentViewName || 'Journal'}
-                allFoci={foci}
-                selection={selection}
-                onAddLogClick={handleOpenTemplateSelection}
-                onAddQuickLog={handleAddQuickLog}
-                onToggleKaryTask={() => {}}
-                selectedLogId={selectedLogId}
-                onSelectLog={(id) => { handleSelectLog(id); setShowDetail(true); }}
-              />
-            )}
-          </div>
-        ) : (
-          <ResizablePanels initialLeftWidth={50}>
-            <div className="h-full w-full bg-white/80">
+            if (newSelection.type === 'template') {
+              setSelectedLogId(null);
+            }
+            if (isMobile) setShowDetail(false);
+          }}
+          onOpenModal={handleOpenAddFocusModal}
+          onCreateTemplate={handleCreateTemplate}
+          onEditFocus={handleOpenEditFocusModal}
+          onReorderFoci={() => {}}
+          isMobile={isMobile}
+          isSidebarOpen={isAppSidebarOpen}
+        />
+        
+        <main className="flex-1 flex min-w-0">
+          {isMobile && showDetail && selectedLogId ? (
+            renderRightPanel()
+          ) : isMobile && !showDetail ? (
+            <div className="flex flex-col w-full h-full">
               {selection.type === 'calendar' ? (
                 <CalendarView
                   allFoci={foci}
@@ -396,7 +355,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
                   filteredLogs={calendarLogs}
                   onToggleKaryTask={() => {}}
                   selectedLogId={selectedLogId}
-                  onSelectLog={handleSelectLog}
+                  onSelectLog={(id) => { handleSelectLog(id); setShowDetail(true); }}
                   onAddLogClick={handleOpenTemplateSelection}
                   calendarViewMode={calendarViewMode}
                   onSetCalendarViewMode={setCalendarViewMode}
@@ -414,14 +373,54 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
                   onAddQuickLog={handleAddQuickLog}
                   onToggleKaryTask={() => {}}
                   selectedLogId={selectedLogId}
-                  onSelectLog={handleSelectLog}
+                  onSelectLog={(id) => { handleSelectLog(id); setShowDetail(true); }}
                 />
               )}
             </div>
-            {renderRightPanel()}
-          </ResizablePanels>
-        )}
-      </main>
+          ) : (
+            <ResizablePanels initialLeftWidth={45}>
+              <div className="h-full w-full bg-white">
+                {selection.type === 'calendar' ? (
+                  <CalendarView
+                    allFoci={foci}
+                    logs={logs}
+                    selectedDate={selection.date ? new Date(selection.date) : null}
+                    onDateSelect={(date) => {
+                      setSelection({ type: 'calendar', date: date.toISOString() });
+                      setSelectedLogId(null);
+                    }}
+                    filteredLogs={calendarLogs}
+                    onToggleKaryTask={() => {}}
+                    selectedLogId={selectedLogId}
+                    onSelectLog={handleSelectLog}
+                    onAddLogClick={handleOpenTemplateSelection}
+                    calendarViewMode={calendarViewMode}
+                    onSetCalendarViewMode={setCalendarViewMode}
+                  />
+                ) : (
+                  <LogList
+                    groupedLogs={groupedLogs}
+                    timelineLogs={todayLogsForTimeline}
+                    todayViewMode={todayViewMode}
+                    onSetTodayViewMode={setTodayViewMode}
+                    viewName={currentViewName || 'Journal'}
+                    allFoci={foci}
+                    selection={selection}
+                    onAddLogClick={handleOpenTemplateSelection}
+                    onAddQuickLog={handleAddQuickLog}
+                    onToggleKaryTask={() => {}}
+                    selectedLogId={selectedLogId}
+                    onSelectLog={handleSelectLog}
+                  />
+                )}
+              </div>
+              {renderRightPanel()}
+            </ResizablePanels>
+          )}
+        </main>
+      </div>
+
+      {/* Modals */}
       {modal === 'add-focus' && (
         <Modal
           title={editingFocus ? 'Edit Focus Area' : 'Create New Focus'}
@@ -456,7 +455,7 @@ const DainandiniView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarO
           initialFocusId={logEntryModalState.initialFocusId}
         />
       )}
-    </>
+    </div>
   );
 };
 

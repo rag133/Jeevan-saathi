@@ -3,6 +3,7 @@ import { LogTemplate, Focus, LogType, logTypeDetails, ChecklistItem } from '~/mo
 import * as Icons from '~/components/Icons';
 import ColorPicker from './forms/ColorPicker';
 import IconPicker from './forms/IconPicker';
+import { WysiwygMarkdownEditor } from '~/components/common/WysiwygMarkdownEditor';
 
 const StarRatingInput: React.FC<{ rating: number; onSetRating: (rating: number) => void }> = ({
   rating,
@@ -194,13 +195,12 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, foci, onSave,
             <label htmlFor="template-desc" className="block text-sm font-medium text-gray-700">
               Default Description
             </label>
-            <textarea
-              id="template-desc"
+            <WysiwygMarkdownEditor
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
-            ></textarea>
+              onChange={setDescription}
+              placeholder="Add a default description... (Markdown supported)"
+              minHeight="120px"
+            />
           </div>
         )}
 

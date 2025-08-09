@@ -27,22 +27,18 @@ const SidebarItem: React.FC<{
 }> = ({ name, icon, color, isSelected, onSelect, onEdit, type }) => {
   const IconComponent = Icons[icon] || Icons.ListIcon;
   return (
-    <a
-      href="#"
-      onClick={(e) => {
-        e.preventDefault();
-        onSelect();
-      }}
-      className={`flex items-center justify-between w-full px-3 py-2 rounded-md text-sm font-medium transition-colors group ${
+    <div
+      onClick={onSelect}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
         isSelected
-          ? 'bg-blue-100 text-blue-700'
-          : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
       }`}
     >
-      <div className="flex items-center gap-3 min-w-0">
-        <IconComponent className={`w-5 h-5 flex-shrink-0 ${color ? `text-${color}` : ''}`} />
-        <span className="flex-1 truncate">{name}</span>
+      <div className={`w-5 h-5 flex items-center justify-center ${color ? `text-${color}` : 'text-gray-500'}`}>
+        <IconComponent className="w-4 h-4" />
       </div>
+      <span className="flex-1 truncate text-left">{name}</span>
       {type === 'focus' && onEdit && (
         <button
           onClick={(e) => {
@@ -56,18 +52,28 @@ const SidebarItem: React.FC<{
           <Icons.Edit3Icon className="w-4 h-4" />
         </button>
       )}
-    </a>
+    </div>
   );
 };
 
-const SidebarHeader: React.FC<{ title: string; onAdd: () => void }> = ({ title, onAdd }) => (
-  <div className="px-4 pt-6 pb-2 flex justify-between items-center">
-    <h2 className="text-sm font-semibold text-gray-500">{title}</h2>
-    <button className="text-gray-400 hover:text-gray-700" onClick={onAdd}>
-      <Icons.PlusIcon className="w-4 h-4" />
-    </button>
-  </div>
-);
+const SidebarHeader: React.FC<{ title: string; onAdd: () => void; icon: keyof typeof Icons }> = ({ title, onAdd, icon }) => {
+  const IconComponent = Icons[icon];
+  
+  return (
+    <div className="px-3 pt-6 pb-3 flex justify-between items-center">
+      <div className="flex items-center gap-2">
+        <IconComponent className="w-4 h-4 text-gray-500" />
+        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{title}</h2>
+      </div>
+      <button 
+        onClick={onAdd}
+        className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+      >
+        <Icons.PlusIcon className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
 
 const DainandiniSidebar: React.FC<DainandiniSidebarProps> = ({
   foci,
@@ -117,83 +123,107 @@ const DainandiniSidebar: React.FC<DainandiniSidebarProps> = ({
 
   return (
     <aside
-      className={`w-72 flex-shrink-0 bg-gray-100/80 border-r border-gray-200 p-2 flex flex-col
+      className={`w-80 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col
         ${isMobile ? 'fixed inset-y-0 left-0 z-20 transition-transform duration-300 ease-in-out' : ''}
         ${isMobile && !isSidebarOpen ? '-translate-x-full' : 'translate-x-0'}
       `}
     >
-      <nav className="flex-1 overflow-y-auto">
-        <div className="px-4 pt-4 pb-2 flex items-center gap-3 text-gray-800">
-          <Icons.BookOpenIcon className="w-6 h-6 text-indigo-500" />
-          <h1 className="text-xl font-bold">Dainandini</h1>
+      {/* Sidebar Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+            <Icons.BookOpenIcon className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Dainandini</h1>
+            <p className="text-xs text-gray-500">Reflect on your day</p>
+          </div>
         </div>
+      </div>
 
-        <ul className="space-y-1 pt-2">
-          <li className="px-2">
-            <SidebarItem
-              id="today"
-              type="today"
-              name="Today's Journal"
-              icon="TodayIcon"
-              isSelected={selection.type === 'today'}
-              onSelect={() => onSelect({ type: 'today' })}
-            />
-          </li>
-          <li className="px-2">
-            <SidebarItem
-              id="calendar"
-              type="calendar"
-              name="Calendar"
-              icon="CalendarIcon"
-              isSelected={selection.type === 'calendar'}
-              onSelect={() => onSelect({ type: 'calendar' })}
-            />
-          </li>
-        </ul>
-
-        <SidebarHeader title="Focus Areas" onAdd={onOpenModal} />
-        <ul className="space-y-1">
-          {foci.map((focus) => {
-            return (
-              <li
-                key={focus.id}
-                draggable={true}
-                onDragStart={(e) => handleDragStart(e, focus.id)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, focus.id)}
-                onDragEnd={handleDragEnd}
-                className={`px-2 transition-all duration-200 cursor-grab ${draggedItemId === focus.id ? 'opacity-40 scale-95 shadow-lg rounded-md' : ''}`}
-              >
-                <SidebarItem
-                  id={focus.id}
-                  type="focus"
-                  name={focus.name}
-                  icon={focus.icon}
-                  color={focus.color}
-                  isSelected={selection.type === 'focus' && selection.id === focus.id}
-                  onSelect={() => onSelect({ type: 'focus', id: focus.id })}
-                  onEdit={() => onEditFocus(focus.id)}
-                />
-              </li>
-            );
-          })}
-        </ul>
-
-        <SidebarHeader title="Templates" onAdd={onCreateTemplate} />
-        <ul className="space-y-1">
-          {templates.map((template) => (
-            <li key={template.id} className="px-2">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto p-3">
+        {/* Smart Views */}
+        <div className="mb-6">
+          <ul className="space-y-1">
+            <li>
               <SidebarItem
-                id={template.id}
-                type="template"
-                name={template.name}
-                icon={template.icon}
-                isSelected={selection.type === 'template' && selection.id === template.id}
-                onSelect={() => onSelect({ type: 'template', id: template.id })}
+                id="today"
+                type="today"
+                name="Today's Journal"
+                icon="TodayIcon"
+                isSelected={selection.type === 'today'}
+                onSelect={() => onSelect({ type: 'today' })}
               />
             </li>
-          ))}
-        </ul>
+            <li>
+              <SidebarItem
+                id="calendar"
+                type="calendar"
+                name="Calendar"
+                icon="CalendarIcon"
+                isSelected={selection.type === 'calendar'}
+                onSelect={() => onSelect({ type: 'calendar' })}
+              />
+            </li>
+          </ul>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 mb-6"></div>
+
+        {/* Focus Areas */}
+        <div className="mb-6">
+          <SidebarHeader title="Focus Areas" onAdd={onOpenModal} icon="TargetIcon" />
+          <ul className="space-y-1">
+            {foci.map((focus) => {
+              return (
+                <li
+                  key={focus.id}
+                  draggable={true}
+                  onDragStart={(e) => handleDragStart(e, focus.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, focus.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`transition-all duration-200 cursor-grab ${draggedItemId === focus.id ? 'opacity-40 scale-95 shadow-lg rounded-md' : ''}`}
+                >
+                  <SidebarItem
+                    id={focus.id}
+                    type="focus"
+                    name={focus.name}
+                    icon={focus.icon}
+                    color={focus.color}
+                    isSelected={selection.type === 'focus' && selection.id === focus.id}
+                    onSelect={() => onSelect({ type: 'focus', id: focus.id })}
+                    onEdit={() => onEditFocus(focus.id)}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 mb-6"></div>
+
+        {/* Templates */}
+        <div className="mb-6">
+          <SidebarHeader title="Templates" onAdd={onCreateTemplate} icon="FileTextIcon" />
+          <ul className="space-y-1">
+            {templates.map((template) => (
+              <li key={template.id}>
+                <SidebarItem
+                  id={template.id}
+                  type="template"
+                  name={template.name}
+                  icon={template.icon}
+                  isSelected={selection.type === 'template' && selection.id === template.id}
+                  onSelect={() => onSelect({ type: 'template', id: template.id })}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       </nav>
     </aside>
   );

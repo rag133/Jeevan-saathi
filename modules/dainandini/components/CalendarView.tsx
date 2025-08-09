@@ -59,6 +59,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   const [viewDate, setViewDate] = useState(selectedDate || new Date());
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [showDescriptions, setShowDescriptions] = useState(true);
   const datePickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -135,75 +136,115 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <header className="p-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex justify-between items-center">
-          <span className="text-xl font-semibold text-gray-800">{getMonthYearText(viewDate)}</span>
-          <div className="flex items-center space-x-2 text-gray-500">
-            <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100 shadow-inner">
+    <div className="w-full h-full bg-white flex flex-col">
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Icons.CalendarIcon className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Calendar</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-gray-100 shadow-inner">
+                <button
+                  onClick={() => onSetCalendarViewMode('focus')}
+                  title="Group by Focus"
+                  className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'focus' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                  <Icons.SummaryIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => onSetCalendarViewMode('timeline')}
+                  title="Timeline View"
+                  className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'timeline' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                >
+                  <Icons.ListIcon className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="relative" ref={datePickerRef}>
+                <button
+                  onClick={() => setIsDatePickerOpen((o) => !o)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Open date picker"
+                >
+                  <Icons.CalendarIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                {isDatePickerOpen && (
+                  <div className="absolute top-full right-0 mt-2 z-30">
+                    <DateTimePicker
+                      currentDate={selectedDate}
+                      onSelect={(date) => {
+                        setViewDate(date);
+                        onDateSelect(date);
+                        setIsDatePickerOpen(false);
+                      }}
+                      onClear={() => {}}
+                      onClose={() => setIsDatePickerOpen(false)}
+                    />
+                  </div>
+                )}
+              </div>
               <button
-                onClick={() => onSetCalendarViewMode('focus')}
-                title="Group by Focus"
-                className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'focus' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
+                onClick={onAddLogClick}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
-                <Icons.SummaryIcon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => onSetCalendarViewMode('timeline')}
-                title="Timeline View"
-                className={`p-1.5 rounded-md transition-all ${calendarViewMode === 'timeline' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:bg-gray-200'}`}
-              >
-                <Icons.ListIcon className="w-5 h-5" />
+                <Icons.PlusIcon className="w-5 h-5" />
+                <span>Add Log</span>
               </button>
             </div>
-            <div className="relative" ref={datePickerRef}>
-              <button
-                onClick={() => setIsDatePickerOpen((o) => !o)}
-                className="p-1.5 rounded-md hover:bg-gray-100"
-                aria-label="Open date picker"
-              >
-                <Icons.CalendarIcon className="w-5 h-5" />
-              </button>
-              {isDatePickerOpen && (
-                <div className="absolute top-full right-0 mt-2 z-30">
-                  <DateTimePicker
-                    currentDate={selectedDate}
-                    onSelect={(date) => {
-                      setViewDate(date);
-                      onDateSelect(date);
-                      setIsDatePickerOpen(false);
-                    }}
-                    onClear={() => {}}
-                    onClose={() => setIsDatePickerOpen(false)}
-                  />
-                </div>
-              )}
-            </div>
-            <button
-              onClick={handleGoToToday}
-              title="Go to Today"
-              className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
-            >
-              Today
-            </button>
-            <button onClick={handlePrevWeek} className="p-1 rounded-full hover:bg-gray-100">
-              <Icons.ChevronLeftIcon className="w-5 h-5" />
-            </button>
-            <button onClick={handleNextWeek} className="p-1 rounded-full hover:bg-gray-100">
-              <Icons.ChevronRightIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onAddLogClick}
-              className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <Icons.PlusIcon className="w-4 h-4" />
-              <span>Add</span>
-            </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="p-4 pb-2">
+      {/* Calendar Grid */}
+      <div className="p-6 pb-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">{getMonthYearText(viewDate)}</h2>
+            <div className="flex items-center gap-4">
+              {/* Description Toggle Switch */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 font-medium">Show Details</span>
+                <button
+                  onClick={() => setShowDescriptions(!showDescriptions)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                    showDescriptions ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                  role="switch"
+                  aria-checked={showDescriptions}
+                  title={showDescriptions ? 'Hide Descriptions' : 'Show Descriptions'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      showDescriptions ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleGoToToday}
+                  title="Go to Today"
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Today
+                </button>
+                <button onClick={handlePrevWeek} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+                </button>
+                <button onClick={handleNextWeek} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.ChevronRightIcon className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-7 gap-2">
           {weekGrid.map((day, i) => {
             const isSelected = isSameDay(day, selectedDate);
@@ -211,12 +252,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             const hasLogs = daysWithLogs.has(day.toDateString());
 
             let buttonClass =
-              'w-full text-center p-2 rounded-lg transition-colors duration-150 border-2';
+              'w-full text-center p-3 rounded-lg transition-all duration-200 border-2';
 
             if (isSelected) {
-              buttonClass += ' bg-blue-600 text-white font-semibold border-blue-600 shadow-lg';
+              buttonClass += ' bg-indigo-600 text-white font-semibold border-indigo-600 shadow-lg';
             } else if (isToday) {
-              buttonClass += ' border-blue-500 text-blue-600 font-semibold hover:bg-blue-50';
+              buttonClass += ' border-indigo-500 text-indigo-600 font-semibold hover:bg-indigo-50';
             } else {
               buttonClass += ' border-transparent text-gray-700 hover:bg-gray-100';
             }
@@ -234,7 +275,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   </span>
                   {hasLogs && (
                     <div
-                      className={`w-1.5 h-1.5 rounded-full mt-1.5 mx-auto ${isSelected ? 'bg-white' : 'bg-blue-500'}`}
+                      className={`w-1.5 h-1.5 rounded-full mt-1.5 mx-auto ${isSelected ? 'bg-white' : 'bg-indigo-500'}`}
                     ></div>
                   )}
                 </button>
@@ -244,76 +285,87 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-4 border-t border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-700 my-4 px-2 sticky top-0 bg-white/90 backdrop-blur-sm py-2 z-10">
-          {selectedDate
-            ? `Logs for ${new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
-            : 'Select a date to see logs'}
-        </h2>
-        {calendarViewMode === 'timeline' ? (
-          filteredLogs.length > 0 ? (
-            <ul className="space-y-3">
-              {filteredLogs.map((log) => {
-                const focus = allFoci.find((f) => f.id === log.focusId);
-                return (
-                  <li key={log.id}>
+      {/* Log List */}
+      <div className="flex-1 overflow-y-auto border-t border-gray-200">
+        <div className="p-4">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4 sticky top-0 bg-white/90 backdrop-blur-sm py-2 z-10">
+            {selectedDate
+              ? `Logs for ${new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
+              : 'Select a date to see logs'}
+          </h2>
+          {calendarViewMode === 'timeline' ? (
+            filteredLogs.length > 0 ? (
+              <div className="space-y-3">
+                {filteredLogs.map((log) => {
+                  const focus = allFoci.find((f) => f.id === log.focusId);
+                  return (
                     <LogItem
+                      key={log.id}
                       log={log}
                       focus={focus}
                       isSelected={selectedLogId === log.id}
                       onSelect={onSelectLog}
                       onToggleKaryTask={onToggleKaryTask}
+                      showDescription={showDescriptions}
                     />
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            selectedDate && (
-              <div className="text-center py-10 text-gray-500">
-                <p>No logs on this day.</p>
+                  );
+                })}
               </div>
-            )
-          )
-        ) : groupEntries.length > 0 ? (
-          <div className="space-y-6">
-            {groupEntries.map(([groupTitle, logsInGroup]) => {
-              const focusForGroup = allFoci.find((f) => f.name === groupTitle);
-              const IconComponent = focusForGroup ? Icons[focusForGroup.icon] : Icons.ListIcon;
-
-              return (
-                <div key={groupTitle}>
-                  <div className="flex items-center gap-2.5 mb-3 px-2">
-                    {focusForGroup && (
-                      <IconComponent
-                        className={`w-5 h-5 text-${focusForGroup.color || 'gray-500'}`}
-                      />
-                    )}
-                    <h3 className="text-md font-semibold text-gray-600">{groupTitle}</h3>
+            ) : (
+              selectedDate && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icons.CalendarIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                  <ul className="space-y-3">
-                    {logsInGroup.map((log) => (
-                      <li key={log.id}>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No logs on this day</h3>
+                  <p className="text-gray-500">Start by adding your first log entry</p>
+                </div>
+              )
+            )
+          ) : groupEntries.length > 0 ? (
+            <div className="space-y-6">
+              {groupEntries.map(([groupTitle, logsInGroup]) => {
+                const focusForGroup = allFoci.find((f) => f.name === groupTitle);
+                const IconComponent = focusForGroup ? Icons[focusForGroup.icon] : Icons.ListIcon;
+
+                return (
+                  <div key={groupTitle}>
+                    <div className="flex items-center gap-2.5 mb-3">
+                      {focusForGroup && (
+                        <IconComponent
+                          className={`w-5 h-5 text-${focusForGroup.color || 'gray-500'}`}
+                        />
+                      )}
+                      <h3 className="text-md font-semibold text-gray-600">{groupTitle}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {logsInGroup.map((log) => (
                         <LogItem
+                          key={log.id}
                           log={log}
                           onToggleKaryTask={onToggleKaryTask}
                           isSelected={selectedLogId === log.id}
                           onSelect={onSelectLog}
+                          showDescription={showDescriptions}
                         />
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          selectedDate && (
-            <div className="text-center py-10 text-gray-500">
-              <p>No logs on this day.</p>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )
-        )}
+          ) : (
+            selectedDate && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icons.CalendarIcon className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No logs on this day</h3>
+                <p className="text-gray-500">Start by adding your first log entry</p>
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

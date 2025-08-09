@@ -3,6 +3,7 @@ import { Log, Focus, ChecklistItem, LogType, logTypeDetails } from '~/modules/da
 import * as Icons from '~/components/Icons';
 import Checkbox from '~/components/common/Checkbox';
 import DateTimePicker from '~/components/DateTimePicker';
+import { WysiwygMarkdownEditor } from '~/components/common/WysiwygMarkdownEditor';
 
 const StarRatingInput: React.FC<{ rating: number; onSetRating: (rating: number) => void }> = ({
   rating,
@@ -36,27 +37,26 @@ interface LogDetailProps {
 const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteLog, onBack }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [descriptionInput, setDescriptionInput] = useState('');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [activePopup, setActivePopup] = useState<'focus' | 'date' | null>(null);
 
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const descriptionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const triggerRefs = {
     focus: useRef<HTMLButtonElement>(null),
     date: useRef<HTMLButtonElement>(null),
   };
 
+  // Get focus and icon for header
+  const logFocus = log ? foci.find((f) => f.id === log.focusId) : null;
+  const LogIcon = logFocus ? Icons[logFocus.icon] : Icons.ListIcon;
+
   useEffect(() => {
     if (log) {
       setTitleInput(log.title);
-      setDescriptionInput(log.description || '');
       setChecklist(log.checklist || []);
       setIsEditingTitle(false);
-      setIsEditingDescription(false);
       setActivePopup(null);
     }
   }, [log]);
@@ -83,12 +83,6 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
     }
   }, [isEditingTitle]);
 
-  useEffect(() => {
-    if (isEditingDescription && descriptionTextareaRef.current) {
-      descriptionTextareaRef.current.focus();
-    }
-  }, [isEditingDescription]);
-
   const handleUpdate = (updates: Partial<Log>) => {
     if (log) {
       onUpdateLog(log.id, updates);
@@ -101,13 +95,6 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
       onUpdateLog(log.id, { title: titleInput.trim() });
     }
     setIsEditingTitle(false);
-  };
-
-  const handleDescriptionSave = () => {
-    if (log && descriptionInput.trim() !== (log.description || '')) {
-      onUpdateLog(log.id, { description: descriptionInput.trim() });
-    }
-    setIsEditingDescription(false);
   };
 
   const handleRatingUpdate = (rating: number) => {
@@ -201,9 +188,31 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
     );
   }
 
-  const logFocus = foci.find((f) => f.id === log.focusId);
-  const LogIcon = logFocus ? Icons[logFocus.icon] : Icons.ListIcon;
-  const LogTypeIcon = Icons[logTypeDetails[log.logType].icon];
+  // Determine which icon to show based on log type (same logic as LogItem)
+  const getLogIcon = () => {
+    if (log.taskId) {
+      // Task - show checked checkbox icon
+      return (
+        <div className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1">
+          <Icons.CheckSquareIcon className="w-6 h-6" />
+        </div>
+      );
+    } else if (log.habitId) {
+      // Habit - show Abhyasa module symbol (target/bullseye icon)
+      return (
+        <div className="w-6 h-6 text-green-600 flex-shrink-0 mt-1">
+          <Icons.TargetIcon className="w-6 h-6" />
+        </div>
+      );
+    } else {
+      // Journal/General log - show Dainandini module symbol (pencil icon)
+      return (
+        <div className="w-6 h-6 text-gray-400 flex-shrink-0 mt-1">
+          <Icons.Edit3Icon className="w-6 h-6" />
+        </div>
+      );
+    }
+  };
 
   return (
     <div className="flex-1 bg-white/90 p-6 flex flex-col h-full">
@@ -253,7 +262,7 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
 
       <div className="flex-1 flex flex-col overflow-y-auto pr-2 -mr-2">
         <div className="flex items-start gap-3 mb-6">
-          <LogTypeIcon className="w-6 h-6 text-gray-400 mt-1 flex-shrink-0" />
+          {getLogIcon()}
           <div className="flex-1 min-w-0">
             {isEditingTitle ? (
               <textarea
@@ -291,36 +300,12 @@ const LogDetail: React.FC<LogDetailProps> = ({ log, foci, onUpdateLog, onDeleteL
         )}
 
         <div className="prose max-w-none text-gray-800 mb-6 flex-1 flex flex-col">
-          <h3 className="font-semibold text-gray-600 text-sm uppercase tracking-wider mb-2">
-            Description
-          </h3>
-          {isEditingDescription ? (
-            <textarea
-              ref={descriptionTextareaRef}
-              value={descriptionInput}
-              onChange={(e) => setDescriptionInput(e.target.value)}
-              onBlur={handleDescriptionSave}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setIsEditingDescription(false);
-                }
-              }}
-              className="w-full flex-1 text-base p-2 text-gray-800 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-sans"
-              placeholder="Add more details..."
-            />
-          ) : (
-            <div
-              className="p-2 -m-2 rounded-md cursor-text hover:bg-gray-100/70 h-full"
-              onClick={() => setIsEditingDescription(true)}
-            >
-              {descriptionInput.trim() ? (
-                <p className="whitespace-pre-wrap">{descriptionInput}</p>
-              ) : (
-                <p className="text-gray-400 italic">No description provided. Click to add.</p>
-              )}
-            </div>
-          )}
+          <WysiwygMarkdownEditor
+            value={log.description || ''}
+            onChange={(newDescription) => onUpdateLog(log.id, { description: newDescription })}
+            placeholder="Add more details... (Markdown supported)"
+            minHeight="200px"
+          />
         </div>
 
         {log.logType === LogType.CHECKLIST && (

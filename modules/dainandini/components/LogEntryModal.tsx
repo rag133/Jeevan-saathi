@@ -3,6 +3,7 @@ import { Log, Focus, ChecklistItem, LogType, logTypeDetails, LogTemplate } from 
 import Modal from '~/components/Modal';
 import * as Icons from '~/components/Icons';
 import DateTimePicker from '~/components/DateTimePicker';
+import { WysiwygMarkdownEditor } from '~/components/common/WysiwygMarkdownEditor';
 
 const isSameDay = (d1: Date | null, d2: Date | null): boolean => {
   if (!d1 || !d2) return false;
@@ -308,12 +309,11 @@ const LogEntryModal: React.FC<LogEntryModalProps> = ({
       case LogType.TEXT:
       default:
         return (
-          <textarea
+          <WysiwygMarkdownEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add a description... (optional)"
-            className="w-full bg-transparent text-gray-700 placeholder-gray-400 text-sm outline-none resize-none"
-            rows={4}
+            onChange={setDescription}
+            placeholder="Add a description... (optional) (Markdown supported)"
+            minHeight="120px"
           />
         );
     }

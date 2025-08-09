@@ -120,11 +120,11 @@ export const WysiwygMarkdownEditor: React.FC<WysiwygMarkdownEditorProps> = ({
         >
           {value ? (
             <div 
-              className="prose prose-sm max-w-none"
+              className="prose prose-sm max-w-none text-gray-800"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }}
             />
           ) : (
-            <span className="text-gray-400">{placeholder}</span>
+            <span className="text-gray-400 italic">{placeholder}</span>
           )}
         </div>
       )}
