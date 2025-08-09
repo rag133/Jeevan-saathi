@@ -1,0 +1,37 @@
+# Jeevan Saathi Monorepo Development Rules
+
+## Project Structure
+- `web/` - React web application (existing)
+- `mobile/` - React Native mobile application (to be created)
+- `shared/` - Code shared between web and mobile
+
+## Code Reuse Guidelines
+- ALWAYS check `shared/` directory first for existing code
+- Reuse business logic, stores, and services from `shared/`
+- Only create new code when absolutely necessary
+- Maintain consistency between web and mobile implementations
+
+## Development Workflow
+1. Implement core logic in `shared/`
+2. Adapt UI components for web in `web/src/`
+3. Adapt UI components for mobile in `mobile/src/`
+4. Ensure both platforms use the same data models and business logic
+
+## Critical Rules
+- NEVER modify the existing web app functionality during mobile development
+- ALWAYS test web app after any changes to shared code
+- Use the SAME Firebase project for both apps
+- Maintain data consistency across platforms
+
+## File Organization
+- Business logic → `shared/`
+- Platform-specific UI → `web/` or `mobile/`
+- Types and interfaces → `shared/types/`
+- Stores and state → `shared/stores/`
+- Services → `shared/services/`
+- Utilities → `shared/utils/`
+
+## Testing Requirements
+- Test web app functionality after any shared code changes
+- Ensure mobile app works with shared code
+- Maintain backward compatibility
