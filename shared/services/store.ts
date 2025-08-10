@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { useKaryStore } from '~/modules/kary/karyStore';
-import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
-import { useAbhyasaStore } from '~/modules/abhyasa/abhyasaStore';
+import { useKaryStore } from '../stores/karyStore';
+import { useDainandiniStore } from '../stores/dainandiniStore';
+import { useAbhyasaStore } from '../stores/abhyasaStore';
 
 const useRootStore = create(devtools((set, get) => ({
   ...useKaryStore.getState(),

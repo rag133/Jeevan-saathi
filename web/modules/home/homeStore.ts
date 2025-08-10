@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { useKaryStore } from '~/modules/kary/karyStore';
 import { useAbhyasaStore } from '~/modules/abhyasa/abhyasaStore';
 import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
-import { taskService, habitService, habitLogService, logService } from '~/services/dataService';
+import { taskService, habitService, habitLogService, logService } from '@jeevan-saathi/shared/services/dataService';
 import type { HomeStore, CalendarItem, TimeSlot } from './types';
 import { CalendarItemType } from './types';
 import { convertToCalendarItems } from './utils/dataAggregator';

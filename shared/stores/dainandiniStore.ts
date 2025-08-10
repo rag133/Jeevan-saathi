@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { logService, logTemplateService, focusService } from '~/services/dataService';
-import type { Log, LogTemplate, Focus } from './types';
+import { logService, logTemplateService, focusService } from '../services/dataService';
+import type { Log, LogTemplate, Focus } from '../types';
 
 type DainandiniState = {
   logs: Log[];
@@ -37,33 +37,9 @@ export const useDainandiniStore = create<DainandiniState>()(
             logTemplateService.getAll(),
             focusService.getAll(),
           ]);
-          // If no Focus Areas exist, initialize them with default data
-          if (foci.length === 0) {
-            const { initialFoci } = await import('./data');
-            // Check if any of the initial foci already exist by name
-            const existingFociNames = foci.map(f => f.name);
-            const fociToAdd = initialFoci.filter(focus => !existingFociNames.includes(focus.name));
-            
-            if (fociToAdd.length > 0) {
-              // Add only missing foci to prevent duplicates
-              await Promise.all(fociToAdd.map(focus => focusService.add(focus)));
-              // Fetch again after initialization
-              const newFoci = await focusService.getAll();
-              // Deduplicate foci by ID to prevent React key conflicts
-              const uniqueNewFoci = newFoci.filter((focus, index, self) => 
-                index === self.findIndex(f => f.id === focus.id)
-              );
-              set({ logs, logTemplates, foci: uniqueNewFoci, loading: false });
-            } else {
-              set({ logs, logTemplates, foci, loading: false });
-            }
-          } else {
-            // Deduplicate foci by ID to prevent React key conflicts
-            const uniqueFoci = foci.filter((focus, index, self) => 
-              index === self.findIndex(f => f.id === focus.id)
-            );
-            set({ logs, logTemplates, foci: uniqueFoci, loading: false });
-          }
+          // TODO: Initialize default foci when data is available
+          // For now, just set the existing foci
+          set({ logs, logTemplates, foci, loading: false });
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }

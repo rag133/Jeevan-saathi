@@ -30,7 +30,14 @@ type FirestoreDoc<T> = T & { id: string };
 // Helper function to get user collection reference
 const getUserCollection = (collectionName: string) => {
   const user = getCurrentUser();
-  if (!user) throw new Error('User not authenticated');
+  if (!user) {
+    console.warn('getUserCollection called without authenticated user');
+    throw new Error('User not authenticated');
+  }
+  if (!user.uid) {
+    console.warn('getUserCollection called with user but no UID');
+    throw new Error('User UID not available');
+  }
   return collection(db, 'users', user.uid, collectionName);
 };
 

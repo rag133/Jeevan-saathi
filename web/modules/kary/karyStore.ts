@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { taskService, listService, tagService, listFolderService, tagFolderService } from '~/services/dataService';
-import type { Task, List, Tag, ListFolder, TagFolder } from './types';
+import { taskService, listService, tagService, listFolderService, tagFolderService } from '@jeevan-saathi/shared/services/dataService';
+import { getCurrentUser } from '@jeevan-saathi/shared/services/authService';
+import type { Task, List, Tag, ListFolder, TagFolder } from '@jeevan-saathi/shared/types';
 
 export type SortOption = 'created' | 'dueDate' | 'priority' | 'title';
 export type SortDirection = 'asc' | 'desc';
@@ -66,6 +67,14 @@ export const useKaryStore = create<KaryState>()(
       fetchKaryData: async () => {
         set({ loading: true, error: null });
         try {
+          // Check if user is authenticated before making requests
+          const user = getCurrentUser();
+          if (!user || !user.uid) {
+            console.warn('Cannot fetch kary data: user not authenticated');
+            set({ loading: false, error: 'User not authenticated' });
+            return;
+          }
+
           const [tasks, lists, tags, listFolders, tagFolders] = await Promise.all([
             taskService.getAll(),
             listService.getAll(),
@@ -75,7 +84,9 @@ export const useKaryStore = create<KaryState>()(
           ]);
           set({ tasks, lists, tags, listFolders, tagFolders, loading: false });
         } catch (error) {
-          set({ error: (error as Error).message, loading: false });
+          console.error('Error fetching kary data:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+          set({ error: errorMessage, loading: false });
         }
       },
       addTask: async (task) => {

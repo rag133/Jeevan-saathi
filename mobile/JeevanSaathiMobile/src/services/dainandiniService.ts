@@ -1,152 +1,173 @@
 import { dataService } from './dataService';
-import { LogEntry, Template, Tab } from '../types';
+import { LogEntry, LogTemplate, Tab } from '../types';
 
 export class DainandiniService {
   // Log Entry operations
-  async getLogEntries(date?: string): Promise<LogEntry[]> {
-    if (date) {
-      return dataService.getDocuments<LogEntry>('logEntries');
-    }
-    return dataService.getDocuments<LogEntry>('logEntries');
+  async getLogEntries(): Promise<LogEntry[]> {
+    return dataService.getLogEntries();
   }
 
-  async getLogEntry(entryId: string): Promise<LogEntry | null> {
-    return dataService.getDocument<LogEntry>('logEntries', entryId);
+  async createLogEntry(entry: Omit<LogEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<LogEntry> {
+    return dataService.createLogEntry(entry);
   }
 
-  async createLogEntry(entry: Omit<LogEntry, 'id'>): Promise<string> {
-    return dataService.addDocument<LogEntry>('logEntries', entry);
+  async updateLogEntry(id: string, updates: Partial<LogEntry>): Promise<void> {
+    return dataService.updateLogEntry(id, updates);
   }
 
-  async updateLogEntry(entryId: string, updates: Partial<LogEntry>): Promise<void> {
-    return dataService.updateDocument<LogEntry>('logEntries', entryId, updates);
+  async deleteLogEntry(id: string): Promise<void> {
+    return dataService.deleteLogEntry(id);
   }
 
-  async deleteLogEntry(entryId: string): Promise<void> {
-    return dataService.deleteDocument('logEntries', entryId);
+  // Log Template operations
+  async getLogTemplates(): Promise<LogTemplate[]> {
+    return dataService.getLogTemplates();
   }
 
-  // Template operations
-  async getTemplates(): Promise<Template[]> {
-    return dataService.getDocuments<Template>('templates');
+  async createLogTemplate(template: Omit<LogTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<LogTemplate> {
+    return dataService.createLogTemplate(template);
   }
 
-  async getTemplate(templateId: string): Promise<Template | null> {
-    return dataService.getDocument<Template>('templates', templateId);
+  async updateLogTemplate(id: string, updates: Partial<LogTemplate>): Promise<void> {
+    return dataService.updateLogTemplate(id, updates);
   }
 
-  async createTemplate(template: Omit<Template, 'id'>): Promise<string> {
-    return dataService.addDocument<Template>('templates', template);
-  }
-
-  async updateTemplate(templateId: string, updates: Partial<Template>): Promise<void> {
-    return dataService.updateDocument<Template>('templates', templateId, updates);
-  }
-
-  async deleteTemplate(templateId: string): Promise<void> {
-    return dataService.deleteDocument('templates', templateId);
+  async deleteLogTemplate(id: string): Promise<void> {
+    return dataService.deleteLogTemplate(id);
   }
 
   // Tab operations
   async getTabs(): Promise<Tab[]> {
-    return dataService.getDocuments<Tab>('tabs');
+    return dataService.getTabs();
   }
 
-  async createTab(tab: Omit<Tab, 'id'>): Promise<string> {
-    return dataService.addDocument<Tab>('tabs', tab);
+  async createTab(tab: Omit<Tab, 'id' | 'createdAt' | 'updatedAt'>): Promise<Tab> {
+    return dataService.createTab(tab);
   }
 
-  async updateTab(tabId: string, updates: Partial<Tab>): Promise<void> {
-    return dataService.updateDocument<Tab>('tabs', tabId, updates);
+  async updateTab(id: string, updates: Partial<Tab>): Promise<void> {
+    return dataService.updateTab(id, updates);
   }
 
-  async deleteTab(tabId: string): Promise<void> {
-    return dataService.deleteDocument('tabs', tabId);
+  async deleteTab(id: string): Promise<void> {
+    return dataService.deleteTab(id);
   }
 
-  // Real-time subscriptions
-  subscribeToLogEntries(callback: (entries: LogEntry[]) => void) {
-    return dataService.subscribeToCollection<LogEntry>('logEntries', callback);
-  }
-
-  subscribeToTemplates(callback: (templates: Template[]) => void) {
-    return dataService.subscribeToCollection<Template>('templates', callback);
-  }
-
-  subscribeToTabs(callback: (tabs: Tab[]) => void) {
-    return dataService.subscribeToCollection<Tab>('tabs', callback);
-  }
-
-  // Date-based operations
-  async getLogEntriesByDate(date: string): Promise<LogEntry[]> {
+  // Date-based queries
+  async getLogEntriesByDate(date: Date): Promise<LogEntry[]> {
     const entries = await this.getLogEntries();
-    return entries.filter(entry => entry.date === date);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDate = new Date(targetDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= targetDate && entryDate < nextDate;
+    });
   }
 
-  async getLogEntriesByDateRange(startDate: string, endDate: string): Promise<LogEntry[]> {
+  async getLogEntriesByDateRange(startDate: Date, endDate: Date): Promise<LogEntry[]> {
     const entries = await this.getLogEntries();
-    return entries.filter(entry => 
-      entry.date >= startDate && entry.date <= endDate
-    );
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate >= start && entryDate <= end;
+    });
   }
 
-  async getTodayLogEntries(): Promise<LogEntry[]> {
-    const today = new Date().toISOString().split('T')[0];
-    return this.getLogEntriesByDate(today);
-  }
-
-  async getWeeklyLogEntries(): Promise<LogEntry[]> {
-    const today = new Date();
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const startDate = weekAgo.toISOString().split('T')[0];
-    const endDate = today.toISOString().split('T')[0];
-    return this.getLogEntriesByDateRange(startDate, endDate);
-  }
-
-  // Search and filtering
-  async searchLogEntries(query: string): Promise<LogEntry[]> {
-    const entries = await this.getLogEntries();
-    return entries.filter(entry => 
-      entry.title?.toLowerCase().includes(query.toLowerCase()) ||
-      entry.content?.toLowerCase().includes(query.toLowerCase()) ||
-      entry.tags?.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
-    );
-  }
-
-  async getLogEntriesByTab(tabId: string): Promise<LogEntry[]> {
-    const entries = await this.getLogEntries();
-    return entries.filter(entry => entry.tabId === tabId);
-  }
-
-  async getLogEntriesByTag(tag: string): Promise<LogEntry[]> {
-    const entries = await this.getLogEntries();
-    return entries.filter(entry => 
-      entry.tags?.some(t => t.toLowerCase() === tag.toLowerCase())
-    );
-  }
-
-  // Analytics
-  async getLogEntryCount(date?: string): Promise<number> {
-    const entries = date ? await this.getLogEntriesByDate(date) : await this.getLogEntries();
+  // Analytics and statistics
+  async getLogEntryCount(startDate?: Date, endDate?: Date): Promise<number> {
+    let entries = await this.getLogEntries();
+    
+    if (startDate && endDate) {
+      entries = await this.getLogEntriesByDateRange(startDate, endDate);
+    }
+    
     return entries.length;
   }
 
-  async getMostUsedTags(): Promise<string[]> {
+  async getMostUsedTags(limit: number = 10): Promise<{ tag: string; count: number }[]> {
     const entries = await this.getLogEntries();
-    const tagCount: { [key: string]: number } = {};
+    const tagCounts: { [key: string]: number } = {};
     
     entries.forEach(entry => {
-      entry.tags?.forEach(tag => {
-        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      entry.tags.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
       });
     });
     
-    return Object.entries(tagCount)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 10)
+    return Object.entries(tagCounts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  }
+
+  async getLogEntryStats(startDate?: Date, endDate?: Date): Promise<{
+    totalEntries: number;
+    averageEntriesPerDay: number;
+    mostActiveDay: string;
+    mostUsedTags: string[];
+  }> {
+    let entries = await this.getLogEntries();
+    
+    if (startDate && endDate) {
+      entries = await this.getLogEntriesByDateRange(startDate, endDate);
+    }
+    
+    const totalEntries = entries.length;
+    const days = startDate && endDate 
+      ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      : 30;
+    const averageEntriesPerDay = totalEntries / days;
+    
+    // Find most active day
+    const dayCounts: { [key: string]: number } = {};
+    entries.forEach(entry => {
+      const day = new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long' });
+      dayCounts[day] = (dayCounts[day] || 0) + 1;
+    });
+    
+    const mostActiveDay = Object.entries(dayCounts)
+      .sort(([, a], [, b]) => b - a)[0]?.[0] || 'Unknown';
+    
+    // Get most used tags
+    const tagCounts: { [key: string]: number } = {};
+    entries.forEach(entry => {
+      entry.tags.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+    
+    const mostUsedTags = Object.entries(tagCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
       .map(([tag]) => tag);
+    
+    return {
+      totalEntries,
+      averageEntriesPerDay,
+      mostActiveDay,
+      mostUsedTags
+    };
+  }
+
+  // Subscriptions
+  subscribeToLogEntries(callback: (entries: LogEntry[]) => void): () => void {
+    return dataService.subscribeToLogEntries(callback);
+  }
+
+  subscribeToLogTemplates(callback: (templates: LogTemplate[]) => void): () => void {
+    return dataService.subscribeToLogTemplates(callback);
+  }
+
+  subscribeToTabs(callback: (tabs: Tab[]) => void): () => void {
+    return dataService.subscribeToTabs(callback);
   }
 }
 
 export const dainandiniService = new DainandiniService();
-export default dainandiniService;

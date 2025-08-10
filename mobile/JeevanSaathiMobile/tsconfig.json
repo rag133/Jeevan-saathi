@@ -1,6 +1,15 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@jeevan-saathi/shared/*": ["../shared/*"],
+      "@jeevan-saathi/shared": ["../shared"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "../shared/**/*"
+  ]
 }

@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { AuthService } from '../services/authService';
+import { AuthService } from '../services/authService.js';
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');

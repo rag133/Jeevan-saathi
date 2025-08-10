@@ -10,10 +10,10 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LogEntry, Tab } from '../types';
+// import { LogEntry, Tab } from '../types';
 
 const DainandiniScreen = () => {
-  const [logs, setLogs] = useState<LogEntry[]>([
+  const [logs, setLogs] = useState([
     {
       id: '1',
       title: 'Morning Reflection',
@@ -36,13 +36,13 @@ const DainandiniScreen = () => {
     },
   ]);
 
-  const [tabs, setTabs] = useState<Tab[]>([
+  const [tabs, setTabs] = useState([
     { id: '1', name: 'Personal', color: '#007AFF', icon: 'person', createdAt: new Date(), updatedAt: new Date() },
     { id: '2', name: 'Work', color: '#34C759', icon: 'briefcase', createdAt: new Date(), updatedAt: new Date() },
     { id: '3', name: 'Health', color: '#FF9500', icon: 'heart', createdAt: new Date(), updatedAt: new Date() },
   ]);
 
-  const [selectedTab, setSelectedTab] = useState<string>('1');
+  const [selectedTab, setSelectedTab] = useState('1');
   const [showQuickInput, setShowQuickInput] = useState(false);
   const [quickInput, setQuickInput] = useState('');
 
@@ -54,7 +54,7 @@ const DainandiniScreen = () => {
 
   const addQuickLog = () => {
     if (quickInput.trim()) {
-      const newLog: LogEntry = {
+      const newLog = {
         id: Date.now().toString(),
         title: 'Quick Log',
         content: quickInput,
@@ -68,7 +68,7 @@ const DainandiniScreen = () => {
     }
   };
 
-  const renderLog = ({ item }: { item: LogEntry }) => (
+  const renderLog = ({ item }) => (
     <View style={styles.logCard}>
       <View style={styles.logHeader}>
         <Text style={styles.logTitle}>{item.title}</Text>
@@ -100,7 +100,7 @@ const DainandiniScreen = () => {
     </View>
   );
 
-  const renderTab = (tab: Tab) => (
+  const renderTab = (tab) => (
     <TouchableOpacity
       key={tab.id}
       style={[
@@ -110,7 +110,7 @@ const DainandiniScreen = () => {
       ]}
       onPress={() => setSelectedTab(tab.id)}
     >
-      <Ionicons name={tab.icon as any} size={20} color={tab.color} />
+      <Ionicons name={tab.icon} size={20} color={tab.color} />
       <Text style={[styles.tabText, selectedTab === tab.id && styles.activeTabText]}>
         {tab.name}
       </Text>

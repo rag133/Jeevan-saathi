@@ -55,9 +55,9 @@ const HomeView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     const initializeStores = async () => {
       try {
         // Import stores dynamically to avoid circular dependencies
-        const { useKaryStore } = await import('~/modules/kary/karyStore');
-        const { useAbhyasaStore } = await import('~/modules/abhyasa/abhyasaStore');
-        const { useDainandiniStore } = await import('~/modules/dainandini/dainandiniStore');
+            const { useKaryStore } = await import('@jeevan-saathi/shared/stores/karyStore');
+    const { useAbhyasaStore } = await import('@jeevan-saathi/shared/stores/abhyasaStore');
+    const { useDainandiniStore } = await import('@jeevan-saathi/shared/stores/dainandiniStore');
         
         // Fetch data for all stores
         await Promise.all([

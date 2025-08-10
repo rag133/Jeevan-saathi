@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { taskService, listService, tagService, listFolderService, tagFolderService } from '~/services/dataService';
-import type { Task, List, Tag, ListFolder, TagFolder } from './types';
+import { taskService, listService, tagService, listFolderService, tagFolderService } from '../services/dataService';
+import type { Task, List, Tag, ListFolder, TagFolder } from '../types';
 
 export type SortOption = 'created' | 'dueDate' | 'priority' | 'title';
 export type SortDirection = 'asc' | 'desc';

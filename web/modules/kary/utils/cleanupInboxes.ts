@@ -1,4 +1,4 @@
-import { listService } from '~/services/dataService';
+import { listService } from '@jeevan-saathi/shared/services/dataService';
 
 export const cleanupDuplicateInboxes = async () => {
   try {

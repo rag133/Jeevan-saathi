@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { habitService, habitLogService, goalService, milestoneService, quickWinService } from '~/services/dataService';
+import { habitService, habitLogService, goalService, milestoneService, quickWinService } from '@jeevan-saathi/shared/services/dataService';
 import type { Habit, HabitLog, Goal, Milestone, QuickWin } from './types';
 
 type AbhyasaState = {

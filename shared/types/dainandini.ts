@@ -1,4 +1,4 @@
-import * as Icons from '~/components/Icons';
+import * as Icons from '../components/Icons';
 
 export enum LogType {
   TEXT = 'text',
@@ -7,9 +7,9 @@ export enum LogType {
 }
 
 export const logTypeDetails: Record<LogType, { name: string; icon: keyof typeof Icons }> = {
-  [LogType.TEXT]: { name: 'Text', icon: 'Edit3Icon' },
-  [LogType.CHECKLIST]: { name: 'Checklist', icon: 'CheckSquareIcon' },
-  [LogType.RATING]: { name: 'Rating', icon: 'StarIcon' },
+  [LogType.TEXT]: { name: 'Text', icon: 'Edit3Icon' as keyof typeof Icons },
+  [LogType.CHECKLIST]: { name: 'Checklist', icon: 'CheckSquareIcon' as keyof typeof Icons },
+  [LogType.RATING]: { name: 'Rating', icon: 'StarIcon' as keyof typeof Icons },
 };
 
 export interface ChecklistItem {

@@ -15,12 +15,12 @@ import {
   onAuthStateChange,
   signOutUser,
   updateUserProfile,
-} from './services/authService';
+} from '@jeevan-saathi/shared/services/authService';
 
-import { useKaryStore } from './modules/kary/karyStore';
-import { useDainandiniStore } from './modules/dainandini/dainandiniStore';
+import { useKaryStore } from '@jeevan-saathi/shared/stores/karyStore';
+import { useDainandiniStore } from '@jeevan-saathi/shared/stores/dainandiniStore';
 import { Toaster, toast } from 'react-hot-toast';
-import { useAbhyasaStore } from './modules/abhyasa/abhyasaStore';
+import { useAbhyasaStore } from '@jeevan-saathi/shared/stores/abhyasaStore';
 import useWindowSize from './hooks/useWindowSize'; // Import the custom hook
 import LoadingSpinner from './components/LoadingSpinner';
 import KeyboardShortcuts from './components/KeyboardShortcuts';

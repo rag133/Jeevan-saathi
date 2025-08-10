@@ -1,4 +1,4 @@
-import type { Log } from '~/modules/dainandini/types';
+import * as Icons from '../components/Icons';
 
 export interface ListFolder {
   id: string;
@@ -13,7 +13,7 @@ export interface TagFolder {
 export interface List {
   id: string;
   name: string;
-  icon: keyof typeof import('~/components/Icons');
+  icon: keyof typeof Icons;
   count?: number;
   color?: string;
   folderId?: string | null;
@@ -24,7 +24,7 @@ export interface Tag {
   id: string;
   name: string;
   color: string; // e.g. 'red-500'
-  icon?: keyof typeof import('~/components/Icons');
+  icon?: keyof typeof Icons;
   folderId?: string | null;
 }
 

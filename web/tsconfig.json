@@ -18,7 +18,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      "@jeevan-saathi/shared/*": ["../shared/*"],
+      "@jeevan-saathi/shared": ["../shared"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"]

@@ -49,11 +49,11 @@ const VidyaScreen = () => {
     { title: 'Earned badge: TypeScript Expert', time: '3 days ago', type: 'achievement' },
   ];
 
-  const renderLearningModule = (module: typeof learningModules[0]) => (
+  const renderLearningModule = (module) => (
     <TouchableOpacity key={module.id} style={styles.moduleCard}>
       <View style={styles.moduleHeader}>
         <View style={[styles.moduleIcon, { backgroundColor: module.color }]}>
-          <Ionicons name={module.icon as any} size={24} color="white" />
+                          <Ionicons name={module.icon} size={24} color="white" />
         </View>
         <View style={styles.moduleInfo}>
           <Text style={styles.moduleTitle}>{module.title}</Text>
@@ -80,7 +80,7 @@ const VidyaScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderActivity = (activity: typeof recentActivities[0], index: number) => (
+  const renderActivity = (activity, index) => (
     <View key={index} style={styles.activityCard}>
       <View style={styles.activityIcon}>
         <Ionicons 

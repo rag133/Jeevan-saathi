@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import KarySidebar from '~/modules/kary/components/KarySidebar';
 import KaryTaskList from '~/modules/kary/components/KaryTaskList';
 import { KaryTaskDetail } from '~/modules/kary/components/KaryTaskDetail';
@@ -7,12 +7,13 @@ import AddListForm from '~/modules/kary/components/forms/AddListForm';
 import AddTagForm from '~/modules/kary/components/forms/AddTagForm';
 import EditListForm from '~/modules/kary/components/forms/EditListForm';
 import ResizablePanels from '~/components/common/ResizablePanels';
-import { Task, List, ListFolder, Tag, TagFolder, Selection } from '~/modules/kary/types';
 import LogEntryModal from '~/modules/dainandini/components/LogEntryModal';
-import { initialFoci } from '~/modules/dainandini/data';
-import { useKaryStore } from '../karyStore';
+import { useKaryStore } from '@jeevan-saathi/shared/stores/karyStore';
+import { useDainandiniStore } from '@jeevan-saathi/shared/stores/dainandiniStore';
 import useWindowSize from '~/hooks/useWindowSize';
-import { useDainandiniStore } from '~/modules/dainandini/dainandiniStore';
+import type { Task, List, Tag, ListFolder, TagFolder, Selection } from '@jeevan-saathi/shared/types/kary';
+import type { Log } from '@jeevan-saathi/shared/types/dainandini';
+import { initialFoci } from '~/modules/dainandini/data';
 import Logo from '~/components/Logo';
 import * as Icons from '~/components/Icons';
 
@@ -144,7 +145,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     }
   }, [getDefaultList]);
 
-  const customListsWithInbox = useMemo(() => {
+  const customListsWithInbox = useCallback(() => {
     // Add task counts to regular lists
     const listsWithCounts = lists.map(list => ({
       ...list,
@@ -174,7 +175,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     return listsWithCounts;
   }, [tasks, lists]);
 
-  const allLists = useMemo(() => {
+  const allLists = useCallback(() => {
     const todayCount = tasks.filter(
       (t) =>
         t.dueDate &&
@@ -204,16 +205,16 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
       { id: 'upcoming', name: 'Upcoming', icon: 'TomorrowIcon', count: upcomingCount },
     ];
 
-    return [...smartLists, ...customListsWithInbox];
+    return [...smartLists, ...customListsWithInbox()];
   }, [tasks, customListsWithInbox]);
 
   // Debug: Log lists to see what's being loaded
   useEffect(() => {
     console.log('Lists loaded:', lists);
-    console.log('All lists with counts:', allLists);
+    console.log('All lists with counts:', allLists());
   }, [lists, allLists]);
 
-  const displayedTasks = useMemo(() => {
+  const displayedTasks = useCallback(() => {
     let filteredTasks: Task[] = [];
     if (selectedItem.type === 'list') {
       if (selectedItem.id === 'today') {
@@ -263,11 +264,11 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     );
   }, [selectedItem, tasks]);
 
-  const selectedTask = useMemo(
+  const selectedTask = useCallback(
     () => tasks.find((t) => t.id === selectedTaskId) || null,
     [selectedTaskId, tasks]
   );
-  const childrenOfSelectedTask = useMemo(() => {
+  const childrenOfSelectedTask = useCallback(() => {
     if (!selectedTaskId) return [];
     return tasks
       .filter((t) => t.parentId === selectedTaskId)
@@ -275,7 +276,7 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
   }, [selectedTaskId, tasks]);
 
   useEffect(() => {
-    const topLevelTasks = displayedTasks.filter((t) => !t.parentId);
+    const topLevelTasks = displayedTasks();
     if (!selectedTaskId || !tasks.some((t) => t.id === selectedTaskId)) {
       setSelectedTaskId(topLevelTasks.length > 0 ? topLevelTasks[0].id : null);
     }
@@ -359,9 +360,9 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
     await setDefaultList(listId);
   };
 
-  const currentViewDetails = useMemo(() => {
+  const currentViewDetails = useCallback(() => {
     if (selectedItem.type === 'list') {
-      return allLists.find((l) => l.id === selectedItem.id);
+      return allLists().find((l) => l.id === selectedItem.id);
     }
     return tags.find((t) => t.id === selectedItem.id);
   }, [selectedItem, allLists, tags]);
@@ -400,8 +401,8 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
       {/* Main Content */}
       <div className="flex-1 min-h-0 flex">
         <KarySidebar
-          smartLists={allLists.filter((l) => ['today', 'due', 'upcoming'].includes(l.id))}
-          customLists={customListsWithInbox}
+          smartLists={allLists().filter((l) => ['today', 'due', 'upcoming'].includes(l.id))}
+          customLists={customListsWithInbox()}
           listFolders={listFolders}
           tags={tags}
           tagFolders={tagFolders}
@@ -422,9 +423,9 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
               selectedTaskId={selectedTaskId}
               tasks={tasks}
               allTags={tags}
-              allLists={allLists}
+              allLists={allLists()}
               allLogs={logs}
-              childrenTasks={childrenOfSelectedTask}
+              childrenTasks={childrenOfSelectedTask()}
               onToggleComplete={(taskId) => {
                 const task = tasks.find(t => t.id === taskId);
                 const newCompleted = !task?.completed;
@@ -447,9 +448,9 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
             />
           ) : isMobile && !showDetail ? (
             <KaryTaskList
-              viewDetails={currentViewDetails}
-              tasks={displayedTasks}
-              allLists={allLists}
+              viewDetails={currentViewDetails()}
+              tasks={displayedTasks()}
+              allLists={allLists()}
               allTags={tags}
               selectedTaskId={selectedTaskId}
               expandedTasks={expandedTasks}
@@ -477,9 +478,9 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
           ) : (
             <ResizablePanels initialLeftWidth={45}>
               <KaryTaskList
-                viewDetails={currentViewDetails}
-                tasks={displayedTasks}
-                allLists={allLists}
+                viewDetails={currentViewDetails()}
+                tasks={displayedTasks()}
+                allLists={allLists()}
                 allTags={tags}
                 selectedTaskId={selectedTaskId}
                 expandedTasks={expandedTasks}
@@ -508,9 +509,9 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
                 selectedTaskId={selectedTaskId}
                 tasks={tasks}
                 allTags={tags}
-                allLists={allLists}
+                allLists={allLists()}
                 allLogs={logs}
-                childrenTasks={childrenOfSelectedTask}
+                childrenTasks={childrenOfSelectedTask()}
                 onToggleComplete={(taskId) => {
                   const task = tasks.find(t => t.id === taskId);
                   const newCompleted = !task?.completed;
@@ -601,14 +602,24 @@ const KaryView: React.FC<{ isAppSidebarOpen: boolean }> = ({ isAppSidebarOpen })
           isOpen={true}
           onClose={() => setLogModalTask(null)}
           onAddLog={(logData) => {
-            if (logData.title) {
+            if (logData.title && logData.focusId && logData.logType) {
               // Add the taskId to the log data so it's associated with the task
-              const logWithTaskId = {
-                ...logData,
-                taskId: logModalTask.id,
+              const logWithTaskId: Omit<Log, 'id' | 'createdAt'> = {
+                title: logData.title,
+                focusId: logData.focusId,
+                logType: logData.logType,
                 logDate: logData.logDate || new Date(),
+                taskId: logModalTask.id,
+                description: logData.description,
+                checklist: logData.checklist,
+                rating: logData.rating,
+                habitId: logData.habitId,
+                milestoneId: logData.milestoneId,
+                goalId: logData.goalId,
+                completed: logData.completed,
+                taskCompletionDate: logData.taskCompletionDate,
               };
-              addLog(logWithTaskId as any);
+              addLog(logWithTaskId);
             }
           }}
           allFoci={initialFoci.filter((f) => f.id === 'kary' || f.id === 'general')}

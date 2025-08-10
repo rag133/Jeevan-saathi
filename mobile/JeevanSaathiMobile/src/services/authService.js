@@ -4,13 +4,13 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
+  User
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { User } from '../types';
+// import { User } from '../types';
 
 export class AuthService {
-  static async signIn(email: string, password: string): Promise<User> {
+  static async signIn(email, password) {
     try {
       console.log('Attempting sign in for:', email);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -23,7 +23,7 @@ export class AuthService {
         displayName: firebaseUser.displayName || undefined,
         photoURL: firebaseUser.photoURL || undefined
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Sign in error details:', error);
       
       // Check if it's a Firebase error with a code
@@ -52,7 +52,7 @@ export class AuthService {
     }
   }
 
-  static async signUp(email: string, password: string, displayName?: string): Promise<User> {
+  static async signUp(email, password, displayName) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
@@ -75,7 +75,7 @@ export class AuthService {
     }
   }
 
-  static async signOut(): Promise<void> {
+  static async signOut() {
     try {
       await signOut(auth);
     } catch (error) {
@@ -83,10 +83,10 @@ export class AuthService {
     }
   }
 
-  static onAuthStateChange(callback: (user: User | null) => void): () => void {
-    return onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+  static onAuthStateChange(callback) {
+          return onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const user: User = {
+        const user = {
           id: firebaseUser.uid,
           email: firebaseUser.email || '',
           displayName: firebaseUser.displayName || undefined,
@@ -99,7 +99,7 @@ export class AuthService {
     });
   }
 
-  static getCurrentUser(): User | null {
+  static getCurrentUser() {
     const firebaseUser = auth.currentUser;
     if (firebaseUser) {
       return {

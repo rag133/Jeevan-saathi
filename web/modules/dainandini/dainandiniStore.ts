@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { logService, logTemplateService, focusService } from '~/services/dataService';
+import { logService, logTemplateService, focusService } from '@jeevan-saathi/shared/services/dataService';
 import type { Log, LogTemplate, Focus } from './types';
 
 type DainandiniState = {

@@ -9,9 +9,11 @@ import {
   Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { AuthService } from '../services/authService';
 
 const ProfileScreen = () => {
+  const navigation = useNavigation();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
 
@@ -53,7 +55,7 @@ const ProfileScreen = () => {
     },
   ];
 
-  const handleAction = (action: string) => {
+  const handleAction = (action) => {
     switch (action) {
       case 'edit-profile':
         // TODO: Navigate to edit profile
@@ -88,7 +90,7 @@ const ProfileScreen = () => {
     }
   };
 
-  const renderSection = (section: typeof profileSections[0]) => (
+  const renderSection = (section) => (
     <View key={section.title} style={styles.section}>
       <Text style={styles.sectionTitle}>{section.title}</Text>
       {section.items.map((item, index) => (
@@ -98,7 +100,7 @@ const ProfileScreen = () => {
           onPress={() => handleAction(item.action)}
         >
           <View style={styles.menuItemLeft}>
-            <Ionicons name={item.icon as any} size={24} color="#666" />
+            <Ionicons name={item.icon} size={24} color="#666" />
             <Text style={styles.menuItemLabel}>{item.label}</Text>
           </View>
           {item.toggle ? (
@@ -121,6 +123,18 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={styles.headerRight} />
+      </View>
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
@@ -163,6 +177,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  headerRight: {
+    width: 40,
   },
   scrollView: {
     flex: 1,

@@ -1,31 +1,28 @@
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  doc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  writeBatch,
-  where,
-  Timestamp,
-} from 'firebase/firestore';
-import { db } from './firebase';
-import { getCurrentUser } from './authService';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, getDocs, query, orderBy, onSnapshot, where, limit, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { db, auth } from './firebase';
+import type { 
+  Task, 
+  List, 
+  Tag, 
+  ListFolder, 
+  TagFolder, 
+  Goal, 
+  Habit, 
+  HabitLog, 
+  Milestone, 
+  QuickWin, 
+  Log as LogEntry, 
+  LogTemplate, 
+  Focus,
+  FirestoreDoc,
+  PartialFirestoreDoc
+} from '../types';
 
-// Import types
-import type { Task, List, Tag, ListFolder, TagFolder } from '~/modules/kary/types';
-import type { Log, LogTemplate, Focus } from '~/modules/dainandini/types';
-import type { Habit, HabitLog, Goal, Milestone, QuickWin } from '~/modules/abhyasa/types';
-
-import { habits, initialGoals, initialMilestones, initialQuickWins } from '~/modules/abhyasa/data';
-import { customLists, listFolders, tags, tagFolders } from '~/modules/kary/data';
-import { initialFoci } from '~/modules/dainandini/data';
-
-// Type for Firestore documents (includes id)
-type FirestoreDoc<T> = T & { id: string };
+// Helper function to get current user
+const getCurrentUser = (): User | null => {
+  return auth.currentUser;
+};
 
 // Helper function to get user collection reference
 const getUserCollection = (collectionName: string) => {
@@ -36,26 +33,16 @@ const getUserCollection = (collectionName: string) => {
 
 // Helper function to convert Firestore timestamps to Date objects
 const convertTimestamps = (data: any): any => {
-  if (!data) return data;
-
-  const converted = { ...data };
-  Object.keys(converted).forEach((key) => {
-    if (converted[key] instanceof Timestamp) {
-      converted[key] = converted[key].toDate();
-    } else if (
-      converted[key] &&
-      typeof converted[key] === 'object' &&
-      !Array.isArray(converted[key])
-    ) {
-      converted[key] = convertTimestamps(converted[key]);
-    } else if (Array.isArray(converted[key])) {
-      converted[key] = converted[key].map((item: any) =>
-        typeof item === 'object' ? convertTimestamps(item) : item
-      );
-    }
-  });
-
-  return converted;
+  if (data && typeof data === 'object') {
+    Object.keys(data).forEach(key => {
+      if (data[key] && typeof data[key] === 'object' && data[key].toDate) {
+        data[key] = data[key].toDate();
+      } else if (data[key] && typeof data[key] === 'object') {
+        data[key] = convertTimestamps(data[key]);
+      }
+    });
+  }
+  return data;
 };
 
 export const taskService = {
@@ -242,7 +229,14 @@ export const listFolderService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const snapshot = await getDocs(getUserCollection('listFolders'));
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        name: data.name || 'Unnamed Folder',
+        ...data 
+      } as FirestoreDoc<ListFolder>;
+    });
   },
 
   subscribe: (callback: (folders: FirestoreDoc<ListFolder>[]) => void) => {
@@ -251,7 +245,14 @@ export const listFolderService = {
 
     const q = query(getUserCollection('listFolders'));
     return onSnapshot(q, (snapshot) => {
-      const folders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const folders = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return { 
+          id: doc.id, 
+          name: data.name || 'Unnamed Folder',
+          ...data 
+        } as FirestoreDoc<ListFolder>;
+      });
       callback(folders);
     });
   },
@@ -287,7 +288,14 @@ export const tagFolderService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const snapshot = await getDocs(getUserCollection('tagFolders'));
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return { 
+        id: doc.id, 
+        name: data.name || 'Unnamed Folder',
+        ...data 
+      } as FirestoreDoc<TagFolder>;
+    });
   },
 
   subscribe: (callback: (folders: FirestoreDoc<TagFolder>[]) => void) => {
@@ -296,14 +304,21 @@ export const tagFolderService = {
 
     const q = query(getUserCollection('tagFolders'));
     return onSnapshot(q, (snapshot) => {
-      const folders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const folders = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return { 
+          id: doc.id, 
+          name: data.name || 'Unnamed Folder',
+          ...data 
+        } as FirestoreDoc<TagFolder>;
+      });
       callback(folders);
     });
   },
 };
 
 export const logService = {
-  add: async (logData: Omit<Log, 'id' | 'createdAt'>): Promise<string> => {
+  add: async (logData: Omit<LogEntry, 'id' | 'createdAt'>): Promise<string> => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -315,7 +330,7 @@ export const logService = {
     return docRef.id;
   },
 
-  update: async (logId: string, updates: Partial<Log>): Promise<void> => {
+  update: async (logId: string, updates: Partial<LogEntry>): Promise<void> => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const logRef = doc(db, 'users', user.uid, 'logs', logId);
@@ -329,7 +344,7 @@ export const logService = {
     return deleteDoc(logRef);
   },
 
-  getAll: async (): Promise<FirestoreDoc<Log>[]> => {
+  getAll: async (): Promise<FirestoreDoc<LogEntry>[]> => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const q = query(getUserCollection('logs'), orderBy('logDate', 'desc'));
@@ -337,7 +352,7 @@ export const logService = {
     return snapshot.docs.map((doc) => convertTimestamps({ id: doc.id, ...doc.data() }));
   },
 
-  subscribe: (callback: (logs: FirestoreDoc<Log>[]) => void) => {
+  subscribe: (callback: (logs: FirestoreDoc<LogEntry>[]) => void) => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -383,7 +398,7 @@ export const logTemplateService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const snapshot = await getDocs(getUserCollection('logTemplates'));
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirestoreDoc<LogTemplate>));
   },
 
   subscribe: (callback: (templates: FirestoreDoc<LogTemplate>[]) => void) => {
@@ -392,7 +407,7 @@ export const logTemplateService = {
 
     const q = query(getUserCollection('logTemplates'));
     return onSnapshot(q, (snapshot) => {
-      const templates = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const templates = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirestoreDoc<LogTemplate>));
       callback(templates);
     });
   },
@@ -428,7 +443,7 @@ export const focusService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const snapshot = await getDocs(getUserCollection('foci'));
-    const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirestoreDoc<Focus>));
     return foci;
   },
 
@@ -438,7 +453,7 @@ export const focusService = {
 
     const q = query(getUserCollection('foci'));
     return onSnapshot(q, (snapshot) => {
-      const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const foci = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as FirestoreDoc<Focus>));
       callback(foci);
     });
   },
@@ -608,9 +623,10 @@ export const habitService = {
       ...habitData,
       createdAt: new Date(),
       userId: user.uid,
-      target: habitData.target || null,
-      targetComparison: habitData.targetComparison || null,
-      targetType: habitData.targetType || null,
+      dailyTarget: habitData.dailyTarget || null,
+      dailyTargetComparison: habitData.dailyTargetComparison || null,
+      totalTarget: habitData.totalTarget || null,
+      totalTargetComparison: habitData.totalTargetComparison || null,
       checklist: habitData.checklist || [],
       milestoneId: habitData.milestoneId || null,
       goalId: habitData.goalId || null,
@@ -630,8 +646,9 @@ export const habitService = {
 
     const cleanedUpdates: Partial<Habit> = {};
     for (const key in updates) {
-      if (updates[key as keyof Partial<Habit>] !== undefined) {
-        cleanedUpdates[key as keyof Partial<Habit>] = updates[key as keyof Partial<Habit>];
+      const value = updates[key as keyof Partial<Habit>];
+      if (value !== undefined) {
+        (cleanedUpdates as any)[key] = value;
       }
     }
 
@@ -740,101 +757,8 @@ export const initializeUserData = async () => {
 
   console.log('Initializing user data for new user:', user.uid);
 
-  // Initialize default foci for new users
-  const { initialFoci } = await import('../modules/dainandini/data');
-  console.log('Adding default focus areas:', initialFoci.length);
-
-  // Add default focus areas
-  await Promise.all(initialFoci.map(async (focus) => {
-    await focusService.add(focus);
-  }));
-
-  // Add default habits
-  console.log('Adding default habits:', habits.length);
-  await Promise.all(habits.map(async (habit) => {
-    await habitService.add(habit);
-  }));
-
-  // Add default goals
-  console.log('Adding default goals:', initialGoals.length);
-  await Promise.all(initialGoals.map(async (goal) => {
-    await goalService.add(goal);
-  }));
-
-  // Add default milestones
-  console.log('Adding default milestones:', initialMilestones.length);
-  await Promise.all(initialMilestones.map(async (milestone) => {
-    await milestoneService.add(milestone);
-  }));
-
-  // Add default quick wins
-  console.log('Adding default quick wins:', initialQuickWins.length);
-  await Promise.all(initialQuickWins.map(async (quickWin) => {
-    await quickWinService.add(quickWin);
-  }));
-
-  // Add default custom lists (including Inbox) - check for existing lists first
-  console.log('Adding default custom lists:', customLists.length);
-  const existingLists = await listService.getAll();
-  const listsToAdd = customLists.filter(list => 
-    !existingLists.some(existing => existing.name === list.name)
-  );
-  
-  if (listsToAdd.length > 0) {
-    console.log('Lists to add:', listsToAdd.map(l => l.name));
-    await Promise.all(listsToAdd.map(async (list) => {
-      await listService.add(list);
-    }));
-  } else {
-    console.log('No new lists to add');
-  }
-
-  // Add default list folders - check for existing folders first
-  const existingListFolders = await listFolderService.getAll();
-  const listFoldersToAdd = listFolders.filter(folder => 
-    !existingListFolders.some(existing => existing.name === folder.name)
-  );
-  
-  if (listFoldersToAdd.length > 0) {
-    console.log('Adding list folders:', listFoldersToAdd.map(f => f.name));
-    await Promise.all(listFoldersToAdd.map(async (folder) => {
-      await listFolderService.add(folder);
-    }));
-  } else {
-    console.log('No new list folders to add');
-  }
-
-  // Add default tags - check for existing tags first
-  const existingTags = await tagService.getAll();
-  const tagsToAdd = tags.filter(tag => 
-    !existingTags.some(existing => existing.name === tag.name)
-  );
-  
-  if (tagsToAdd.length > 0) {
-    console.log('Adding tags:', tagsToAdd.map(t => t.name));
-    await Promise.all(tagsToAdd.map(async (tag) => {
-      await tagService.add(tag);
-    }));
-  } else {
-    console.log('No new tags to add');
-  }
-
-  // Add default tag folders - check for existing folders first
-  const existingTagFolders = await tagFolderService.getAll();
-  const tagFoldersToAdd = tagFolders.filter(folder => 
-    !existingTagFolders.some(existing => existing.name === folder.name)
-  );
-  
-  if (tagFoldersToAdd.length > 0) {
-    console.log('Adding tag folders:', tagFoldersToAdd.map(f => f.name));
-    await Promise.all(tagFoldersToAdd.map(async (folder) => {
-      await tagFolderService.add(folder);
-    }));
-  } else {
-    console.log('No new tag folders to add');
-  }
-
-  console.log('User data initialization completed successfully');
+  // TODO: Implement data initialization when initial data is available
+  console.log('User data initialization not implemented yet');
 };
 
 // ============= UTILITY FUNCTIONS =============

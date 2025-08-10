@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, ActivityIndicator } from 'react-native';
 
@@ -14,33 +15,18 @@ import DainandiniScreen from '../screens/DainandiniScreen';
 import VidyaScreen from '../screens/VidyaScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
+// Import components
+import CustomDrawerContent from '../components/CustomDrawerContent';
+
 // Import services
 import { auth } from '../services/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
-// Navigation types
-export type RootStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-};
-
-export type MainTabParamList = {
-  Home: undefined;
-  Kary: undefined;
-  Abhyasa: undefined;
-  Dainandini: undefined;
-  Vidya: undefined;
-  Profile: undefined;
-};
-
-export type AuthStackParamList = {
-  Login: undefined;
-};
-
 // Create navigators
-const Stack = createStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
-const AuthStack = createStackNavigator<AuthStackParamList>();
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
+const AuthStack = createStackNavigator();
 
 // Auth Navigator
 const AuthNavigator = () => (
@@ -49,12 +35,12 @@ const AuthNavigator = () => (
   </AuthStack.Navigator>
 );
 
-// Main Tab Navigator
+// Main Tab Navigator (now with only 5 tabs, Profile moved to drawer)
 const MainTabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       tabBarIcon: ({ focused, color, size }) => {
-        let iconName: keyof typeof Ionicons.glyphMap;
+        let iconName;
 
         switch (route.name) {
           case 'Home':
@@ -72,9 +58,6 @@ const MainTabNavigator = () => (
           case 'Vidya':
             iconName = focused ? 'school' : 'school-outline';
             break;
-          case 'Profile':
-            iconName = focused ? 'person' : 'person-outline';
-            break;
           default:
             iconName = 'help-outline';
         }
@@ -91,8 +74,38 @@ const MainTabNavigator = () => (
     <Tab.Screen name="Abhyasa" component={AbhyasaScreen} />
     <Tab.Screen name="Dainandini" component={DainandiniScreen} />
     <Tab.Screen name="Vidya" component={VidyaScreen} />
-    <Tab.Screen name="Profile" component={ProfileScreen} />
   </Tab.Navigator>
+);
+
+// Drawer Navigator
+const DrawerNavigator = () => (
+  <Drawer.Navigator
+    drawerContent={(props) => <CustomDrawerContent {...props} />}
+    screenOptions={({ route }) => ({
+      headerShown: false,
+      drawerActiveTintColor: '#007AFF',
+      drawerInactiveTintColor: 'gray',
+      drawerIcon: ({ focused, color, size }) => {
+        let iconName;
+
+        switch (route.name) {
+          case 'App':
+            iconName = 'home';
+            break;
+          case 'Profile':
+            iconName = 'person';
+            break;
+          default:
+            iconName = 'help-outline';
+        }
+
+        return <Ionicons name={iconName} size={size} color={color} />;
+      },
+    })}
+  >
+    <Drawer.Screen name="App" component={MainTabNavigator} />
+    <Drawer.Screen name="Profile" component={ProfileScreen} />
+  </Drawer.Navigator>
 );
 
 // Loading component
@@ -107,7 +120,7 @@ const LoadingScreen = () => (
 
 // Main App Navigator
 const AppNavigator = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -127,7 +140,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Main" component={MainTabNavigator} />
+          <Stack.Screen name="Main" component={DrawerNavigator} />
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}

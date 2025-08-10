@@ -1,125 +1,159 @@
 import { dataService } from './dataService';
-import { Habit, Goal, Milestone, QuickWin, HabitLog } from '../types';
+import { 
+  Habit, 
+  Goal, 
+  Milestone, 
+  QuickWin, 
+  HabitLog 
+} from '../types';
 
 export class AbhyasaService {
-  // Goal operations
+  // Goal methods
   async getGoals(): Promise<Goal[]> {
-    return dataService.getDocuments<Goal>('goals');
+    return dataService.getGoals();
   }
 
   async getGoal(goalId: string): Promise<Goal | null> {
-    return dataService.getDocument<Goal>('goals', goalId);
+    // Note: getGoal method doesn't exist in DataService, using getGoals and filtering
+    const goals = await dataService.getGoals();
+    return goals.find(g => g.id === goalId) || null;
   }
 
-  async createGoal(goal: Omit<Goal, 'id'>): Promise<string> {
-    return dataService.addDocument<Goal>('goals', goal);
+  async createGoal(goal: Omit<Goal, 'id'>): Promise<Goal> {
+    return dataService.createGoal(goal);
   }
 
   async updateGoal(goalId: string, updates: Partial<Goal>): Promise<void> {
-    return dataService.updateDocument<Goal>('goals', goalId, updates);
+    return dataService.updateGoal(goalId, updates);
   }
 
   async deleteGoal(goalId: string): Promise<void> {
-    return dataService.deleteDocument('goals', goalId);
+    return dataService.deleteGoal(goalId);
   }
 
-  // Habit operations
+  // Habit methods
   async getHabits(): Promise<Habit[]> {
-    return dataService.getDocuments<Habit>('habits');
+    return dataService.getHabits();
   }
 
   async getHabit(habitId: string): Promise<Habit | null> {
-    return dataService.getDocument<Habit>('habits', habitId);
+    const habits = await dataService.getHabits();
+    return habits.find(h => h.id === habitId) || null;
   }
 
-  async createHabit(habit: Omit<Habit, 'id'>): Promise<string> {
-    return dataService.addDocument<Habit>('habits', habit);
+  async createHabit(habit: Omit<Habit, 'id'>): Promise<Habit> {
+    return dataService.createHabit(habit);
   }
 
   async updateHabit(habitId: string, updates: Partial<Habit>): Promise<void> {
-    return dataService.updateDocument<Habit>('habits', habitId, updates);
+    return dataService.updateHabit(habitId, updates);
   }
 
   async deleteHabit(habitId: string): Promise<void> {
-    return dataService.deleteDocument('habits', habitId);
+    return dataService.deleteHabit(habitId);
   }
 
-  // Habit logging
+  // HabitLog methods
   async getHabitLogs(habitId?: string): Promise<HabitLog[]> {
     if (habitId) {
-      return dataService.getDocuments<HabitLog>('habitLogs');
+      const logs = await dataService.getHabitLogs();
+      return logs.filter(log => log.habitId === habitId);
     }
-    return dataService.getDocuments<HabitLog>('habitLogs');
+    return dataService.getHabitLogs();
   }
 
-  async createHabitLog(log: Omit<HabitLog, 'id'>): Promise<string> {
-    return dataService.addDocument<HabitLog>('habitLogs', log);
+  async createHabitLog(log: Omit<HabitLog, 'id'>): Promise<HabitLog> {
+    return dataService.createHabitLog(log);
   }
 
   async updateHabitLog(logId: string, updates: Partial<HabitLog>): Promise<void> {
-    return dataService.updateDocument<HabitLog>('habitLogs', logId, updates);
+    return dataService.updateHabitLog(logId, updates);
   }
 
-  // Milestone operations
+  // Milestone methods
   async getMilestones(goalId?: string): Promise<Milestone[]> {
     if (goalId) {
-      return dataService.getDocuments<Milestone>('milestones');
+      const milestones = await dataService.getMilestones();
+      return milestones.filter(m => m.goalId === goalId);
     }
-    return dataService.getDocuments<Milestone>('milestones');
+    return dataService.getMilestones();
   }
 
-  async createMilestone(milestone: Omit<Milestone, 'id'>): Promise<string> {
-    return dataService.addDocument<Milestone>('milestones', milestone);
+  async createMilestone(milestone: Omit<Milestone, 'id'>): Promise<Milestone> {
+    return dataService.createMilestone(milestone);
   }
 
   async updateMilestone(milestoneId: string, updates: Partial<Milestone>): Promise<void> {
-    return dataService.updateDocument<Milestone>('milestones', milestoneId, updates);
+    return dataService.updateMilestone(milestoneId, updates);
   }
 
-  // Quick Win operations
+  async deleteMilestone(milestoneId: string): Promise<void> {
+    return dataService.deleteMilestone(milestoneId);
+  }
+
+  // QuickWin methods
   async getQuickWins(): Promise<QuickWin[]> {
-    return dataService.getDocuments<QuickWin>('quickWins');
+    return dataService.getQuickWins();
   }
 
-  async createQuickWin(quickWin: Omit<QuickWin, 'id'>): Promise<string> {
-    return dataService.addDocument<QuickWin>('quickWins', quickWin);
+  async createQuickWin(quickWin: Omit<QuickWin, 'id'>): Promise<QuickWin> {
+    return dataService.createQuickWin(quickWin);
   }
 
-  // Real-time subscriptions
+  // Subscription methods
   subscribeToGoals(callback: (goals: Goal[]) => void) {
-    return dataService.subscribeToCollection<Goal>('goals', callback);
+    return dataService.subscribeToGoals(callback);
   }
 
   subscribeToHabits(callback: (habits: Habit[]) => void) {
-    return dataService.subscribeToCollection<Habit>('habits', callback);
+    return dataService.subscribeToHabits(callback);
   }
 
   subscribeToHabitLogs(callback: (logs: HabitLog[]) => void) {
-    return dataService.subscribeToCollection<HabitLog>('habitLogs', callback);
+    return dataService.subscribeToHabitLogs(callback);
   }
 
-  // Analytics and insights
+  // Analytics methods (placeholder implementations)
   async getHabitStreak(habitId: string): Promise<number> {
     const logs = await this.getHabitLogs(habitId);
-    // Calculate streak logic here
-    return 0; // Placeholder
+    // Simple streak calculation - count consecutive days
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let i = 0; i < 30; i++) { // Check last 30 days
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      
+      const hasLog = logs.some(log => {
+        const logDate = new Date(log.date);
+        logDate.setHours(0, 0, 0, 0);
+        return logDate.getTime() === checkDate.getTime();
+      });
+      
+      if (hasLog) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
   }
 
   async getGoalProgress(goalId: string): Promise<number> {
-    const goal = await this.getGoal(goalId);
     const milestones = await this.getMilestones(goalId);
-    
-    if (!goal || milestones.length === 0) return 0;
+    if (milestones.length === 0) return 0;
     
     const completedMilestones = milestones.filter(m => m.status === 'completed').length;
     return (completedMilestones / milestones.length) * 100;
   }
 
-  // Search and filtering
+  // Search and filter methods
   async searchHabits(query: string): Promise<Habit[]> {
     const habits = await this.getHabits();
     return habits.filter(habit => 
-      habit.name.toLowerCase().includes(query.toLowerCase()) ||
+      habit.name.toLowerCase().includes(query.toLowerCase()) || 
       habit.description?.toLowerCase().includes(query.toLowerCase())
     );
   }
@@ -136,4 +170,3 @@ export class AbhyasaService {
 }
 
 export const abhyasaService = new AbhyasaService();
-export default abhyasaService;
