@@ -20,7 +20,7 @@ import type { Task, List, Tag, ListFolder, TagFolder } from '~/modules/kary/type
 import type { Log, LogTemplate, Focus } from '~/modules/dainandini/types';
 import type { Habit, HabitLog, Goal, Milestone, QuickWin } from '~/modules/abhyasa/types';
 
-import { habits, initialGoals, initialMilestones, initialQuickWins } from '~/modules/abhyasa/data';
+import { initialGoals, initialMilestones, initialQuickWins } from '~/modules/abhyasa/data';
 import { customLists, listFolders, tags, tagFolders } from '~/modules/kary/data';
 import { initialFoci } from '~/modules/dainandini/data';
 
@@ -73,14 +73,15 @@ export const taskService = {
     const taskToAdd = {
       ...taskData,
       createdAt: new Date(),
+      updatedAt: new Date(),
       userId: user.uid,
-      parentId: taskData.parentId || null,
       completionDate: taskData.completionDate || null,
       dueDate: taskData.dueDate || null,
       reminder: taskData.reminder || false,
       tags: taskData.tags || [],
       description: taskData.description || '',
-      priority: taskData.priority || null,
+      priority: taskData.priority || '',
+      subtasks: taskData.subtasks || [], // Initialize subtasks array
       source: taskData.source || null,
     };
 
@@ -756,11 +757,7 @@ export const initializeUserData = async () => {
     await focusService.add(focus);
   }));
 
-  // Add default habits
-  console.log('Adding default habits:', habits.length);
-  await Promise.all(habits.map(async (habit) => {
-    await habitService.add(habit);
-  }));
+  // Note: No default habits are created - users start with empty habit lists
 
   // Add default goals
   console.log('Adding default goals:', initialGoals.length);

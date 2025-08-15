@@ -3,6 +3,39 @@ import { devtools } from 'zustand/middleware';
 import { habitService, habitLogService, goalService, milestoneService, quickWinService } from '@jeevan-saathi/shared/services/dataService';
 import type { Habit, HabitLog, Goal, Milestone, QuickWin } from './types';
 
+// Map icon names from shared services to web app's Icons component
+const mapIconName = (iconName: string): string => {
+  // Map common icon names to web app equivalents
+  const iconMap: Record<string, string> = {
+    'target': 'TargetIcon',
+    'trophy': 'TrophyIcon',
+    'star': 'StarIcon',
+    'flag': 'FlagIcon',
+    'FitnessIcon': 'ActivityIcon',
+    'BookIcon': 'BookOpenIcon',
+    'MindIcon': 'ActivityIcon', // Use ActivityIcon as fallback
+    'WaterIcon': 'ActivityIcon', // Use ActivityIcon as fallback
+    'PlanIcon': 'FileTextIcon',
+    'HeartIcon': 'HeartIcon',
+    'Edit3Icon': 'Edit3Icon',
+    'CheckSquareIcon': 'CheckSquareIcon',
+    'StarIcon': 'StarIcon',
+    'leaf': 'ActivityIcon', // Use ActivityIcon as fallback
+    'book': 'BookOpenIcon',
+    'calendar': 'CalendarIcon',
+    'list': 'ListIcon',
+    'tag': 'TagIcon',
+    'plus': 'PlusIcon',
+    'home': 'HomeIcon',
+    'inbox': 'InboxIcon',
+    'clock': 'ClockIcon',
+    'today': 'TodayIcon',
+    'tomorrow': 'TomorrowIcon',
+  };
+  
+  return iconMap[iconName] || 'CircleIcon'; // Default fallback
+};
+
 type AbhyasaState = {
   habits: Habit[];
   habitLogs: HabitLog[];
@@ -49,7 +82,26 @@ export const useAbhyasaStore = create<AbhyasaState>()(
             milestoneService.getAll(),
             quickWinService.getAll(),
           ]);
-          set({ habits, habitLogs, goals, milestones, quickWins, loading: false });
+          
+          // Transform icon names to match web app's Icons component
+          const transformedHabits = habits.map(habit => ({
+            ...habit,
+            icon: mapIconName(habit.icon)
+          }));
+          
+          const transformedGoals = goals.map(goal => ({
+            ...goal,
+            icon: mapIconName(goal.icon)
+          }));
+          
+          set({ 
+            habits: transformedHabits, 
+            habitLogs, 
+            goals: transformedGoals, 
+            milestones, 
+            quickWins, 
+            loading: false 
+          });
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }

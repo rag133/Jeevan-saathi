@@ -1,37 +1,57 @@
-# Jeevan Saathi Monorepo Development Rules
+# Jeevan Saathi Development Rules
 
-## Project Structure
-- `web/` - React web application (existing)
-- `mobile/` - React Native mobile application (to be created)
-- `shared/` - Code shared between web and mobile
+## 🚨 CRITICAL PATH INFORMATION 🚨
+- **Web App**: Current workspace directory (jeevan-saathi/)
+- **Mobile App**: SEPARATE location at `C:\JeevanSaathi\`
+- **NEVER confuse these two codebases!**
 
-## Code Reuse Guidelines
-- ALWAYS check `shared/` directory first for existing code
-- Reuse business logic, stores, and services from `shared/`
-- Only create new code when absolutely necessary
-- Maintain consistency between web and mobile implementations
+## Mobile App Details
+- **Location**: `C:\JeevanSaathi\` (React Native CLI project)
+- **Type**: React Native CLI (NOT Expo)
+- **Firebase**: Uses `@react-native-firebase` native SDK
+- **Architecture**: Legacy (newArchEnabled=false for stability)
+- **Navigation**: Custom components (no gesture-handler or drawer dependencies)
 
-## Development Workflow
-1. Implement core logic in `shared/`
-2. Adapt UI components for web in `web/src/`
-3. Adapt UI components for mobile in `mobile/src/`
-4. Ensure both platforms use the same data models and business logic
+## Terminal Commands for Mobile Work
+- **Navigate first**: `cd C:\JeevanSaathi`
+- **PowerShell**: Don't use '&&' - use separate commands
+- **Build Debug**: `cd android` then `./gradlew assembleDebug`
+- **Build Release**: `cd android` then `./gradlew assembleRelease`
+- **Run**: `npx react-native run-android`
 
-## Critical Rules
-- NEVER modify the existing web app functionality during mobile development
-- ALWAYS test web app after any changes to shared code
-- Use the SAME Firebase project for both apps
-- Maintain data consistency across platforms
+## Removed Dependencies (Mobile)
+- ❌ react-native-gesture-handler
+- ❌ @react-navigation/drawer  
+- ❌ react-native-vector-icons
+- ✅ Using custom SimpleDrawer and emoji icons instead
 
-## File Organization
-- Business logic → `shared/`
-- Platform-specific UI → `web/` or `mobile/`
-- Types and interfaces → `shared/types/`
-- Stores and state → `shared/stores/`
+## Code Organization Strategy
+- Business logic → `shared/` directory
+- Web UI → `web/src/`
+- Mobile UI → `mobile/src/` (at C:\JeevanSaathi\src\)
+- Types → `shared/types/`
 - Services → `shared/services/`
-- Utilities → `shared/utils/`
 
-## Testing Requirements
-- Test web app functionality after any shared code changes
-- Ensure mobile app works with shared code
-- Maintain backward compatibility
+## Development Rules
+1. **ALWAYS** clarify which app (web vs mobile) when starting work
+2. **NEVER** modify existing web app functionality during mobile development
+3. **USE** the same Firebase project for both apps
+4. **TEST** web app after any shared code changes
+5. **MAINTAIN** data consistency across platforms
+
+## Current Mobile App Status
+- ✅ Authentication working (email/password)
+- ✅ Firebase Firestore integration
+- ✅ Bottom tab navigation (Home, Kary, Abhyasa, Dainandini)
+- ✅ Custom hamburger drawer with Firebase data
+- ✅ Task details modal (half/full screen modes)
+- ✅ Priority system (P1=Urgent, P2=High, P3=Medium, P4=Low)
+- ✅ Dynamic list names in headers
+- ✅ Selection indicators in menu
+- ✅ Real Firestore tags
+
+## Build Configuration
+- Legacy Architecture (newArchEnabled=false)
+- Hermes enabled
+- Firebase native SDK
+- Clean dependency tree (removed problematic packages)

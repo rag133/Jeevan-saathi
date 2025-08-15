@@ -1,5 +1,7 @@
 // Shared utility functions that can be used by both web and mobile apps
 
+export * from './habitStats';
+
 export const formatDate = (date: Date): string => {
   return date.toLocaleDateString('en-US', {
     year: 'numeric',

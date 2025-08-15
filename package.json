@@ -4,18 +4,13 @@
   "private": true,
   "workspaces": [
     "web",
-    "mobile",
     "shared"
   ],
   "scripts": {
     "web:dev": "cd web && npm run dev",
     "web:build": "cd web && npm run build",
     "web:test": "cd web && npm run test",
-    "mobile:android": "cd mobile && npm run android",
-    "mobile:ios": "cd mobile && npm run ios",
-    "mobile:start": "cd mobile && npm start",
-    "install:all": "npm install && cd web && npm install && cd ../mobile && npm install",
-    "clean": "cd web && npm run clean && cd ../mobile && npm run clean",
+    "install:all": "npm install && cd web && npm install",
     "test:all": "npm run web:test"
   },
   "devDependencies": {

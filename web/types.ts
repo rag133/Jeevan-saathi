@@ -25,6 +25,12 @@ export interface Tag {
   folderId?: string;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   listId: string;
@@ -33,17 +39,12 @@ export interface Task {
   dueDate?: Date;
   tags?: string[]; // Array of Tag IDs
   description?: string;
-  priority?: 1 | 2 | 3 | 4;
+  priority?: 'P1' | 'P2' | 'P3' | 'P4' | ''; // String format to match mobile
+  subtasks?: Subtask[]; // Array of subtasks
   source?: {
     text: string;
     url: string;
   };
-}
-
-export interface Subtask {
-  id: string;
-  text: string;
-  completed: boolean;
 }
 
 export type Selection = { type: 'list'; id: string } | { type: 'tag'; id: string };

@@ -28,19 +28,26 @@ export interface Tag {
   folderId?: string | null;
 }
 
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   listId: string;
   title: string;
   completed: boolean;
   createdAt: Date;
+  updatedAt: Date;
   completionDate?: Date;
-  parentId?: string; // ID of the parent task
   dueDate?: Date;
   reminder?: boolean;
   tags?: string[]; // Array of Tag IDs
   description?: string;
-  priority?: 1 | 2 | 3 | 4;
+  priority?: 'P1' | 'P2' | 'P3' | 'P4' | ''; // String format to match mobile
+  subtasks?: Subtask[]; // Array of subtasks (replaces parentId)
   source?: {
     text: string;
     url: string;

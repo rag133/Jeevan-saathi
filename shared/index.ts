@@ -3,10 +3,7 @@ export * from './stores/karyStore';
 export * from './stores/abhyasaStore';
 export * from './stores/dainandiniStore';
 
-// Export all shared services
-export * from './services/firebase';
-export * from './services/authService';
-export * from './services/dataService';
+// Export all shared services (excluding Firebase - platform-specific)
 export * from './services/store';
 
 // Export all shared types

@@ -18,6 +18,7 @@ import type {
   FirestoreDoc,
   PartialFirestoreDoc
 } from '../types';
+import { HabitLogStatus } from '../types';
 
 // Helper function to get current user
 const getCurrentUser = (): User | null => {
@@ -692,6 +693,11 @@ export const habitLogService = {
       userId: user.uid,
       value: habitLogData.value || null,
       completedChecklistItems: habitLogData.completedChecklistItems || [],
+      count: habitLogData.count || 1, // Default count for backward compatibility
+      status: habitLogData.status || HabitLogStatus.DONE, // Default status
+      notes: habitLogData.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const docRef = await addDoc(getUserCollection('habitLogs'), habitLogToAdd);
@@ -705,7 +711,14 @@ export const habitLogService = {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
     const habitLogRef = doc(db, 'users', user.uid, 'habitLogs', habitLogId);
-    return updateDoc(habitLogRef, updates);
+    
+    // Add updatedAt timestamp
+    const updatesWithTimestamp = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    
+    return updateDoc(habitLogRef, updatesWithTimestamp);
   },
 
   delete: async (habitLogId: string): Promise<void> => {

@@ -25,6 +25,10 @@ interface HabitItemProps {
 
 const HabitItem: React.FC<HabitItemProps> = ({ habit, isSelected, onSelect }) => {
   const Icon = Icons[habit.icon];
+  
+  // Fallback to a default icon if the specified icon doesn't exist
+  const SafeIcon = Icon || Icons.CircleIcon;
+  
   return (
     <li
       onClick={onSelect}
@@ -35,7 +39,7 @@ const HabitItem: React.FC<HabitItemProps> = ({ habit, isSelected, onSelect }) =>
       }`}
     >
       <div className={`p-2 rounded-lg bg-${habit.color}/20 flex-shrink-0`}>
-        <Icon className={`w-6 h-6 text-${habit.color}`} />
+        <SafeIcon className={`w-6 h-6 text-${habit.color}`} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
